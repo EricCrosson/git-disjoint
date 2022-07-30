@@ -4,17 +4,18 @@
     crane.url = "github:ipetkov/crane";
     crane.inputs.nixpkgs.follows = "nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
+    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
   };
 
-  outputs = { self, nixpkgs, crane, flake-utils, ... }:
+  outputs = { self, nixpkgs, crane, flake-utils, pre-commit-hooks, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
         };
-        
+
         craneLib = crane.lib.${system};
-        
+
         # Common derivation arguments used for all builds
         commonArgs = {
           src = ./.;
@@ -57,13 +58,24 @@
         myCrate = craneLib.buildPackage (commonArgs // {
           inherit cargoArtifacts;
         });
+
+        pre-commit-check = pre-commit-hooks.lib.${system}.run {
+          src = ./.;
+          hooks = {
+            nixpkgs-fmt.enable = true;
+          };
+        };
       in
       {
         packages.default = myCrate;
         checks = {
           inherit
             myCrate
-            myCrateClippy;
+            myCrateClippy
+            pre-commit-check;
         };
-    });
+        devShell = nixpkgs.legacyPackages.${system}.mkShell {
+          inherit (self.checks.${system}.pre-commit-check) shellHook;
+        };
+      });
 }
