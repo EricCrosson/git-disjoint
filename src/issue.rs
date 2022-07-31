@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 /// Jira issue identifier.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub(crate) struct Issue(String);
 
 impl Issue {
