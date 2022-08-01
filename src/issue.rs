@@ -1,8 +1,14 @@
+use std::fmt::Display;
+
 use lazy_static::lazy_static;
 use regex::Regex;
 
+#[cfg(test)]
+use proptest_derive::Arbitrary;
+
 /// Jira issue identifier.
 #[derive(Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(test, derive(Arbitrary))]
 pub(crate) struct Issue(String);
 
 impl Issue {
@@ -16,9 +22,21 @@ impl Issue {
     }
 }
 
+impl Display for Issue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::issue::Issue;
+
+    #[test]
+    fn display_issue() {
+        let issue = Issue(String::from("GD-0"));
+        assert_eq!(format!("{}", issue), "GD-0");
+    }
 
     #[test]
     fn successfully_parse_from_commit_message_without_newline() {
