@@ -61,11 +61,14 @@ fn main() -> Result<()> {
             Some(commit)
         })
         // Only include commits after the `start_point`
-        .take_while(|commit| start_point.id().eq(&commit.id()))
+        .take_while(|commit| !start_point.id().eq(&commit.id()))
         .collect();
 
     // Order commits parent-first, children-last
     commits.reverse();
+
+    // DEBUG:
+    // println!("Commits: {:#?}", commits);
 
     let commits_by_issue = commits
         .into_iter()
@@ -96,41 +99,45 @@ fn main() -> Result<()> {
     // println!("{:#?}", commits_by_issue);
 
     // DEBUG:
-    let pair = &commits_by_issue
+    commits_by_issue
         .into_iter()
-        .fold(Vec::new(), |mut vec, (issue, commits)| {
-            vec.push(PullRequestContent { issue, commits });
-            vec
-        })[0];
-    // DEBUG:
-    println!("{:#?}", pair);
+        .map(|(issue, commits)| PullRequestContent { issue, commits })
+        // DEBUG:
+        .take(1)
+        .try_for_each(|pair| -> Result<()> {
+            // DEBUG:
+            println!("{:#?}", pair);
 
-    // RESUME: for each issue: create a branch
-    let PullRequestContent { issue, commits } = pair;
-    let summary = commits[0]
-        .summary()
-        .ok_or(anyhow!("Commit summary is not valid UTF-8"))?;
+            // RESUME: for each issue: create a branch
+            let PullRequestContent { issue, commits } = pair;
+            let summary = commits[0]
+                .summary()
+                .ok_or(anyhow!("Commit summary is not valid UTF-8"))?;
 
-    // Replace parentheses, because they interfere with terminal tab-completion
-    // (they require double quotes).
-    let branch_name = sanitize_text_for_git_branch_name(&format!("{}-{}", issue, summary));
-    let branch_name = branch_name.replace("(", "-");
-    let branch_name = branch_name.replace(")", "-");
-    lazy_static! {
-        static ref RE_MULTIPLE_HYPHENS: Regex =
-            Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
-    }
-    let branch_name = RE_MULTIPLE_HYPHENS.replace_all(&branch_name, "-");
-    repo.branch(&branch_name, start_point_commit, true)?;
+            // Replace parentheses, because they interfere with terminal tab-completion
+            // (they require double quotes).
+            let branch_name = sanitize_text_for_git_branch_name(&format!("{}-{}", issue, summary));
+            let branch_name = branch_name.replace("(", "-");
+            let branch_name = branch_name.replace(")", "-");
+            lazy_static! {
+                static ref RE_MULTIPLE_HYPHENS: Regex = Regex::new("-{2,}")
+                    .expect("Expected multiple-hyphens regular expression to compile");
+            }
+            let branch_name = RE_MULTIPLE_HYPHENS.replace_all(&branch_name, "-");
+            repo.branch(&branch_name, start_point_commit, true)?;
 
-    // Check out the new branch
-    let branch_obj = repo.revparse_single(&("refs/heads/".to_owned() + &branch_name))?;
-    repo.checkout_tree(&branch_obj, None)?;
-    repo.set_head(&("refs/heads/".to_owned() + &branch_name))?;
+            // Check out the new branch
+            let branch_obj = repo.revparse_single(&("refs/heads/".to_owned() + &branch_name))?;
+            repo.checkout_tree(&branch_obj, None)?;
+            repo.set_head(&("refs/heads/".to_owned() + &branch_name))?;
 
-    // NEXT: cherry-pick the related commits
-    // NEXT: push the branch
-    // NEXT: open a pull request
+            // NEXT: cherry-pick the related commits
+            // NEXT: push the branch
+            // NEXT: open a pull request
+            // NEXT: check out the original branch
+
+            Ok(())
+        })?;
 
     Ok(())
 }
