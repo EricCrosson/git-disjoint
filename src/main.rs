@@ -116,14 +116,20 @@ fn main() -> Result<()> {
 
             // Replace parentheses, because they interfere with terminal tab-completion
             // (they require double quotes).
-            let branch_name = sanitize_text_for_git_branch_name(&format!("{}-{}", issue, summary));
-            let branch_name = branch_name.replace("(", "-");
-            let branch_name = branch_name.replace(")", "-");
-            lazy_static! {
-                static ref RE_MULTIPLE_HYPHENS: Regex = Regex::new("-{2,}")
-                    .expect("Expected multiple-hyphens regular expression to compile");
-            }
-            let branch_name = RE_MULTIPLE_HYPHENS.replace_all(&branch_name, "-");
+            let branch_name = {
+                let branch_name =
+                    sanitize_text_for_git_branch_name(&format!("{}-{}", issue, summary))
+                        .replace("(", "-")
+                        .replace(")", "-");
+                lazy_static! {
+                    static ref RE_MULTIPLE_HYPHENS: Regex = Regex::new("-{2,}")
+                        .expect("Expected multiple-hyphens regular expression to compile");
+                }
+                RE_MULTIPLE_HYPHENS
+                    .replace_all(&branch_name, "-")
+                    .to_string()
+            };
+
             repo.branch(&branch_name, start_point_commit, true)?;
 
             // Check out the new branch
@@ -131,7 +137,37 @@ fn main() -> Result<()> {
             repo.checkout_tree(&branch_obj, None)?;
             repo.set_head(&("refs/heads/".to_owned() + &branch_name))?;
 
-            // NEXT: cherry-pick the related commits
+            // Cherry-pick commits related to the target issue
+            // Helpful resource: https://github.com/rust-lang/git2-rs/pull/432/files
+            for commit in commits {
+                // DEBUG:
+                println!("Cherry-picking commit {}", &commit.id());
+
+                let parent = repo
+                    .find_branch(&branch_name, git2::BranchType::Local)?
+                    .get()
+                    .peel_to_commit()?;
+                // DEBUG:
+                println!("Branch peels to commit {:?}", parent,);
+
+                repo.cherrypick(&commit, None)?;
+
+                let id = repo.index()?.write_tree()?;
+                let tree_d = repo.find_tree(id)?;
+                repo.commit(
+                    Some("HEAD"),
+                    &commit.author(),
+                    &commit.committer(),
+                    &commit.message().unwrap_or_default(),
+                    &tree_d,
+                    &[&parent],
+                )?;
+            }
+
+            // Without knowing how to properly commit a cherry-pick,
+            // we have to manually clear the repo state.
+            repo.cleanup_state()?;
+
             // NEXT: push the branch
             // NEXT: open a pull request
             // NEXT: check out the original branch
