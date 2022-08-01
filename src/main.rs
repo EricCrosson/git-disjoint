@@ -44,10 +44,8 @@ fn main() -> Result<()> {
     let mut revwalk = repo.revwalk()?;
 
     // Assume `revspec` indicates a single commit
-    let start_point = repo.revparse(&start_point)?;
+    let start_point = repo.revparse_single(&start_point)?;
     let start_point_commit = start_point
-        .from()
-        .ok_or(anyhow!("Expected start_point to identify a single commit"))?
         .as_commit()
         .ok_or(anyhow!("Expected start_point to identify a commit"))?;
 
@@ -63,10 +61,7 @@ fn main() -> Result<()> {
             Some(commit)
         })
         // Only include commits after the `start_point`
-        .take_while(|commit| match start_point.from() {
-            Some(start_point_oid) => !start_point_oid.id().eq(&commit.id()),
-            None => true,
-        })
+        .take_while(|commit| start_point.id().eq(&commit.id()))
         .collect();
 
     // Order commits parent-first, children-last
