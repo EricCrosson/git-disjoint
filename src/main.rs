@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
+use std::process::Command;
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -172,26 +173,11 @@ fn main() -> Result<()> {
             repo.cleanup_state()?;
 
             // NEXT: push the branch
-            let mut remote_callbacks = RemoteCallbacks::new();
-            remote_callbacks.credentials(|_url, username_from_url, _allowed_types| {
-                Cred::ssh_key(
-                    username_from_url.unwrap(),
-                    None,
-                    Path::new(&format!("{}/.ssh/id_rsa", env::var("HOME").unwrap())),
-                    None,
-                )
-            });
-
-            // let mut push_options = PushOptions::new();
-            // push_options.remote_callbacks(remote_callbacks);
-
-            let mut remote = repo.find_remote("origin")?;
-            remote.connect_auth(Direction::Push, Some(remote_callbacks), None)?;
-            remote.push(
-                &[format!("{}:{}", &branch_ref, &branch_ref)],
-                // Some(&mut push_options),
-                None,
-            )?;
+            Command::new("git")
+                .arg("push")
+                .arg("origin")
+                .arg(&branch_name)
+                .output()?;
 
             // NEXT: open a pull request
             // NEXT: check out the original branch
