@@ -1,10 +1,12 @@
 #![forbid(unsafe_code)]
 
 use std::collections::HashMap;
+use std::env;
+use std::path::Path;
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use git2::{Commit, Repository};
+use git2::{Commit, Cred, Direction, PushOptions, RemoteCallbacks, Repository};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -133,9 +135,10 @@ fn main() -> Result<()> {
             repo.branch(&branch_name, start_point_commit, true)?;
 
             // Check out the new branch
-            let branch_obj = repo.revparse_single(&("refs/heads/".to_owned() + &branch_name))?;
+            let branch_ref = format!("refs/heads/{}", &branch_name);
+            let branch_obj = repo.revparse_single(&branch_ref)?;
             repo.checkout_tree(&branch_obj, None)?;
-            repo.set_head(&("refs/heads/".to_owned() + &branch_name))?;
+            repo.set_head(&branch_ref)?;
 
             // Cherry-pick commits related to the target issue
             // Helpful resource: https://github.com/rust-lang/git2-rs/pull/432/files
@@ -169,6 +172,27 @@ fn main() -> Result<()> {
             repo.cleanup_state()?;
 
             // NEXT: push the branch
+            let mut remote_callbacks = RemoteCallbacks::new();
+            remote_callbacks.credentials(|_url, username_from_url, _allowed_types| {
+                Cred::ssh_key(
+                    username_from_url.unwrap(),
+                    None,
+                    Path::new(&format!("{}/.ssh/id_rsa", env::var("HOME").unwrap())),
+                    None,
+                )
+            });
+
+            // let mut push_options = PushOptions::new();
+            // push_options.remote_callbacks(remote_callbacks);
+
+            let mut remote = repo.find_remote("origin")?;
+            remote.connect_auth(Direction::Push, Some(remote_callbacks), None)?;
+            remote.push(
+                &[format!("{}:{}", &branch_ref, &branch_ref)],
+                // Some(&mut push_options),
+                None,
+            )?;
+
             // NEXT: open a pull request
             // NEXT: check out the original branch
 
