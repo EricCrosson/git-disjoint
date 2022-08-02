@@ -173,7 +173,7 @@ fn main() -> Result<()> {
             execute(&["git", "push", "origin", &branch_name])?;
 
             // Open a pull request
-            execute(&["hub", "pull-request", "--open", "--draft"])?;
+            execute(&["hub", "pull-request", "-o", "--draft"])?;
 
             // Finally, check out the original branch
             repo.checkout_tree(&originally_checked_out_commit.as_object(), None)?;
