@@ -1,13 +1,13 @@
 #![forbid(unsafe_code)]
 
 use std::collections::HashMap;
-use std::env;
-use std::path::Path;
-use std::process::Command;
+use std::io;
+use std::io::Write;
+use std::process::{Command, ExitStatus};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use git2::{Commit, Cred, Direction, PushOptions, RemoteCallbacks, Repository};
+use git2::{Commit, Repository};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -18,6 +18,9 @@ mod sanitize_git_branch_name;
 use crate::args::Args;
 use crate::issue::Issue;
 use crate::sanitize_git_branch_name::sanitize_text_for_git_branch_name;
+
+// git2 resources:
+// - https://siciarz.net/24-days-rust-git2/
 
 // DISCUSS: enforcing prerequisite: working tree is clean
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
@@ -41,10 +44,38 @@ macro_rules! filter_try {
     };
 }
 
+fn get_branch_name(issue: &Issue, summary: &str) -> String {
+    lazy_static! {
+        static ref RE_MULTIPLE_HYPHENS: Regex =
+            Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
+    }
+
+    // Replace parentheses, because they interfere with terminal tab-completion
+    // (they require double quotes).
+    let branch_name = sanitize_text_for_git_branch_name(&format!("{}-{}", issue, summary))
+        .replace("(", "-")
+        .replace(")", "-");
+    RE_MULTIPLE_HYPHENS
+        .replace_all(&branch_name, "-")
+        .to_string()
+}
+
+fn execute(command: &[&str]) -> Result<ExitStatus> {
+    let mut runner = Command::new(command[0]);
+    for argument in command.iter().skip(1) {
+        runner.arg(argument);
+    }
+    let output = runner.output()?;
+    io::stdout().write_all(&output.stdout)?;
+    io::stderr().write_all(&output.stderr)?;
+    Ok(output.status)
+}
+
 fn main() -> Result<()> {
     let Args { start_point } = Args::parse();
     let repo = Repository::open(".")?;
-    let mut revwalk = repo.revwalk()?;
+
+    let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
 
     // Assume `revspec` indicates a single commit
     let start_point = repo.revparse_single(&start_point)?;
@@ -53,6 +84,7 @@ fn main() -> Result<()> {
         .ok_or(anyhow!("Expected start_point to identify a commit"))?;
 
     // Traverse commits starting from HEAD
+    let mut revwalk = repo.revwalk()?;
     revwalk.push_head()?;
 
     revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
@@ -106,37 +138,25 @@ fn main() -> Result<()> {
         .into_iter()
         .map(|(issue, commits)| PullRequestContent { issue, commits })
         // DEBUG:
-        .take(1)
-        .try_for_each(|pair| -> Result<()> {
+        // .take(1)
+        .try_for_each(|PullRequestContent { issue, commits }| -> Result<()> {
             // DEBUG:
-            println!("{:#?}", pair);
+            println!("{:#?}: {:#?}", issue, commits);
 
-            // RESUME: for each issue: create a branch
-            let PullRequestContent { issue, commits } = pair;
+            // Grab the first summary to convert into a branch name.
+            // We only choose the first summary because we know each Vec is
+            // non-empty and the first element is convenient.
             let summary = commits[0]
                 .summary()
                 .ok_or(anyhow!("Commit summary is not valid UTF-8"))?;
 
-            // Replace parentheses, because they interfere with terminal tab-completion
-            // (they require double quotes).
-            let branch_name = {
-                let branch_name =
-                    sanitize_text_for_git_branch_name(&format!("{}-{}", issue, summary))
-                        .replace("(", "-")
-                        .replace(")", "-");
-                lazy_static! {
-                    static ref RE_MULTIPLE_HYPHENS: Regex = Regex::new("-{2,}")
-                        .expect("Expected multiple-hyphens regular expression to compile");
-                }
-                RE_MULTIPLE_HYPHENS
-                    .replace_all(&branch_name, "-")
-                    .to_string()
-            };
+            let branch_name = get_branch_name(&issue, summary);
+            let branch_ref = format!("refs/heads/{}", &branch_name);
 
+            // Create a branch
             repo.branch(&branch_name, start_point_commit, true)?;
 
             // Check out the new branch
-            let branch_ref = format!("refs/heads/{}", &branch_name);
             let branch_obj = repo.revparse_single(&branch_ref)?;
             repo.checkout_tree(&branch_obj, None)?;
             repo.set_head(&branch_ref)?;
@@ -146,41 +166,17 @@ fn main() -> Result<()> {
             for commit in commits {
                 // DEBUG:
                 println!("Cherry-picking commit {}", &commit.id());
-
-                let parent = repo
-                    .find_branch(&branch_name, git2::BranchType::Local)?
-                    .get()
-                    .peel_to_commit()?;
-                // DEBUG:
-                println!("Branch peels to commit {:?}", parent,);
-
-                repo.cherrypick(&commit, None)?;
-
-                let id = repo.index()?.write_tree()?;
-                let tree_d = repo.find_tree(id)?;
-                repo.commit(
-                    Some("HEAD"),
-                    &commit.author(),
-                    &commit.committer(),
-                    &commit.message().unwrap_or_default(),
-                    &tree_d,
-                    &[&parent],
-                )?;
+                execute(&["git", "cherry-pick", &format!("{}", &commit.id())])?;
             }
 
-            // Without knowing how to properly commit a cherry-pick,
-            // we have to manually clear the repo state.
-            repo.cleanup_state()?;
+            // Push the branch
+            execute(&["git", "push", "origin", &branch_name])?;
 
-            // NEXT: push the branch
-            Command::new("git")
-                .arg("push")
-                .arg("origin")
-                .arg(&branch_name)
-                .output()?;
+            // Open a pull request
+            execute(&["hub", "pull-request", "--open", "--draft"])?;
 
-            // NEXT: open a pull request
-            // NEXT: check out the original branch
+            // Finally, check out the original branch
+            repo.checkout_tree(&originally_checked_out_commit.as_object(), None)?;
 
             Ok(())
         })?;
