@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::io;
 use std::io::Write;
-use std::process::{Command, ExitStatus};
+use std::process::{Command, ExitStatus, Stdio};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -65,6 +65,8 @@ fn execute(command: &[&str]) -> Result<ExitStatus> {
     for argument in command.iter().skip(1) {
         runner.arg(argument);
     }
+    // DEBUG: see if this helps heh
+    runner.stdin(Stdio::inherit());
     let output = runner.output()?;
     io::stdout().write_all(&output.stdout)?;
     io::stderr().write_all(&output.stderr)?;
