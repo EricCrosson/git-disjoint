@@ -11,12 +11,12 @@ keywords = ["cli", "git", "pull-request"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-anyhow = "1.0.58"
-clap = { version = "3.2.16", features = ["cargo", "derive"] }
-git2 = { version = "0.15.0", default-features = false, features = ["zlib-ng-compat"] }
-lazy_static = "1.4.0"
-regex = "1.6.0"
+anyhow = "=1.0.58"
+clap = { version = "=3.2.16", features = ["cargo", "derive"] }
+git2 = { version = "=0.15.0", default-features = false, features = ["zlib-ng-compat"] }
+lazy_static = "=1.4.0"
+regex = "=1.6.0"
 
 [dev-dependencies]
-proptest = "1.0.0"
-proptest-derive = "0.2.0"
+proptest = "=1.0.0"
+proptest-derive = "=0.2.0"
