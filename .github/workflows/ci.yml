@@ -1,10 +1,9 @@
 ---
 
-name: Release
+name: CI
 
 on:
-  push:
-    branches: [ master, alpha, beta ]
+  pull_request:
 
 # semantic-release is built around the following idea:
 #
@@ -24,15 +23,12 @@ env:
 
 jobs:
 
-  ### Perform the semantic-release
-  release:
+  test:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
 
     - name: Install toolchain
       uses: actions-rs/toolchain@v1
@@ -54,22 +50,7 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Install semantic-release-rust
-      uses: actions-rs/cargo@v1
-      if: steps.cache-cargo.outputs.cache-hit != 'true'
-      with:
-        command: install
-        args: semantic-release-rust --version 1.0.0-alpha.8
-
     - name: Cargo test
       uses: actions-rs/cargo@v1
       with:
         command: test
-
-    - name: Invoke semantic-release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: |
-        npm ci --ignore-scripts
-        npx semantic-release
