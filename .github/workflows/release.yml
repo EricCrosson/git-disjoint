@@ -1,0 +1,71 @@
+---
+
+name: Release
+
+on:
+  push:
+    branches: [ master, alpha, beta ]
+
+# semantic-release is built around the following idea:
+#
+# > A release consist in running test, defining the version then releasing
+#
+# - https://github.com/semantic-release/semantic-release/issues/753#issuecomment-384689034
+#
+# So we perform the following actions from the context of semantic-release plugins:
+#
+# - push to Cargo
+# - compile all target binaries (not yet supported)
+# - create GitHub release
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+
+  ### Perform the semantic-release
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Install toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        target: ${{ matrix.triple.target }}
+
+    - name: Cache cargo
+      uses: actions/cache@v3
+      id: cache-cargo
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install semantic-release-rust
+      uses: actions-rs/cargo@v1
+      if: steps.cache-cargo.outputs.cache-hit != 'true'
+      with:
+        command: install
+        args: semantic-release-rust --version 1.0.0-alpha.8
+
+    - name: Invoke semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        npm ci --ignore-scripts
+        npx semantic-release
+

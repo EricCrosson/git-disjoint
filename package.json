@@ -1,0 +1,9 @@
+{
+  "name": "git-disjoint",
+  "version": "0.0.0-semantically-released",
+  "devDependencies": {
+    "@semantic-release/changelog": "6.0.1",
+    "@semantic-release/exec": "6.0.3",
+    "semantic-release": "19.0.3"
+  }
+}

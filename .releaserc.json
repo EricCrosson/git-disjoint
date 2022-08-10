@@ -1,0 +1,16 @@
+{
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/git",
+    [
+      "@semantic-release/exec",
+      {
+        "verifyContitionsCmd": "semantic-release-rust verify-conditions",
+        "prepareCmd": "semantic-release-rust prepare ${nextRelease.version}",
+        "publishCmd": "semantic-release-rust publish",
+      }
+    ]
+  ]
+}
