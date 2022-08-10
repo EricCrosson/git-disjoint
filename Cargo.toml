@@ -1,7 +1,14 @@
 [package]
 name = "git-disjoint"
-version = "0.1.0"
+version = "0.0.0-semantically-released"
 edition = "2021"
+authors = ["Eric Crosson <eric.s.crosson@utexas.edu>"]
+license = "MIT OR Apache-2.0"
+description = "A tool to batch commits into PRs on GitHub"
+readme = "README.md"
+homepage = "https://github.com/ericcrosson/git-disjoint"
+keywords = ["cli", "git", "pull-request"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.58"
@@ -11,6 +18,5 @@ lazy_static = "1.4.0"
 regex = "1.6.0"
 
 [dev-dependencies]
-# quickcheck = "1.0.3"
 proptest = "1.0.0"
 proptest-derive = "0.2.0"
