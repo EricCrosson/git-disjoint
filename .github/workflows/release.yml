@@ -73,4 +73,3 @@ jobs:
       run: |
         npm ci --ignore-scripts
         npx semantic-release
-
