@@ -1,0 +1,56 @@
+---
+
+name: CI
+
+on:
+  pull_request:
+
+# semantic-release is built around the following idea:
+#
+# > A release consist in running test, defining the version then releasing
+#
+# - https://github.com/semantic-release/semantic-release/issues/753#issuecomment-384689034
+#
+# So we perform the following actions from the context of semantic-release plugins:
+#
+# - push to Cargo
+# - compile all target binaries (not yet supported)
+# - create GitHub release
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        target: ${{ matrix.triple.target }}
+
+    - name: Cache cargo
+      uses: actions/cache@v3
+      id: cache-cargo
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cargo test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
