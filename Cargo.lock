@@ -162,7 +162,7 @@ dependencies = [
 
 [[package]]
 name = "git-disjoint"
-version = "0.1.0"
+version = "0.0.0-semantically-released"
 dependencies = [
  "anyhow",
  "clap",
