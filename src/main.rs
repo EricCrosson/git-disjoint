@@ -1,9 +1,7 @@
 #![forbid(unsafe_code)]
 
 use std::collections::HashMap;
-use std::io;
-use std::io::Write;
-use std::process::{Command, ExitStatus, Stdio};
+use std::process::{Command, ExitStatus};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -65,12 +63,7 @@ fn execute(command: &[&str]) -> Result<ExitStatus> {
     for argument in command.iter().skip(1) {
         runner.arg(argument);
     }
-    // DEBUG: see if this helps heh
-    runner.stdin(Stdio::inherit());
-    let output = runner.output()?;
-    io::stdout().write_all(&output.stdout)?;
-    io::stderr().write_all(&output.stderr)?;
-    Ok(output.status)
+    Ok(runner.status()?)
 }
 
 fn main() -> Result<()> {
@@ -175,8 +168,7 @@ fn main() -> Result<()> {
             execute(&["git", "push", "origin", &branch_name])?;
 
             // Open a pull request
-            println!("Don't forget to open a pull-request until this step can be automated");
-            // execute(&["hub", "pull-request", "-o", "--draft"])?;
+            execute(&["hub", "pull-request", "--browse", "--draft"])?;
 
             // Finally, check out the original branch
             repo.checkout_tree(&originally_checked_out_commit.as_object(), None)?;
