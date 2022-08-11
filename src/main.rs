@@ -25,7 +25,6 @@ use crate::sanitize_git_branch_name::sanitize_text_for_git_branch_name;
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
 // TODO: add documentation
-// TODO: semantic-release to cargo
 
 #[derive(Debug)]
 struct PullRequestContent<'a> {
