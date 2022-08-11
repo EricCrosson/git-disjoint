@@ -5,11 +5,13 @@ use std::process::{Command, ExitStatus};
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use default_branch::DefaultBranch;
 use git2::{Commit, Repository};
 use lazy_static::lazy_static;
 use regex::Regex;
 
 mod args;
+mod default_branch;
 mod issue;
 mod sanitize_git_branch_name;
 
@@ -66,13 +68,16 @@ fn execute(command: &[&str]) -> Result<ExitStatus> {
 }
 
 fn main() -> Result<()> {
-    let Args { start_point } = Args::parse();
+    let Args { since } = Args::parse();
+    let since = since
+        .ok_or(anyhow!("User did not define `since`"))
+        .or_else(|_| DefaultBranch::try_get_default())?;
     let repo = Repository::open(".")?;
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
 
     // Assume `revspec` indicates a single commit
-    let start_point = repo.revparse_single(&start_point)?;
+    let start_point = repo.revparse_single(&since.0)?;
     let start_point_commit = start_point
         .as_commit()
         .ok_or(anyhow!("Expected start_point to identify a commit"))?;
