@@ -1,3 +1,10 @@
+# [0.2.0](https://github.com/EricCrosson/git-disjoint/compare/v0.1.2...v0.2.0) (2022-08-11)
+
+
+### Features
+
+* determine the default branch automatically ([6632ab0](https://github.com/EricCrosson/git-disjoint/commit/6632ab0136268a3e9d4500d71efdd947d8f0b689))
+
 ## [0.1.2](https://github.com/EricCrosson/git-disjoint/compare/v0.1.1...v0.1.2) (2022-08-11)
 
 
