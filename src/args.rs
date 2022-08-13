@@ -3,8 +3,16 @@ use clap::{crate_version, Parser};
 use crate::default_branch::DefaultBranch;
 
 #[derive(Parser)]
-#[clap(name = "git-disjoint", version = crate_version!(), author = "Eric Crosson <eric.s.crosson@utexas.edu>")]
+#[clap(
+    name = "git-disjoint",
+    version = crate_version!(),
+    author = "Eric Crosson <eric.s.crosson@utexas.edu>",
+)]
 pub(crate) struct Args {
-    #[clap(short, long)]
+    #[clap(
+        short,
+        long,
+        value_parser = DefaultBranch::parse
+    )]
     pub(crate) since: Option<DefaultBranch>,
 }
