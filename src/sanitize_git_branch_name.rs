@@ -16,8 +16,8 @@ pub(crate) fn sanitize_text_for_git_branch_name(text: &str) -> String {
     // }
 
     // They can include slash / for hierarchical (directory) grouping, but no slash-separated component can begin with a dot . or end with the sequence .lock.
-    if result.starts_with(".") {
-        result = result.replacen(".", "-", 1);
+    if result.starts_with('.') {
+        result = result.replacen('.', "-", 1);
     }
     result = result.replace("/.", "/-");
     // FIXME: this is overly cautious
@@ -41,18 +41,18 @@ pub(crate) fn sanitize_text_for_git_branch_name(text: &str) -> String {
     result.retain(|char| !char.is_whitespace());
 
     // They cannot have tilde ~ anywhere.
-    result = result.replace("~", "-");
+    result = result.replace('~', "-");
 
     // They cannot have caret ^ anywhere.
-    result = result.replace("^", "-");
+    result = result.replace('^', "-");
 
     // They cannot have colon : anywhere.
-    result = result.replace(":", "-");
+    result = result.replace(':', "-");
 
     // They cannot have question-mark ?, asterisk *, or open bracket [ anywhere. See the --refspec-pattern option below for an exception to this rule.
-    result = result.replace("?", "-");
-    result = result.replace("*", "-");
-    result = result.replace("[", "-");
+    result = result.replace('?', "-");
+    result = result.replace('*', "-");
+    result = result.replace('[', "-");
 
     // They cannot contain a sequence @{.
     result = result.replace("@{", "-");
@@ -60,10 +60,10 @@ pub(crate) fn sanitize_text_for_git_branch_name(text: &str) -> String {
     // They cannot be the single character @.
     // FIXME: this implementation is too restrictive but I'm not exactly sure of the rules right now.
     // Happy to widen this up if I get more clarity and feel confident we'll avoid false-positives.
-    result = result.replace("@", "-");
+    result = result.replace('@', "-");
 
     // They cannot contain a \.
-    result = result.replace(r"\", "-");
+    result = result.replace('\\', "-");
 
     // They cannot contain multiple consecutive slashes (see the --normalize option below for an exception to this rule)
     lazy_static! {
@@ -81,17 +81,17 @@ pub(crate) fn sanitize_text_for_git_branch_name(text: &str) -> String {
 
     // They cannot begin with a slash / (see the --normalize option below for an exception to this rule)
     // FIXME: this has a bug, property-testing is finding it consistently
-    while result.starts_with("/") {
-        result = result.replacen("/", "-", 1);
+    while result.starts_with('/') {
+        result = result.replacen('/', "-", 1);
     }
 
     // They cannot end with a dot .
     // They cannot end with a slash / (see the --normalize option below for an exception to this rule)
-    while result.ends_with("/") || result.ends_with(".") {
+    while result.ends_with('/') || result.ends_with('.') {
         result.pop();
     }
 
-    if result.ends_with("/") {
+    if result.ends_with('/') {
         result.pop();
     }
 

@@ -52,8 +52,8 @@ fn get_branch_name(issue: &Issue, summary: &str) -> String {
     // Replace parentheses, because they interfere with terminal tab-completion
     // (they require double quotes).
     let branch_name = sanitize_text_for_git_branch_name(&format!("{}-{}", issue, summary))
-        .replace("(", "-")
-        .replace(")", "-");
+        .replace('(', "-")
+        .replace(')', "-");
     RE_MULTIPLE_HYPHENS
         .replace_all(&branch_name, "-")
         .to_string()
@@ -69,9 +69,10 @@ fn execute(command: &[&str]) -> Result<ExitStatus> {
 
 fn main() -> Result<()> {
     let Args { since } = Args::parse();
-    let since = since
-        .ok_or(anyhow!("User did not define `since`"))
-        .or_else(|_| DefaultBranch::try_get_default())?;
+    let since = match since {
+        Some(since) => since,
+        None => DefaultBranch::try_get_default()?,
+    };
     let repo = Repository::open(".")?;
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
@@ -80,7 +81,7 @@ fn main() -> Result<()> {
     let start_point = repo.revparse_single(&since.0)?;
     let start_point_commit = start_point
         .as_commit()
-        .ok_or(anyhow!("Expected start_point to identify a commit"))?;
+        .ok_or_else(|| anyhow!("Expected start_point to identify a commit"))?;
 
     // Traverse commits starting from HEAD
     let mut revwalk = repo.revwalk()?;
@@ -147,7 +148,7 @@ fn main() -> Result<()> {
             // non-empty and the first element is convenient.
             let summary = commits[0]
                 .summary()
-                .ok_or(anyhow!("Commit summary is not valid UTF-8"))?;
+                .ok_or_else(|| anyhow!("Commit summary is not valid UTF-8"))?;
 
             let branch_name = get_branch_name(&issue, summary);
             let branch_ref = format!("refs/heads/{}", &branch_name);
@@ -175,7 +176,7 @@ fn main() -> Result<()> {
             execute(&["hub", "pull-request", "--browse", "--draft"])?;
 
             // Finally, check out the original branch
-            repo.checkout_tree(&originally_checked_out_commit.as_object(), None)?;
+            repo.checkout_tree(originally_checked_out_commit.as_object(), None)?;
 
             Ok(())
         })?;
