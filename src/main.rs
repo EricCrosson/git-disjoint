@@ -135,9 +135,12 @@ fn main() -> Result<()> {
             // Grab the first summary to convert into a branch name.
             // We only choose the first summary because we know each Vec is
             // non-empty and the first element is convenient.
-            let summary = commits[0]
-                .summary()
-                .ok_or_else(|| anyhow!("Commit summary is not valid UTF-8"))?;
+            let summary = {
+                let commit = &commits[0];
+                commits[0].summary().ok_or_else(|| {
+                    anyhow!("Summary for commit {:?} is not valid UTF-8", commit.id())
+                })?
+            };
 
             let branch_name = get_branch_name(&issue, summary);
             let branch_ref = format!("refs/heads/{}", &branch_name);
