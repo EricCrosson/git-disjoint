@@ -21,17 +21,10 @@ use crate::issue::Issue;
 // git2 resources:
 // - https://siciarz.net/24-days-rust-git2/
 
-// DISCUSS: enforcing prerequisite: working tree is clean
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
 // TODO: add documentation
-
-#[derive(Debug)]
-struct PullRequestContent<'a> {
-    issue: Issue,
-    commits: Vec<Commit<'a>>,
-}
 
 macro_rules! filter_try {
     ($e:expr) => {
@@ -125,10 +118,11 @@ fn main() -> Result<()> {
             },
         );
 
+    // TODO: enforcing prerequisite: working tree is clean
+
     commits_by_issue
         .into_iter()
-        .map(|(issue, commits)| PullRequestContent { issue, commits })
-        .try_for_each(|PullRequestContent { issue, commits }| -> Result<()> {
+        .try_for_each(|(issue, commits)| -> Result<()> {
             // DEBUG:
             println!("{:#?}: {:#?}", issue, commits);
 
