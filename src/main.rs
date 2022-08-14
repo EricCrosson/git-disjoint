@@ -3,10 +3,10 @@
 use std::collections::HashMap;
 use std::process::{Command, ExitStatus};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, ensure, Result};
 use clap::Parser;
 use default_branch::DefaultBranch;
-use git2::{Commit, Repository};
+use git2::{Commit, Repository, RepositoryState};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sanitize_git_ref::sanitize_git_ref_onelevel;
@@ -21,17 +21,10 @@ use crate::issue::Issue;
 // git2 resources:
 // - https://siciarz.net/24-days-rust-git2/
 
-// DISCUSS: enforcing prerequisite: working tree is clean
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
 // TODO: add documentation
-
-#[derive(Debug)]
-struct PullRequestContent<'a> {
-    issue: Issue,
-    commits: Vec<Commit<'a>>,
-}
 
 macro_rules! filter_try {
     ($e:expr) => {
@@ -66,6 +59,39 @@ fn execute(command: &[&str]) -> Result<ExitStatus> {
     Ok(runner.status()?)
 }
 
+/// Return an error if the repository state is not clean.
+///
+/// This prevents invoking `git disjoint` on a repository in the middle
+/// of some other operation, like a `git rebase`.
+fn assert_repository_state_is_clean(repo: &Repository) -> Result<()> {
+    let state = repo.state();
+    ensure!(
+        RepositoryState::Clean == state,
+        "Repository should be in a clean state, not {:?}",
+        state
+    );
+    Ok(())
+}
+
+/// Return an error if there are any diffs to tracked files, staged or unstaged.
+///
+/// This emulates `git diff` by diffing the tree to the index and the index to
+/// the working directory and blending the results into a single diff that includes
+/// staged, deletec, etc.
+///
+/// This check currently excludes untracked files, but I'm not tied to this behavior.
+fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<()> {
+    let files_changed = repo
+        .diff_tree_to_workdir_with_index(None, None)?
+        .stats()?
+        .files_changed();
+    ensure!(
+        files_changed == 0,
+        "Repository should not contain staged or unstaged changes to tracked files"
+    );
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let Args { since } = Args::parse();
     let since = match since {
@@ -74,13 +100,16 @@ fn main() -> Result<()> {
     };
     let repo = Repository::open(".")?;
 
+    assert_repository_state_is_clean(&repo)?;
+    assert_tree_matches_workdir_with_index(&repo)?;
+
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
 
-    // Assume `revspec` indicates a single commit
+    // Assume `since` indicates a single commit
     let start_point = repo.revparse_single(&since.0)?;
     let start_point_commit = start_point
         .as_commit()
-        .ok_or_else(|| anyhow!("Expected start_point to identify a commit"))?;
+        .ok_or_else(|| anyhow!("Expected `--since` to identify a commit"))?;
 
     // Traverse commits starting from HEAD
     let mut revwalk = repo.revwalk()?;
@@ -88,21 +117,21 @@ fn main() -> Result<()> {
 
     revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
 
-    let mut commits: Vec<Commit> = revwalk
-        .filter_map(|id| {
-            let id = filter_try!(id);
-            let commit = filter_try!(repo.find_commit(id));
-            Some(commit)
-        })
-        // Only include commits after the `start_point`
-        .take_while(|commit| !start_point.id().eq(&commit.id()))
-        .collect();
+    let commits: Vec<Commit> = {
+        let mut commits: Vec<Commit> = revwalk
+            .filter_map(|id| {
+                let id = filter_try!(id);
+                let commit = filter_try!(repo.find_commit(id));
+                Some(commit)
+            })
+            // Only include commits after the `start_point`
+            .take_while(|commit| !start_point.id().eq(&commit.id()))
+            .collect();
 
-    // Order commits parent-first, children-last
-    commits.reverse();
-
-    // DEBUG:
-    // println!("Commits: {:#?}", commits);
+        // Order commits parent-first, children-last
+        commits.reverse();
+        commits
+    };
 
     let commits_by_issue = commits
         .into_iter()
@@ -120,7 +149,6 @@ fn main() -> Result<()> {
             }
         })
         .fold(
-            // REFACTOR: avoid a tuple here, use a struct for readability
             HashMap::<Issue, Vec<Commit>>::new(),
             |mut map, (issue, commit)| {
                 let commits = map.entry(issue).or_default();
@@ -129,25 +157,21 @@ fn main() -> Result<()> {
             },
         );
 
-    // DEBUG:
-    // println!("{:#?}", commits_by_issue);
-
-    // DEBUG:
     commits_by_issue
         .into_iter()
-        .map(|(issue, commits)| PullRequestContent { issue, commits })
-        // DEBUG:
-        // .take(1)
-        .try_for_each(|PullRequestContent { issue, commits }| -> Result<()> {
+        .try_for_each(|(issue, commits)| -> Result<()> {
             // DEBUG:
             println!("{:#?}: {:#?}", issue, commits);
 
             // Grab the first summary to convert into a branch name.
             // We only choose the first summary because we know each Vec is
             // non-empty and the first element is convenient.
-            let summary = commits[0]
-                .summary()
-                .ok_or_else(|| anyhow!("Commit summary is not valid UTF-8"))?;
+            let summary = {
+                let commit = &commits[0];
+                commits[0].summary().ok_or_else(|| {
+                    anyhow!("Summary for commit {:?} is not valid UTF-8", commit.id())
+                })?
+            };
 
             let branch_name = get_branch_name(&issue, summary);
             let branch_ref = format!("refs/heads/{}", &branch_name);
@@ -161,11 +185,10 @@ fn main() -> Result<()> {
             repo.set_head(&branch_ref)?;
 
             // Cherry-pick commits related to the target issue
-            // Helpful resource: https://github.com/rust-lang/git2-rs/pull/432/files
             for commit in commits {
                 // DEBUG:
                 println!("Cherry-picking commit {}", &commit.id());
-                execute(&["git", "cherry-pick", &format!("{}", &commit.id())])?;
+                execute(&["git", "cherry-pick", &commit.id().to_string()])?;
             }
 
             // Push the branch
