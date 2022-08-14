@@ -9,15 +9,14 @@ use default_branch::DefaultBranch;
 use git2::{Commit, Repository};
 use lazy_static::lazy_static;
 use regex::Regex;
+use sanitize_git_ref::sanitize_git_ref_onelevel;
 
 mod args;
 mod default_branch;
 mod issue;
-mod sanitize_git_branch_name;
 
 use crate::args::Args;
 use crate::issue::Issue;
-use crate::sanitize_git_branch_name::sanitize_text_for_git_branch_name;
 
 // git2 resources:
 // - https://siciarz.net/24-days-rust-git2/
@@ -51,7 +50,7 @@ fn get_branch_name(issue: &Issue, summary: &str) -> String {
 
     // Replace parentheses, because they interfere with terminal tab-completion
     // (they require double quotes).
-    let branch_name = sanitize_text_for_git_branch_name(&format!("{}-{}", issue, summary))
+    let branch_name = sanitize_git_ref_onelevel(&format!("{}-{}", issue, summary))
         .replace('(', "-")
         .replace(')', "-");
     RE_MULTIPLE_HYPHENS
