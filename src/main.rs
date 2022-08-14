@@ -24,7 +24,6 @@ use crate::issue::Issue;
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
-// TODO: add documentation
 
 macro_rules! filter_try {
     ($e:expr) => {
