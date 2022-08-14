@@ -76,11 +76,11 @@ fn main() -> Result<()> {
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
 
-    // Assume `revspec` indicates a single commit
+    // Assume `since` indicates a single commit
     let start_point = repo.revparse_single(&since.0)?;
     let start_point_commit = start_point
         .as_commit()
-        .ok_or_else(|| anyhow!("Expected start_point to identify a commit"))?;
+        .ok_or_else(|| anyhow!("Expected `--since` to identify a commit"))?;
 
     // Traverse commits starting from HEAD
     let mut revwalk = repo.revwalk()?;
