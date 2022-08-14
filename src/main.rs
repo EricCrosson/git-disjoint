@@ -154,7 +154,7 @@ fn main() -> Result<()> {
             for commit in commits {
                 // DEBUG:
                 println!("Cherry-picking commit {}", &commit.id());
-                execute(&["git", "cherry-pick", &format!("{}", &commit.id())])?;
+                execute(&["git", "cherry-pick", &commit.id().to_string()])?;
             }
 
             // Push the branch
