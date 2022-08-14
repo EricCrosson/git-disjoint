@@ -171,6 +171,7 @@ dependencies = [
  "proptest",
  "proptest-derive",
  "regex",
+ "sanitize-git-ref",
  "serde",
  "serde_json",
 ]
@@ -575,6 +576,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 
 [[package]]
+name = "sanitize-git-ref"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43cd3a127808f1bd8f96ec4ce0ab9802eb14cac7643c21f7d8e9e45538402f38"
+dependencies = [
+ "lazy_static",
+ "regex",
+ "thiserror",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -661,6 +673,26 @@ name = "textwrap"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
+
+[[package]]
+name = "thiserror"
+version = "1.0.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5f6586b7f764adc0231f4c79be7b920e766bb2f3e51b3661cdb263828f19994"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12bafc5b54507e0149cdf1b145a5d80ab80a90bcd9275df43d4fff68460f6c21"
+dependencies = [
+ "proc-macro2 1.0.42",
+ "quote 1.0.20",
+ "syn 1.0.98",
+]
 
 [[package]]
 name = "tinyvec"
