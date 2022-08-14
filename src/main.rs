@@ -99,18 +99,21 @@ fn main() -> Result<()> {
 
     revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
 
-    let mut commits: Vec<Commit> = revwalk
-        .filter_map(|id| {
-            let id = filter_try!(id);
-            let commit = filter_try!(repo.find_commit(id));
-            Some(commit)
-        })
-        // Only include commits after the `start_point`
-        .take_while(|commit| !start_point.id().eq(&commit.id()))
-        .collect();
+    let commits: Vec<Commit> = {
+        let mut commits: Vec<Commit> = revwalk
+            .filter_map(|id| {
+                let id = filter_try!(id);
+                let commit = filter_try!(repo.find_commit(id));
+                Some(commit)
+            })
+            // Only include commits after the `start_point`
+            .take_while(|commit| !start_point.id().eq(&commit.id()))
+            .collect();
 
-    // Order commits parent-first, children-last
-    commits.reverse();
+        // Order commits parent-first, children-last
+        commits.reverse();
+        commits
+    };
 
     let commits_by_issue = commits
         .into_iter()
