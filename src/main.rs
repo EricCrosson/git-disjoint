@@ -6,7 +6,7 @@ use std::process::{Command, ExitStatus};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use default_branch::DefaultBranch;
-use git2::{Commit, Repository};
+use git2::{Commit, Repository, RepositoryState};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sanitize_git_ref::sanitize_git_ref_onelevel;
@@ -59,6 +59,20 @@ fn execute(command: &[&str]) -> Result<ExitStatus> {
     Ok(runner.status()?)
 }
 
+/// Return an error if the repository state is not clean.
+///
+/// This prevents invoking `git disjoint` on a repository in the middle
+/// of some other operation, like a `git rebase`.
+fn assert_repository_state_is_clean(repo: &Repository) -> Result<()> {
+    let state = repo.state();
+    ensure!(
+        RepositoryState::Clean == state,
+        "Repository should be in a clean state, not {:?}",
+        state
+    );
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let Args { since } = Args::parse();
     let since = match since {
@@ -66,6 +80,10 @@ fn main() -> Result<()> {
         None => DefaultBranch::try_get_default()?,
     };
     let repo = Repository::open(".")?;
+
+    assert_repository_state_is_clean(&repo)?;
+
+    // TODO: enforcing prerequisite: working tree is clean
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
 
@@ -117,8 +135,6 @@ fn main() -> Result<()> {
                 map
             },
         );
-
-    // TODO: enforcing prerequisite: working tree is clean
 
     commits_by_issue
         .into_iter()
