@@ -9,10 +9,6 @@ use crate::default_branch::DefaultBranch;
     author = "Eric Crosson <eric.s.crosson@utexas.edu>",
 )]
 pub(crate) struct Args {
-    #[clap(
-        short,
-        long,
-        value_parser = DefaultBranch::parse
-    )]
+    #[clap(short, long)]
     pub(crate) since: Option<DefaultBranch>,
 }
