@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{process::Command, str::FromStr};
 
 use anyhow::Result;
 use serde::Deserialize;
@@ -12,11 +12,15 @@ struct Repos {
 #[derive(Clone, Debug)]
 pub(crate) struct DefaultBranch(pub(crate) String);
 
-impl DefaultBranch {
-    pub(crate) fn parse(value: &str) -> Result<DefaultBranch> {
-        Ok(DefaultBranch(value.to_owned()))
-    }
+impl FromStr for DefaultBranch {
+    type Err = anyhow::Error;
 
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Ok(Self(value.to_owned()))
+    }
+}
+
+impl DefaultBranch {
     pub(crate) fn try_get_default() -> Result<DefaultBranch> {
         // hub api /repos/{owner}/{repo}
         let stdout = String::from_utf8(
