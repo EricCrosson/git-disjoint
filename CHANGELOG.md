@@ -1,3 +1,10 @@
+## [0.2.3](https://github.com/EricCrosson/git-disjoint/compare/v0.2.2...v0.2.3) (2022-08-14)
+
+
+### Bug Fixes
+
+* skip branches for tickets that have already been created ([12bb146](https://github.com/EricCrosson/git-disjoint/commit/12bb1463b85c8586a7aa8a82c4b1f3f6bb128ebb))
+
 ## [0.2.2](https://github.com/EricCrosson/git-disjoint/compare/v0.2.1...v0.2.2) (2022-08-14)
 
 
