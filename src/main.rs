@@ -101,9 +101,6 @@ fn main() -> Result<()> {
     // Order commits parent-first, children-last
     commits.reverse();
 
-    // DEBUG:
-    // println!("Commits: {:#?}", commits);
-
     let commits_by_issue = commits
         .into_iter()
         // Parse issue from commit message
@@ -120,7 +117,6 @@ fn main() -> Result<()> {
             }
         })
         .fold(
-            // REFACTOR: avoid a tuple here, use a struct for readability
             HashMap::<Issue, Vec<Commit>>::new(),
             |mut map, (issue, commit)| {
                 let commits = map.entry(issue).or_default();
@@ -129,15 +125,9 @@ fn main() -> Result<()> {
             },
         );
 
-    // DEBUG:
-    // println!("{:#?}", commits_by_issue);
-
-    // DEBUG:
     commits_by_issue
         .into_iter()
         .map(|(issue, commits)| PullRequestContent { issue, commits })
-        // DEBUG:
-        // .take(1)
         .try_for_each(|PullRequestContent { issue, commits }| -> Result<()> {
             // DEBUG:
             println!("{:#?}: {:#?}", issue, commits);
@@ -161,7 +151,6 @@ fn main() -> Result<()> {
             repo.set_head(&branch_ref)?;
 
             // Cherry-pick commits related to the target issue
-            // Helpful resource: https://github.com/rust-lang/git2-rs/pull/432/files
             for commit in commits {
                 // DEBUG:
                 println!("Cherry-picking commit {}", &commit.id());
