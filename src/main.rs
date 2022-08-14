@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::process::{Command, ExitStatus};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, ensure, Result};
 use clap::Parser;
 use default_branch::DefaultBranch;
 use git2::{Commit, Repository, RepositoryState};
@@ -73,6 +73,25 @@ fn assert_repository_state_is_clean(repo: &Repository) -> Result<()> {
     Ok(())
 }
 
+/// Return an error if there are any diffs to tracked files, staged or unstaged.
+///
+/// This emulates `git diff` by diffing the tree to the index and the index to
+/// the working directory and blending the results into a single diff that includes
+/// staged, deletec, etc.
+///
+/// This check currently excludes untracked files, but I'm not tied to this behavior.
+fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<()> {
+    let files_changed = repo
+        .diff_tree_to_workdir_with_index(None, None)?
+        .stats()?
+        .files_changed();
+    ensure!(
+        files_changed == 0,
+        "Repository should not contain staged or unstaged changes to tracked files"
+    );
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let Args { since } = Args::parse();
     let since = match since {
@@ -82,8 +101,7 @@ fn main() -> Result<()> {
     let repo = Repository::open(".")?;
 
     assert_repository_state_is_clean(&repo)?;
-
-    // TODO: enforcing prerequisite: working tree is clean
+    assert_tree_matches_workdir_with_index(&repo)?;
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
 
