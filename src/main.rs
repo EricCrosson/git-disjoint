@@ -6,7 +6,7 @@ use std::process::{Command, ExitStatus};
 use anyhow::{anyhow, ensure, Result};
 use clap::Parser;
 use default_branch::DefaultBranch;
-use git2::{Commit, Repository, RepositoryState};
+use git2::{Commit, Repository, RepositoryState, Tree};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sanitize_git_ref::sanitize_git_ref_onelevel;
@@ -79,9 +79,9 @@ fn assert_repository_state_is_clean(repo: &Repository) -> Result<()> {
 /// staged, deletec, etc.
 ///
 /// This check currently excludes untracked files, but I'm not tied to this behavior.
-fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<()> {
+fn assert_tree_matches_workdir_with_index(repo: &Repository, old_tree: &Tree) -> Result<()> {
     let files_changed = repo
-        .diff_tree_to_workdir_with_index(None, None)?
+        .diff_tree_to_workdir_with_index(Some(old_tree), None)?
         .stats()?
         .files_changed();
     ensure!(
@@ -99,16 +99,17 @@ fn main() -> Result<()> {
     };
     let repo = Repository::open(".")?;
 
-    assert_repository_state_is_clean(&repo)?;
-    assert_tree_matches_workdir_with_index(&repo)?;
-
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
+    let originally_checked_out_tree = originally_checked_out_commit.tree()?;
 
     // Assume `since` indicates a single commit
     let start_point = repo.revparse_single(&since.0)?;
     let start_point_commit = start_point
         .as_commit()
         .ok_or_else(|| anyhow!("Expected `--since` to identify a commit"))?;
+
+    assert_repository_state_is_clean(&repo)?;
+    assert_tree_matches_workdir_with_index(&repo, &originally_checked_out_tree)?;
 
     // Traverse commits starting from HEAD
     let mut revwalk = repo.revwalk()?;
