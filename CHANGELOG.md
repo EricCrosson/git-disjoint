@@ -1,3 +1,10 @@
+## [0.2.4](https://github.com/EricCrosson/git-disjoint/compare/v0.2.3...v0.2.4) (2022-08-15)
+
+
+### Bug Fixes
+
+* print warning when skipping already-pushed branch ([a155591](https://github.com/EricCrosson/git-disjoint/commit/a155591a246344f8cb86cd7502f83d002687aef5))
+
 ## [0.2.3](https://github.com/EricCrosson/git-disjoint/compare/v0.2.2...v0.2.3) (2022-08-14)
 
 
