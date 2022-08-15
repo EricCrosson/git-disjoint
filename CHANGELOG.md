@@ -1,3 +1,10 @@
+## [0.2.5](https://github.com/EricCrosson/git-disjoint/compare/v0.2.4...v0.2.5) (2022-08-15)
+
+
+### Bug Fixes
+
+* use correct old_tree when diffing for uncommitted changes ([b41aca5](https://github.com/EricCrosson/git-disjoint/commit/b41aca5776b7821f0d6c005ebc67bc913ea4d17a))
+
 ## [0.2.4](https://github.com/EricCrosson/git-disjoint/compare/v0.2.3...v0.2.4) (2022-08-15)
 
 
