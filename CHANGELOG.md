@@ -1,3 +1,10 @@
+## [0.2.6](https://github.com/EricCrosson/git-disjoint/compare/v0.2.5...v0.2.6) (2022-08-16)
+
+
+### Bug Fixes
+
+* upload binaries to GitHub Release ([9c7968f](https://github.com/EricCrosson/git-disjoint/commit/9c7968f2611b06f8b4d65126db6233fa3270ed56)), closes [#28](https://github.com/EricCrosson/git-disjoint/issues/28)
+
 ## [0.2.5](https://github.com/EricCrosson/git-disjoint/compare/v0.2.4...v0.2.5) (2022-08-15)
 
 
