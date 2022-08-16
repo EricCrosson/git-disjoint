@@ -1,6 +1,17 @@
 {
   "plugins": [
-    "@semantic-release/commit-analyzer",
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "angular",
+        "releaseRules": [
+          {
+            "type": "docs",
+            "release": "patch"
+          }
+        ]
+      }
+    ],
     "@semantic-release/release-notes-generator",
     "@semantic-release/changelog",
     "@semantic-release/git",
@@ -10,6 +21,37 @@
         "verifyContitionsCmd": "semantic-release-rust verify-conditions",
         "prepareCmd": "semantic-release-rust prepare ${nextRelease.version}",
         "publishCmd": "semantic-release-rust publish"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "dist/x86_64-unknown-linux-musl/git-disjoint-x86_64-unknown-linux-musl.tar.gz",
+            "label": "x86_64-unknown-linux-musl"
+          },
+          {
+            "path": "dist/i686-unknown-linux-musl/git-disjoint-i686-unknown-linux-musl.tar.gz",
+            "label": "i686-unknown-linux-musl"
+          },
+          {
+            "path": "dist/x86_64-apple-darwin/git-disjoint-x86_64-apple-darwin.tar.gz",
+            "label": "x86_64-apple-darwin"
+          },
+          {
+            "path": "dist/aarch64-unknown-linux-musl/git-disjoint-aarch64-unknown-linux-musl.tar.gz",
+            "label": "aarch64-unknown-linux-musl"
+          },
+          {
+            "path": "dist/aarch64-apple-darwin/git-disjoint-aarch64-apple-darwin.tar.gz",
+            "label": "aarch64-apple-darwin"
+          },
+          {
+            "path": "dist/SHASUMS256.txt",
+            "label": "SHASUMS256.txt"
+          }
+        ]
       }
     ]
   ]
