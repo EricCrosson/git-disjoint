@@ -14,6 +14,12 @@
 cargo install git-disjoint
 ```
 
+#### Manual
+
+Download a release compatible with your OS and architecture from the [Releases] page, extract the binary, and put it somewhere in your `$PATH`.
+
+[releases]: https://github.com/EricCrosson/git-disjoint/releases/latest
+
 ## Assumptions
 
 `git disjoint` may add value to your workflow if you
@@ -57,7 +63,13 @@ cargo install git-disjoint
    Closes Ticket: COOL-123
    ```
 
-2. When you're ready to turn the set of commits addressing each ticket into its own feature branch, push that branch, and create a draft PR, run `git disjoint`.
+1. When you're ready to:
+
+   1. turn the set of commits addressing each ticket into its own feature branch,
+   1. push that branch, and 
+   1. create a draft PR,
+
+   run `git disjoint`.
 
 [add all your commits to one branch]: https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html
 [git-branchless]: https://github.com/arxanas/git-branchless
