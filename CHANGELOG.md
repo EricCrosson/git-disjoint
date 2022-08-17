@@ -1,3 +1,10 @@
+## [0.2.7](https://github.com/EricCrosson/git-disjoint/compare/v0.2.6...v0.2.7) (2022-08-17)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate anyhow to v1.0.62 ([cc05418](https://github.com/EricCrosson/git-disjoint/commit/cc0541890e70705ff48c241269963d6919c61c56))
+
 ## [0.2.6](https://github.com/EricCrosson/git-disjoint/compare/v0.2.5...v0.2.6) (2022-08-16)
 
 
