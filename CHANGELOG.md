@@ -1,3 +1,10 @@
+## [0.2.15](https://github.com/EricCrosson/git-disjoint/compare/v0.2.14...v0.2.15) (2022-09-05)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate anyhow to v1.0.64 ([732a05a](https://github.com/EricCrosson/git-disjoint/commit/732a05ab287ff9c0d2f5cc78a27686a3afdf2c18))
+
 ## [0.2.14](https://github.com/EricCrosson/git-disjoint/compare/v0.2.13...v0.2.14) (2022-09-02)
 
 
