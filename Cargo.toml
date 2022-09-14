@@ -11,7 +11,7 @@ keywords = ["cli", "git", "pull-request"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-anyhow = "=1.0.64"
+anyhow = "=1.0.65"
 clap = { version = "=3.2.21", features = ["cargo", "derive"] }
 git2 = { version = "=0.15.0", default-features = false, features = ["zlib-ng-compat"] }
 lazy_static = "=1.4.0"
