@@ -1,3 +1,11 @@
+## [0.4.2](https://github.com/EricCrosson/git-disjoint/compare/v0.4.1...v0.4.2) (2022-09-23)
+
+
+### Bug Fixes
+
+* correctly check out the original ref ([d3ad9ce](https://github.com/EricCrosson/git-disjoint/commit/d3ad9ce9b094d40994eaec5c522c08c97d8ff7fd)), closes [#45](https://github.com/EricCrosson/git-disjoint/issues/45)
+* use branch name in error message ([a922715](https://github.com/EricCrosson/git-disjoint/commit/a922715e63ffceff1485639cf9230117d18b465d))
+
 ## [0.4.1](https://github.com/EricCrosson/git-disjoint/compare/v0.4.0...v0.4.1) (2022-09-23)
 
 
