@@ -11,7 +11,7 @@
 #### Cargo
 
 ```
-cargo install git-disjoint
+cargo +nightly install git-disjoint
 ```
 
 #### Manual
