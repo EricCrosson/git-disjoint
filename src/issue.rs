@@ -12,7 +12,8 @@ lazy_static! {
 }
 lazy_static! {
     static ref RE_GITHUB_ISSUE: Regex =
-        Regex::new(r"(?m)^Closes\s+#(\d+)").expect("Expected regular expression to compile");
+        Regex::new(r"(?im)^(closes|close|closed|fixes|fixed)\s+#(\d+)")
+            .expect("Expected regular expression to compile");
 }
 
 /// Jira or GitHub issue identifier.
@@ -37,6 +38,8 @@ impl Display for Issue {
 
 #[cfg(test)]
 mod test {
+    use indoc::formatdoc;
+
     use crate::issue::Issue;
 
     #[test]
@@ -45,181 +48,172 @@ mod test {
         assert_eq!(format!("{}", issue), "GD-0");
     }
 
-    #[test]
-    fn successfully_parse_jira_ticket_from_commit_message_without_newline() {
-        let message = r#"feat(foo): add hyperdrive
+    macro_rules! test_parses {
+        ($unit_test:ident, $input:expr, $output:expr) => {
+            #[test]
+            fn $unit_test() {
+                let message = $input;
+                let issue = Issue::parse_from_commit_message(message);
+                assert!(
+                    issue.is_some(),
+                    "Expected to parse issue from commit message"
+                );
+                let issue = issue.unwrap();
+                assert_eq!(issue, $output);
+            }
+        };
+    }
+
+    test_parses!(
+        successfully_parse_jira_ticket_from_commit_message_without_newline,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
+
+            Ticket: AB-123     
+            "
+        ),
+        Issue(String::from("AB-123"))
+    );
+
+    test_parses!(
+        successfully_parse_jira_ticket_from_commit_message_with_newline,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
         
-Ticket: AB-123"#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("AB-123")));
-    }
-
-    #[test]
-    fn successfully_parse_jira_ticket_from_commit_message_with_newline() {
-        let message = r#"feat(foo): add hyperdrive
+            Ticket: AB-123
         
-Ticket: AB-123
-        "#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("AB-123")));
-    }
+            ",
+        ),
+        Issue(String::from("AB-123"))
+    );
 
-    #[test]
-    fn successfully_parse_jira_ticket_from_commit_message_with_footer() {
-        let message = r#"feat(foo): add hyperdrive
+    test_parses!(
+        successfully_parse_jira_ticket_from_commit_message_with_footer,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
         
-Ticket: AB-123
-Footer: http://example.com"#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("AB-123")));
-    }
+            Ticket: AB-123
+            Footer: http://example.com
+            ",
+        ),
+        Issue(String::from("AB-123"))
+    );
 
-    #[test]
-    fn successfully_parse_jira_ticket_closes_ticket_from_commit_message_without_newline() {
-        let message = r#"feat(foo): add hyperdrive
+    test_parses!(
+        successfully_parse_jira_ticket_closes_ticket_from_commit_message_without_newline,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
 
-Closes Ticket: AB-123"#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("AB-123")));
-    }
+            Closes Ticket: AB-123
+            ",
+        ),
+        Issue(String::from("AB-123"))
+    );
 
-    #[test]
-    fn successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_newline() {
-        let message = r#"feat(foo): add hyperdrive
+    test_parses!(
+        successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_newline,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
 
-Closes Ticket: AB-123
-        "#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("AB-123")));
-    }
+            Closes Ticket: AB-123
 
-    #[test]
-    fn successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_footer() {
-        let message = r#"feat(foo): add hyperdrive
+            ",
+        ),
+        Issue(String::from("AB-123"))
+    );
 
-Closes Ticket: AB-123
-Footer: http://example.com"#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("AB-123")));
-    }
+    test_parses!(
+        successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_footer,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
 
-    #[test]
-    fn successfully_parse_github_issue_from_commit_message_without_newline() {
-        let message = r#"feat(foo): add hyperdrive
+            Closes Ticket: AB-123
+            Footer: http://example.com
+            ",
+        ),
+        Issue(String::from("AB-123"))
+    );
 
-Closes #123"#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("123")));
-    }
+    test_parses!(
+        successfully_parse_github_issue_from_commit_message_without_newline,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
 
-    #[test]
-    fn successfully_parse_github_issue_from_commit_message_with_newline() {
-        let message = r#"feat(foo): add hyperdrive
+            Closes #123
+            ",
+        ),
+        Issue(String::from("123"))
+    );
 
-Closes #123
-        "#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("123")));
-    }
+    test_parses!(
+        successfully_parse_github_issue_from_commit_message_with_newline,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
 
-    #[test]
-    fn successfully_parse_github_issue_from_commit_message_with_footer() {
-        let message = r#"feat(foo): add hyperdrive
+            Closes #123
+            "
+        ),
+        Issue(String::from("123"))
+    );
 
-Closes #123
-Footer: http://example.com"#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("123")));
-    }
+    test_parses!(
+        successfully_parse_github_issue_from_commit_message_with_footer,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
 
-    #[test]
-    fn successfully_parse_github_issue_closes_ticket_from_commit_message_without_newline() {
-        let message = r#"feat(foo): add hyperdrive
+            Closes #123
+            Footer: http://example.com
+            ",
+        ),
+        Issue(String::from("123"))
+    );
 
-Closes #123"#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("123")));
-    }
+    test_parses!(
+        successfully_parse_github_issue_closes_ticket_from_commit_message_without_newline,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
 
-    #[test]
-    fn successfully_parse_github_issue_closes_ticket_from_commit_message_with_newline() {
-        let message = r#"feat(foo): add hyperdrive
+            Closes #123
+            ",
+        ),
+        Issue(String::from("123"))
+    );
 
-Closes #123
-        "#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("123")));
-    }
+    test_parses!(
+        successfully_parse_github_issue_closes_ticket_from_commit_message_with_newline,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
 
-    #[test]
-    fn successfully_parse_github_issue_closes_ticket_from_commit_message_with_footer() {
-        let message = r#"feat(foo): add hyperdrive
+            Closes #123
 
-Closes #123
-Footer: http://example.com"#;
-        let issue = Issue::parse_from_commit_message(message);
-        assert!(
-            issue.is_some(),
-            "Expected to parse issue from commit message"
-        );
-        let issue = issue.unwrap();
-        assert_eq!(issue, Issue(String::from("123")));
-    }
+            ",
+        ),
+        Issue(String::from("123"))
+    );
+
+    test_parses!(
+        successfully_parse_github_issue_closes_ticket_from_commit_message_with_footer,
+        formatdoc!(
+            "
+            feat(foo): add hyperdrive
+
+            Closes #123
+            Footer: http://example.com
+            ",
+        ),
+        Issue(String::from("123"))
+    );
 
     #[test]
     fn unnsuccessfully_parse_from_commit_message() {
