@@ -15,9 +15,11 @@ use sanitize_git_ref::sanitize_git_ref_onelevel;
 mod args;
 mod default_branch;
 mod issue;
+mod user_config;
 
 use crate::args::Args;
 use crate::issue::Issue;
+use crate::user_config::{get_user_remote, UserConfig};
 
 // git2 resources:
 // - https://siciarz.net/24-days-rust-git2/
@@ -106,6 +108,7 @@ fn main() -> Result<()> {
         Some(since) => since,
         None => DefaultBranch::try_get_default()?,
     };
+
     let repo = Repository::open(".")?;
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
@@ -140,6 +143,10 @@ fn main() -> Result<()> {
         // Order commits parent-first, children-last
         commits.reverse();
         commits
+    };
+
+    let user_config = UserConfig {
+        remote: get_user_remote(&repo)?,
     };
 
     let commits_by_issue = commits
@@ -210,7 +217,7 @@ fn main() -> Result<()> {
             }
 
             // Push the branch
-            execute(&["git", "push", "origin", &branch_name])?;
+            execute(&["git", "push", &user_config.remote, &branch_name])?;
 
             // Open a pull request
             execute(&["hub", "pull-request", "--browse", "--draft"])?;
