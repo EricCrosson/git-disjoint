@@ -183,7 +183,7 @@ fn main() -> Result<()> {
             };
 
             let branch_name = get_branch_name(&issue, summary);
-            let branch_ref = format!("refs/heads/{}", &branch_name);
+            let branch_ref = format!("refs/heads/{}", branch_name);
             let branch_obj = repo.revparse_single(&branch_ref);
 
             // If branch already exists, assume we've already handled this ticket
