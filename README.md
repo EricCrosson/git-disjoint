@@ -37,21 +37,9 @@ Download a release compatible with your OS and architecture from the [Releases] 
 
 1. [Add all your commits to one branch].
 
-   Starting from your repository's default branch, this could look like:
-
-   ```
-   git checkout -b now
-   ```
-
-   or, if you are using [git-branchless]:
-
-   ```
-   git checkout --detach
-   ```
-
 1. In each commit message, include a reference to the relevant ticket.
 
-   For example:
+   For example, use the Jira automation format:
 
    ```
    Ticket: COOL-123
@@ -62,6 +50,14 @@ Download a release compatible with your OS and architecture from the [Releases] 
    ```
    Closes Ticket: COOL-123
    ```
+
+   Or use the GitHub [format]: 
+
+    ```
+    Closes 123
+    ```
+
+   [format]: https://github.blog/2013-01-22-closing-issues-via-commit-messages/
 
 1. When you're ready to:
 
