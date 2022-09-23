@@ -33,6 +33,6 @@ impl DefaultBranch {
 
         let repos: Repos = serde_json::from_str(&stdout)?;
 
-        Ok(DefaultBranch(repos.default_branch))
+        Ok(DefaultBranch(format!("origin/{}", repos.default_branch)))
     }
 }
