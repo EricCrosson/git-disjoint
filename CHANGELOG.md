@@ -1,3 +1,10 @@
+# [0.4.0](https://github.com/EricCrosson/git-disjoint/compare/v0.3.0...v0.4.0) (2022-09-23)
+
+
+### Features
+
+* permit single-branch development ([f76e839](https://github.com/EricCrosson/git-disjoint/commit/f76e8397361d1ea5dd7045e648e9b393e2e57faa)), closes [#48](https://github.com/EricCrosson/git-disjoint/issues/48)
+
 # [0.3.0](https://github.com/EricCrosson/git-disjoint/compare/v0.2.19...v0.3.0) (2022-09-23)
 
 
