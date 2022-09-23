@@ -1,7 +1,8 @@
 #![forbid(unsafe_code)]
+#![feature(exit_status_error)]
 
 use std::collections::HashMap;
-use std::process::{Command, ExitStatus};
+use std::process::Command;
 
 use anyhow::{anyhow, ensure, Result};
 use clap::Parser;
@@ -50,12 +51,20 @@ fn get_branch_name(issue: &Issue, summary: &str) -> String {
         .to_string()
 }
 
-fn execute(command: &[&str]) -> Result<ExitStatus> {
+fn execute(command: &[&str]) -> Result<()> {
     let mut runner = Command::new(command[0]);
     for argument in command.iter().skip(1) {
         runner.arg(argument);
     }
-    Ok(runner.status()?)
+
+    // Try to run the command
+    let status = runner.status()?;
+
+    // Return an Err if the exit status is non-zero
+    if let Err(error) = status.exit_ok() {
+        return Err(error)?;
+    }
+    Ok(())
 }
 
 /// Return an error if the repository state is not clean.
