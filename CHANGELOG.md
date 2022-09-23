@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/EricCrosson/git-disjoint/compare/v0.2.19...v0.3.0) (2022-09-23)
+
+
+### Features
+
+* support GitHub closes syntax ([1eeaa7a](https://github.com/EricCrosson/git-disjoint/commit/1eeaa7ac6da17d42a24ff7b80f179ff4b8f38879)), closes [#33](https://github.com/EricCrosson/git-disjoint/issues/33)
+
 ## [0.2.19](https://github.com/EricCrosson/git-disjoint/compare/v0.2.18...v0.2.19) (2022-09-23)
 
 
