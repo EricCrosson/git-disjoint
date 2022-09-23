@@ -25,6 +25,11 @@ use crate::issue::Issue;
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
 
+lazy_static! {
+    static ref RE_MULTIPLE_HYPHENS: Regex =
+        Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
+}
+
 macro_rules! filter_try {
     ($e:expr) => {
         match $e {
@@ -35,11 +40,6 @@ macro_rules! filter_try {
 }
 
 fn get_branch_name(issue: &Issue, summary: &str) -> String {
-    lazy_static! {
-        static ref RE_MULTIPLE_HYPHENS: Regex =
-            Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
-    }
-
     // Replace parentheses, because they interfere with terminal tab-completion
     // (they require double quotes).
     let branch_name = sanitize_git_ref_onelevel(&format!("{}-{}", issue, summary))
