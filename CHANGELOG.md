@@ -1,3 +1,10 @@
+## [0.4.3](https://github.com/EricCrosson/git-disjoint/compare/v0.4.2...v0.4.3) (2022-09-23)
+
+
+### Bug Fixes
+
+* support all GitHub comment keywords ([8e44286](https://github.com/EricCrosson/git-disjoint/commit/8e44286b6716d861bf4d6a5e015207db32135eff)), closes [#33](https://github.com/EricCrosson/git-disjoint/issues/33)
+
 ## [0.4.2](https://github.com/EricCrosson/git-disjoint/compare/v0.4.1...v0.4.2) (2022-09-23)
 
 
