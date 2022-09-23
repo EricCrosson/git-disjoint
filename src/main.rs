@@ -215,8 +215,8 @@ fn main() -> Result<()> {
             // Open a pull request
             execute(&["hub", "pull-request", "--browse", "--draft"])?;
 
-            // Finally, check out the original branch
-            repo.checkout_tree(originally_checked_out_commit.as_object(), None)?;
+            // Finally, check out the original ref
+            execute(&["git", "checkout", "-"])?;
 
             Ok(())
         })?;
