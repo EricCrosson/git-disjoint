@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/EricCrosson/git-disjoint/compare/v0.4.3...v0.5.0) (2022-09-23)
+
+
+### Features
+
+* support the fork model ([eaa38d3](https://github.com/EricCrosson/git-disjoint/commit/eaa38d3e38eff88cf7f16323b379a7df7dee0afd))
+
 ## [0.4.3](https://github.com/EricCrosson/git-disjoint/compare/v0.4.2...v0.4.3) (2022-09-23)
 
 
