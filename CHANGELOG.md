@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/EricCrosson/git-disjoint/compare/v0.4.0...v0.4.1) (2022-09-23)
+
+
+### Bug Fixes
+
+* stop immediately when a command exits non-zero ([9bc614f](https://github.com/EricCrosson/git-disjoint/commit/9bc614f1ea4c400e8ad2491bb45cd9d91958ba3c))
+
 # [0.4.0](https://github.com/EricCrosson/git-disjoint/compare/v0.3.0...v0.4.0) (2022-09-23)
 
 
