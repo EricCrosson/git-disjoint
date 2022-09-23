@@ -189,11 +189,8 @@ fn main() -> Result<()> {
             // If branch already exists, assume we've already handled this ticket
             // DISCUSS: in the future, we could compare this branch against the desired
             // commits, and add any missing commits to this branch and then update the remote
-            if let Ok(branch_obj) = branch_obj {
-                eprintln!(
-                    "Warning: a branch named {:?} already exists",
-                    branch_obj.id().to_string()
-                );
+            if branch_obj.is_ok() {
+                eprintln!("Warning: a branch named {:?} already exists", branch_name);
                 return Ok(());
             }
 
