@@ -8,9 +8,8 @@ struct Repos {
     default_branch: String,
 }
 
-// DISCUSS: how can we downshift to a String automatically?
 #[derive(Clone, Debug)]
-pub(crate) struct DefaultBranch(pub(crate) String);
+pub(crate) struct DefaultBranch(pub String);
 
 impl FromStr for DefaultBranch {
     type Err = anyhow::Error;
