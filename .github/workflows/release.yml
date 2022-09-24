@@ -6,6 +6,10 @@ on:
   push:
     branches: [ master, alpha, beta ]
 
+# Only allow one release workflow to execute at a time, since each release
+# workflow uses shared resources (git tags, package registries)
+concurrency: ${{ github.workflow }}
+
 # semantic-release is built around the following idea:
 #
 # > A release consist in running test, defining the version then releasing
