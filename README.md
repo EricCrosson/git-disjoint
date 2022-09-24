@@ -4,42 +4,54 @@
   <img src="https://github.com/EricCrosson/git-disjoint/blob/master/assets/logo.png?raw=true" alt="alt-text"/>
 </p>
 
-`git disjoint` groups commits by issue onto unique branches.
+**git-disjoint** automates an optimal git workflow for PR authors and reviewers
+by grouping commits by issue onto unique branches, referencing issues in
+branch names, and creating PRs.
+
+This encourages the submission of small, independent PRs, minimizing cognitive
+load on reviewers and keeping cycle time low.
+
+## How does it work?
+
+**git-disjoint** uses commit messages to determine which issue a commit relates
+to. Following formalized conventions for commit messages, **git-disjoint**
+automatically creates a PR for each issue and associates the PR to an existing
+issue in your work tracker.
+
+When the PR merges, the existing issue closes and your git history updates to
+reflect the upstream changes.
+
+## Supported Integrations
+
+`git-disjoint` may add value to your workflow if you
+
+- use a work tracker (currently supports Jira and GitHub Issues)
+- use GitHub and Pull Requests
 
 ## Installing
 
-#### Cargo
+### Cargo
+
+If `cargo` is installed on your system, run:
 
 ```
 cargo +nightly install git-disjoint
 ```
 
-#### Manual
+### Manual
 
-Download a release compatible with your OS and architecture from the [Releases] page, extract the binary, and put it somewhere in your `$PATH`.
+Otherwise, download a release compatible with your OS and architecture from the
+[Releases] page, extract the binary, and put it somewhere in your `$PATH`.
 
 [releases]: https://github.com/EricCrosson/git-disjoint/releases/latest
 
-## Assumptions
+## Making commits
 
-`git disjoint` may add value to your workflow if you
-
-- use a work tracker (currently supports Jira)
-- use GitHub and Pull Requests
-
-## Goals
-
-`git disjoint` automates referencing issues in your development work ([Jira]) so you can focus on development.
-
-[Jira]: https://support.atlassian.com/jira-software-cloud/docs/reference-issues-in-your-development-work/
-
-## Workflow
-
-1. [Add all your commits to one branch].
+1. [Add all of your commits to the repository's default branch][workflow].
 
 1. In each commit message, include a reference to the relevant ticket.
 
-   For example, use the Jira automation format:
+   For example, use the Jira automation [format][jira]:
 
    ```
    Ticket: COOL-123
@@ -51,27 +63,28 @@ Download a release compatible with your OS and architecture from the [Releases] 
    Closes Ticket: COOL-123
    ```
 
-   Or use the GitHub [format]: 
+   Or use the GitHub [format][gh]: 
 
     ```
-    Closes 123
+    Closes #123
     ```
 
-   [format]: https://github.blog/2013-01-22-closing-issues-via-commit-messages/
+   [jira]: https://support.atlassian.com/jira-software-cloud/docs/reference-issues-in-your-development-work/
+   [gh]: https://github.blog/2013-01-22-closing-issues-via-commit-messages/
 
-1. When you're ready to:
+## Opening PRs
 
-   1. turn the set of commits addressing each ticket into its own feature branch,
-   1. push that branch, and 
-   1. create a draft PR,
+ When you're ready to:
 
-   run `git disjoint`.
+1. turn the set of commits addressing each ticket into its own feature branch,
+1. push that branch, and 
+1. create a draft PR,
 
-[add all your commits to one branch]: https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html
-[git-branchless]: https://github.com/arxanas/git-branchless
+run `git disjoint`.
 
-## Caveats
+[workflow]: https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html
 
-- There's currently no code to handle the case where `git disjoint` tries to operate on a branch that already exists. This can happen if you invoke `git disjoint` twice on the same branch. See [#32].
+## Ignoring commits
 
-[#32]: https://github.com/EricCrosson/git-disjoint/issues/32
+To ignore commits associated with an issue, use the `--choose` flag. This will
+open a menu where you can select the issues to create PRs for.
