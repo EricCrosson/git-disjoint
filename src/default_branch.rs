@@ -21,7 +21,6 @@ impl FromStr for DefaultBranch {
 
 impl DefaultBranch {
     pub(crate) fn try_get_default() -> Result<DefaultBranch> {
-        // hub api /repos/{owner}/{repo}
         let stdout = String::from_utf8(
             Command::new("hub")
                 .arg("api")
@@ -32,6 +31,7 @@ impl DefaultBranch {
 
         let repos: Repos = serde_json::from_str(&stdout)?;
 
+        // Assumption: `origin` is the upstream/main repositiory
         Ok(DefaultBranch(format!("origin/{}", repos.default_branch)))
     }
 }

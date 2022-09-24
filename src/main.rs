@@ -5,8 +5,7 @@ use std::collections::HashMap;
 use std::process::Command;
 
 use anyhow::{anyhow, ensure, Result};
-use clap::Parser;
-use default_branch::DefaultBranch;
+use args::SanitizedArgs;
 use git2::{Commit, Repository, RepositoryState, Tree};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -14,10 +13,10 @@ use sanitize_git_ref::sanitize_git_ref_onelevel;
 
 mod args;
 mod default_branch;
+mod interact;
 mod issue;
 mod user_config;
 
-use crate::args::Args;
 use crate::issue::Issue;
 use crate::user_config::{get_user_remote, UserConfig};
 
@@ -103,11 +102,7 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository, old_tree: &Tree) ->
 }
 
 fn main() -> Result<()> {
-    let Args { since } = Args::parse();
-    let since = match since {
-        Some(since) => since,
-        None => DefaultBranch::try_get_default()?,
-    };
+    let SanitizedArgs { since, choose } = SanitizedArgs::parse()?;
 
     let repo = Repository::open(".")?;
 
@@ -173,8 +168,24 @@ fn main() -> Result<()> {
             },
         );
 
+    let selected_issues = if choose {
+        let keys = commits_by_issue.keys().collect();
+        Some(
+            interact::select_issues(keys)
+                .map_err(|_| anyhow!("Unable to process issue selection"))?,
+        )
+    } else {
+        None
+    };
+
     commits_by_issue
         .into_iter()
+        .filter(|(issue, _commit)| {
+            if let Some(whitelist) = &selected_issues {
+                return whitelist.contains(issue);
+            }
+            true
+        })
         .try_for_each(|(issue, commits)| -> Result<()> {
             // DEBUG:
             println!("{:#?}: {:#?}", issue, commits);
