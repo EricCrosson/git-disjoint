@@ -1,3 +1,10 @@
+## [0.6.1](https://github.com/EricCrosson/git-disjoint/compare/v0.6.0...v0.6.1) (2022-09-24)
+
+
+### Bug Fixes
+
+* sort list of issues with --choose flag ([6c9ad83](https://github.com/EricCrosson/git-disjoint/commit/6c9ad830c1f78033bb98199b61c12b9587ebaca7))
+
 # [0.6.0](https://github.com/EricCrosson/git-disjoint/compare/v0.5.0...v0.6.0) (2022-09-24)
 
 
