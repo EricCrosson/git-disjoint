@@ -1,3 +1,15 @@
+# [0.6.0](https://github.com/EricCrosson/git-disjoint/compare/v0.5.0...v0.6.0) (2022-09-24)
+
+
+### Bug Fixes
+
+* avoid prompting user to edit PR metadata for single-commit PRs ([90112de](https://github.com/EricCrosson/git-disjoint/commit/90112de6cd5b60b647ac22da7bfcb88e9cf42d3e)), closes [#68](https://github.com/EricCrosson/git-disjoint/issues/68)
+
+
+### Features
+
+* add --choose to select issues to create PRs for ([b151eac](https://github.com/EricCrosson/git-disjoint/commit/b151eacf7242b53a74a1a24c507ff46915496317)), closes [#62](https://github.com/EricCrosson/git-disjoint/issues/62)
+
 # [0.5.0](https://github.com/EricCrosson/git-disjoint/compare/v0.4.3...v0.5.0) (2022-09-23)
 
 
