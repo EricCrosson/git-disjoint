@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::process::Command;
 
 use anyhow::{anyhow, ensure, Result};
@@ -160,7 +160,7 @@ fn main() -> Result<()> {
             }
         })
         .fold(
-            HashMap::<Issue, Vec<Commit>>::new(),
+            BTreeMap::<Issue, Vec<Commit>>::new(),
             |mut map, (issue, commit)| {
                 let commits = map.entry(issue).or_default();
                 commits.push(commit);
