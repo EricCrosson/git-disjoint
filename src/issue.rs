@@ -17,7 +17,7 @@ lazy_static! {
 }
 
 /// Jira or GitHub issue identifier.
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(test, derive(Arbitrary))]
 pub(crate) struct Issue(String);
 
