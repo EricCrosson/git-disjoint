@@ -10,5 +10,5 @@ use crate::default_branch::DefaultBranch;
 )]
 pub(crate) struct Args {
     #[clap(short, long)]
-    pub(crate) since: Option<DefaultBranch>,
+    pub since: Option<DefaultBranch>,
 }
