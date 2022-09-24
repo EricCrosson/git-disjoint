@@ -1,3 +1,5 @@
+#![deny(missing_docs)]
+
 use clap::{crate_version, Parser};
 
 use crate::default_branch::DefaultBranch;
