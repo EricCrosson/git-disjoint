@@ -1,3 +1,10 @@
+## [0.6.2](https://github.com/EricCrosson/git-disjoint/compare/v0.6.1...v0.6.2) (2022-09-24)
+
+
+### Bug Fixes
+
+* **deps:** pin rust crate inquire to =0.3.0 ([837d25c](https://github.com/EricCrosson/git-disjoint/commit/837d25c1d8aa3c91a7b22c3ca327d05dc92e0fed))
+
 ## [0.6.1](https://github.com/EricCrosson/git-disjoint/compare/v0.6.0...v0.6.1) (2022-09-24)
 
 
