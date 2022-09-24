@@ -221,7 +221,7 @@ fn main() -> Result<()> {
             repo.set_head(&branch_ref)?;
 
             // Cherry-pick commits related to the target issue
-            for commit in commits {
+            for commit in commits.iter() {
                 // DEBUG:
                 println!("Cherry-picking commit {}", &commit.id());
                 execute(&["git", "cherry-pick", &commit.id().to_string()])?;
@@ -231,7 +231,16 @@ fn main() -> Result<()> {
             execute(&["git", "push", &user_config.remote, &branch_name])?;
 
             // Open a pull request
-            execute(&["hub", "pull-request", "--browse", "--draft"])?;
+            // Only ask the user to edit the PR metadata when multiple commits
+            // create ambiguity about the contents of the PR title and body.
+            let edit = commits.len() > 1;
+            execute(&[
+                "hub",
+                "pull-request",
+                "--browse",
+                "--draft",
+                if edit { "--edit" } else { "--no-edit" },
+            ])?;
 
             // Finally, check out the original ref
             execute(&["git", "checkout", "-"])?;
