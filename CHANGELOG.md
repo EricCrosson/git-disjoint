@@ -1,3 +1,10 @@
+## [0.6.6](https://github.com/EricCrosson/git-disjoint/compare/v0.6.5...v0.6.6) (2022-09-25)
+
+
+### Bug Fixes
+
+* add information to help strings ([7fb11c9](https://github.com/EricCrosson/git-disjoint/commit/7fb11c9015b7e95678c2d6e0e5fb5345df9b0948)), closes [#70](https://github.com/EricCrosson/git-disjoint/issues/70)
+
 ## [0.6.5](https://github.com/EricCrosson/git-disjoint/compare/v0.6.4...v0.6.5) (2022-09-25)
 
 
