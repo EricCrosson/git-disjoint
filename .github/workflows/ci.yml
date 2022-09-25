@@ -42,7 +42,6 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
-        target: ${{ matrix.triple.target }}
 
     - name: Cache cargo
       uses: actions/cache@v3
