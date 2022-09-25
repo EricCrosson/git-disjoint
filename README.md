@@ -34,6 +34,12 @@ reflect the upstream changes.
 - use a work tracker (currently supports Jira and GitHub Issues)
 - use GitHub and Pull Requests
 
+## Requirements
+
+You must have the [hub] command installed and configured.
+
+[hub]: https://github.com/github/hub
+
 ## Installing
 
 ### Cargo
