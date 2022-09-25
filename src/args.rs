@@ -1,5 +1,3 @@
-#![deny(missing_docs)]
-
 use anyhow::{anyhow, Result};
 use clap::{crate_version, Parser};
 
@@ -13,9 +11,11 @@ use crate::default_branch::DefaultBranch;
     about,
 )]
 pub(crate) struct Args {
+    /// The lower-bound (exclusive) of commits to act on
     #[clap(short, long)]
     pub since: Option<DefaultBranch>,
 
+    /// Prompt the user to select which issues to create PRs for
     #[clap(short, long, action)]
     pub choose: bool,
 }
