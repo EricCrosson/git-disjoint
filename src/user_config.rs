@@ -9,7 +9,7 @@ pub(crate) struct UserConfig {
 
 pub(crate) fn get_user_remote(repo: &Repository) -> Result<String> {
     let repo_remotes = repo.remotes()?;
-    let mut remotes: HashSet<&str> = repo_remotes.iter().filter_map(|remote| remote).collect();
+    let mut remotes: HashSet<&str> = repo_remotes.iter().flatten().collect();
 
     remotes
         .take("fork")
