@@ -44,9 +44,8 @@ macro_rules! filter_try {
 fn get_branch_name(issue: &Issue, summary: &str) -> String {
     // Replace parentheses, because they interfere with terminal tab-completion
     // (they require double quotes).
-    let branch_name = sanitize_git_ref_onelevel(&format!("{}-{}", issue, summary))
-        .replace('(', "-")
-        .replace(')', "-");
+    let branch_name =
+        sanitize_git_ref_onelevel(&format!("{}-{}", issue, summary)).replace(['(', ')'], "-");
     RE_MULTIPLE_HYPHENS
         .replace_all(&branch_name, "-")
         .to_string()
