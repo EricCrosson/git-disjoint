@@ -59,4 +59,4 @@ jobs:
         key: nix-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
 
     - name: Nix flake check
-      run: nix flake check
+      run: nix --extra-experimental-features nix-command --extra-experimental-features flakes flake check
