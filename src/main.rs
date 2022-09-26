@@ -223,7 +223,12 @@ fn main() -> Result<()> {
             for commit in commits.iter() {
                 // DEBUG:
                 println!("Cherry-picking commit {}", &commit.id());
-                execute(&["git", "cherry-pick", &commit.id().to_string()])?;
+                execute(&[
+                    "git",
+                    "cherry-pick",
+                    "--allow-empty",
+                    &commit.id().to_string(),
+                ])?;
             }
 
             // Push the branch
