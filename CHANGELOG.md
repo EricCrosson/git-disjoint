@@ -1,3 +1,10 @@
+## [0.6.8](https://github.com/EricCrosson/git-disjoint/compare/v0.6.7...v0.6.8) (2022-09-26)
+
+
+### Bug Fixes
+
+* support cherry-picking empty commits ([b6b503e](https://github.com/EricCrosson/git-disjoint/commit/b6b503e5064e53ba2e516d88ec131af7a21d8711))
+
 ## [0.6.7](https://github.com/EricCrosson/git-disjoint/compare/v0.6.6...v0.6.7) (2022-09-25)
 
 ## [0.6.6](https://github.com/EricCrosson/git-disjoint/compare/v0.6.5...v0.6.6) (2022-09-25)
