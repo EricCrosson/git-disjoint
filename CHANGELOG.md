@@ -1,3 +1,10 @@
+## [0.6.9](https://github.com/EricCrosson/git-disjoint/compare/v0.6.8...v0.6.9) (2022-09-27)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate inquire to v0.4.0 ([5295ef5](https://github.com/EricCrosson/git-disjoint/commit/5295ef5766e63710ebd528bf6e61eeece0921a75))
+
 ## [0.6.8](https://github.com/EricCrosson/git-disjoint/compare/v0.6.7...v0.6.8) (2022-09-26)
 
 
