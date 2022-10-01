@@ -1,3 +1,10 @@
+## [0.6.12](https://github.com/EricCrosson/git-disjoint/compare/v0.6.11...v0.6.12) (2022-10-01)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate clap to v4.0.7 ([f3d9449](https://github.com/EricCrosson/git-disjoint/commit/f3d94495c3a8781cf120b305581ae23758c94474))
+
 ## [0.6.11](https://github.com/EricCrosson/git-disjoint/compare/v0.6.10...v0.6.11) (2022-09-30)
 
 
