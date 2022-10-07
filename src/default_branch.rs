@@ -1,6 +1,7 @@
 use std::{process::Command, str::FromStr};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
+use indoc::formatdoc;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -27,7 +28,22 @@ impl DefaultBranch {
                 .arg("/repos/{owner}/{repo}")
                 .output()?
                 .stdout,
-        )?;
+        )
+        .with_context(|| {
+            formatdoc!(
+                "
+                Unable to query the repository's default branch from the GitHub API.
+                
+                Do you have hub configured? You should be able to run
+                
+                ```
+                hub /repos/{{owner}}/{{repo}}
+                ```
+                
+                without error.
+                "
+            )
+        })?;
 
         let repos: Repos = serde_json::from_str(&stdout)?;
 
