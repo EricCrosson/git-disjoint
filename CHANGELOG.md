@@ -1,3 +1,10 @@
+## [0.6.16](https://github.com/EricCrosson/git-disjoint/compare/v0.6.15...v0.6.16) (2022-10-07)
+
+
+### Bug Fixes
+
+* add better error message when hub is not configured ([5be9baf](https://github.com/EricCrosson/git-disjoint/commit/5be9baf7cc4de39a0a57a3b94c8f8f96924ea1c2)), closes [#101](https://github.com/EricCrosson/git-disjoint/issues/101)
+
 ## [0.6.15](https://github.com/EricCrosson/git-disjoint/compare/v0.6.14...v0.6.15) (2022-10-06)
 
 
