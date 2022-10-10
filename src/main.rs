@@ -207,7 +207,7 @@ fn main() -> Result<()> {
         })
         .try_for_each(|(issue, commits)| -> Result<()> {
             // DEBUG:
-            println!("{:#?}: {:#?}", issue, commits);
+            println!("{:?}: {:#?}", issue, commits);
 
             // Grab the first summary to convert into a branch name.
             // We only choose the first summary because we know each Vec is
