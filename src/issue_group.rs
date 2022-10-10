@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use anyhow::anyhow;
+use git2::Commit;
 
 use crate::issue::Issue;
 
@@ -13,14 +14,19 @@ impl Display for GitCommitSummary {
     }
 }
 
-impl TryFrom<Option<&str>> for GitCommitSummary {
+impl<'a> TryFrom<&Commit<'a>> for GitCommitSummary {
     type Error = anyhow::Error;
 
-    fn try_from(value: Option<&str>) -> Result<Self, Self::Error> {
+    fn try_from(commit: &Commit) -> Result<Self, Self::Error> {
         Ok(Self(
-            value
-                // FIXME: include the commit.id() here, so the user can find and fix the offending commit.
-                .ok_or_else(|| anyhow!("Summary for commit is not a valid UTF-8 string"))?
+            commit
+                .summary()
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Summary for commit {:?} is not a valid UTF-8 string",
+                        commit.id()
+                    )
+                })?
                 .to_owned(),
         ))
     }

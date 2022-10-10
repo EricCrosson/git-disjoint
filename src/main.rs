@@ -166,10 +166,7 @@ fn main() -> Result<()> {
             // --specified the all flag, add this commit to a unique issue-
             // --group.
             if all {
-                return Ok(Some((
-                    IssueGroup::Commit(commit.summary().try_into()?),
-                    commit,
-                )));
+                return Ok(Some((IssueGroup::Commit((&commit).try_into()?), commit)));
             }
 
             // Otherwise, skip this commit.
