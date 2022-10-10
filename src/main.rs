@@ -47,16 +47,16 @@ macro_rules! filter_try {
 /// - concatenating the issue and summary, separated by a hyphen
 /// - replace parenthesis with hyphens
 ///   since parenthesis interfere with terminal tab-completion,
-/// - lower-case all letters
+/// - lower-case all letters in the commit message summary (but not the ticket name)
 fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
     let raw_branch_name = match issue {
-        IssueGroup::Issue(issue) => format!("{}-{}", issue, summary),
-        IssueGroup::Commit(summary) => summary.0.clone(),
+        IssueGroup::Issue(issue) => format!("{}-{}", issue, summary.to_lowercase()),
+        IssueGroup::Commit(summary) => summary.0.clone().to_lowercase(),
     };
     let branch_name = sanitize_git_ref_onelevel(&raw_branch_name).replace(['(', ')'], "-");
     RE_MULTIPLE_HYPHENS
         .replace_all(&branch_name, "-")
-        .to_lowercase()
+        .to_string()
 }
 
 fn execute(command: &[&str]) -> Result<()> {
