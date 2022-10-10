@@ -1,3 +1,11 @@
+## [0.7.1](https://github.com/EricCrosson/git-disjoint/compare/v0.7.0...v0.7.1) (2022-10-10)
+
+
+### Bug Fixes
+
+* include commit id in error message ([22c1bb7](https://github.com/EricCrosson/git-disjoint/commit/22c1bb75d316e7be415ddefa0609e8b2dbf0e6f7))
+* use condensed debug output ([7cfcaad](https://github.com/EricCrosson/git-disjoint/commit/7cfcaad5976f2121b20a80b44b47b99114f0c5f8))
+
 # [0.7.0](https://github.com/EricCrosson/git-disjoint/compare/v0.6.18...v0.7.0) (2022-10-10)
 
 
