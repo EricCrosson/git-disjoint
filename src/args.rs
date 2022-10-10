@@ -18,11 +18,16 @@ pub(crate) struct Args {
     /// Prompt the user to select which issues to create PRs for
     #[clap(short, long, action)]
     pub choose: bool,
+
+    /// Create a branch for all commits, even without an associated issue
+    #[clap(short, long, action)]
+    pub all: bool,
 }
 
 pub(crate) struct SanitizedArgs {
     pub since: DefaultBranch,
     pub choose: bool,
+    pub all: bool,
 }
 
 impl SanitizedArgs {
@@ -35,15 +40,16 @@ impl TryFrom<Args> for SanitizedArgs {
     type Error = anyhow::Error;
 
     fn try_from(value: Args) -> Result<Self, Self::Error> {
+        let Args { since, choose, all } = value;
         Ok(Self {
             // Clap doesn't provide a way to supply a default value coming from
             // a function when the user has not supplied a required value.
             // This TryFrom bridges the gap.
-            since: value
-                .since
+            since: since
                 .ok_or_else(|| anyhow!("User has not provided a default branch"))
                 .or_else(|_| DefaultBranch::try_get_default())?,
-            choose: value.choose,
+            choose,
+            all,
         })
     }
 }

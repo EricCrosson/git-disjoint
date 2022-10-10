@@ -15,9 +15,11 @@ mod args;
 mod default_branch;
 mod interact;
 mod issue;
+mod issue_group;
 mod user_config;
 
 use crate::issue::Issue;
+use crate::issue_group::IssueGroup;
 use crate::user_config::{get_user_remote, UserConfig};
 
 // git2 resources:
@@ -46,9 +48,12 @@ macro_rules! filter_try {
 /// - replace parenthesis with hyphens
 ///   since parenthesis interfere with terminal tab-completion,
 /// - lower-case all letters
-fn get_branch_name(issue: &Issue, summary: &str) -> String {
-    let branch_name =
-        sanitize_git_ref_onelevel(&format!("{}-{}", issue, summary)).replace(['(', ')'], "-");
+fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
+    let raw_branch_name = match issue {
+        IssueGroup::Issue(issue) => format!("{}-{}", issue, summary),
+        IssueGroup::Commit(summary) => summary.0.clone(),
+    };
+    let branch_name = sanitize_git_ref_onelevel(&raw_branch_name).replace(['(', ')'], "-");
     RE_MULTIPLE_HYPHENS
         .replace_all(&branch_name, "-")
         .to_lowercase()
@@ -104,7 +109,7 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository, old_tree: &Tree) ->
 }
 
 fn main() -> Result<()> {
-    let SanitizedArgs { since, choose } = SanitizedArgs::parse()?;
+    let SanitizedArgs { since, choose, all } = SanitizedArgs::parse()?;
 
     let repo = Repository::open(".")?;
 
@@ -146,29 +151,44 @@ fn main() -> Result<()> {
         remote: get_user_remote(&repo)?,
     };
 
-    let commits_by_issue = commits
+    let commits_by_issue: BTreeMap<IssueGroup, Vec<Commit>> = commits
         .into_iter()
         // Parse issue from commit message
-        .filter_map(|commit| -> Option<(Issue, Commit)> {
+        .map(|commit| -> Result<Option<(IssueGroup, Commit)>> {
             let issue = commit.message().and_then(Issue::parse_from_commit_message);
+            // If this commit includes an issue, add this commit to that
+            // issue's group.
             if let Some(issue) = issue {
-                Some((issue, commit))
-            } else {
-                eprintln!(
-                    "Warning: ignoring commit without issue footer: {:?}",
-                    commit.id()
-                );
-                None
+                return Ok(Some((IssueGroup::Issue(issue), commit)));
             }
+
+            // If this commit does not include an issue, but the user has
+            // --specified the all flag, add this commit to a unique issue-
+            // --group.
+            if all {
+                return Ok(Some((
+                    IssueGroup::Commit(commit.summary().try_into()?),
+                    commit,
+                )));
+            }
+
+            // Otherwise, skip this commit.
+            eprintln!(
+                "Warning: ignoring commit without issue footer: {:?}",
+                commit.id()
+            );
+            Ok(None)
         })
-        .fold(
-            BTreeMap::<Issue, Vec<Commit>>::new(),
-            |mut map, (issue, commit)| {
-                let commits = map.entry(issue).or_default();
-                commits.push(commit);
-                map
-            },
-        );
+        // unwrap the Result
+        .collect::<Result<Vec<_>>>()?
+        .into_iter()
+        // drop the Options
+        .flatten()
+        .fold(BTreeMap::new(), |mut map, (issue, commit)| {
+            let commits = map.entry(issue).or_default();
+            commits.push(commit);
+            map
+        });
 
     let selected_issues = if choose {
         let keys = commits_by_issue.keys().collect();
@@ -198,7 +218,10 @@ fn main() -> Result<()> {
             let summary = {
                 let commit = &commits[0];
                 commits[0].summary().ok_or_else(|| {
-                    anyhow!("Summary for commit {:?} is not valid UTF-8", commit.id())
+                    anyhow!(
+                        "Summary for commit {:?} is not a valid UTF-8 string",
+                        commit.id()
+                    )
                 })?
             };
 

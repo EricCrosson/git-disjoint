@@ -3,10 +3,11 @@ use std::collections::HashSet;
 use anyhow::Result;
 use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 
-use crate::issue::Issue;
+use crate::issue_group::IssueGroup;
 
-pub(crate) fn select_issues(from: Vec<&Issue>) -> Result<HashSet<Issue>> {
-    let formatter: MultiOptionFormatter<&Issue> = &|selected| format!("Selected: {:?}:", selected);
+pub(crate) fn select_issues(from: Vec<&IssueGroup>) -> Result<HashSet<IssueGroup>> {
+    let formatter: MultiOptionFormatter<&IssueGroup> =
+        &|selected| format!("Selected: {:?}", selected);
 
     Ok(
         MultiSelect::new("Select the issues to create PRs for:", from)
