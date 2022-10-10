@@ -41,14 +41,17 @@ macro_rules! filter_try {
     };
 }
 
+/// Create a valid git branch name, by:
+/// - concatenating the issue and summary, separated by a hyphen
+/// - replace parenthesis with hyphens
+///   since parenthesis interfere with terminal tab-completion,
+/// - lower-case all letters
 fn get_branch_name(issue: &Issue, summary: &str) -> String {
-    // Replace parentheses, because they interfere with terminal tab-completion
-    // (they require double quotes).
     let branch_name =
         sanitize_git_ref_onelevel(&format!("{}-{}", issue, summary)).replace(['(', ')'], "-");
     RE_MULTIPLE_HYPHENS
         .replace_all(&branch_name, "-")
-        .to_string()
+        .to_lowercase()
 }
 
 fn execute(command: &[&str]) -> Result<()> {
