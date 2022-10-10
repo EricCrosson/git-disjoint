@@ -1,3 +1,10 @@
+## [0.7.2](https://github.com/EricCrosson/git-disjoint/compare/v0.7.1...v0.7.2) (2022-10-10)
+
+
+### Bug Fixes
+
+* do not lowecase letters in the ticket branch-name prefix ([f0a92f6](https://github.com/EricCrosson/git-disjoint/commit/f0a92f6026f558969dbaef3fbe047a730a192ee3))
+
 ## [0.7.1](https://github.com/EricCrosson/git-disjoint/compare/v0.7.0...v0.7.1) (2022-10-10)
 
 
