@@ -109,6 +109,7 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository, old_tree: &Tree) ->
 }
 
 fn main() -> Result<()> {
+    // DISCUSS: moving the `repo` into SanitizedArgs
     let SanitizedArgs { since, choose, all } = SanitizedArgs::parse()?;
 
     let repo = Repository::open(".")?;
@@ -151,6 +152,8 @@ fn main() -> Result<()> {
         remote: get_user_remote(&repo)?,
     };
 
+    // DISCUSS: instead of sorting by issue, consider sorting by proximity to origin/master.
+    // IndexMap preserves insertion order
     let commits_by_issue: BTreeMap<IssueGroup, Vec<Commit>> = commits
         .into_iter()
         // Parse issue from commit message
