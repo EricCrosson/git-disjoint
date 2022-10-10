@@ -182,7 +182,7 @@ fn main() -> Result<()> {
         // unwrap the Result
         .collect::<Result<Vec<_>>>()?
         .into_iter()
-        // drop the Options
+        // drop the None values
         .flatten()
         .fold(BTreeMap::new(), |mut map, (issue, commit)| {
             let commits = map.entry(issue).or_default();
