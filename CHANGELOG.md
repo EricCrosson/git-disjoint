@@ -1,3 +1,15 @@
+# [0.7.0](https://github.com/EricCrosson/git-disjoint/compare/v0.6.18...v0.7.0) (2022-10-10)
+
+
+### Bug Fixes
+
+* lower-case all characters in branch names ([edd36c3](https://github.com/EricCrosson/git-disjoint/commit/edd36c35d600a1528c750bee9803a082a72d9b65))
+
+
+### Features
+
+* allow manipulation of commits without tickets ([aaf6094](https://github.com/EricCrosson/git-disjoint/commit/aaf609492253bc8336670449d49105a3fcc54e96)), closes [#91](https://github.com/EricCrosson/git-disjoint/issues/91)
+
 ## [0.6.18](https://github.com/EricCrosson/git-disjoint/compare/v0.6.17...v0.6.18) (2022-10-10)
 
 
