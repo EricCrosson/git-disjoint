@@ -1,3 +1,10 @@
+## [0.7.12](https://github.com/EricCrosson/git-disjoint/compare/v0.7.11...v0.7.12) (2022-10-29)
+
+
+### Bug Fixes
+
+* remove double and single quotes from branch names ([7053be3](https://github.com/EricCrosson/git-disjoint/commit/7053be386f8968ad99d9348f619b3a70eb40772c)), closes [#116](https://github.com/EricCrosson/git-disjoint/issues/116)
+
 ## [0.7.11](https://github.com/EricCrosson/git-disjoint/compare/v0.7.10...v0.7.11) (2022-10-22)
 
 
