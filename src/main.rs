@@ -47,6 +47,8 @@ macro_rules! filter_try {
 /// - concatenating the issue and summary, separated by a hyphen
 /// - replace parenthesis with hyphens
 ///   since parenthesis interfere with terminal tab-completion,
+/// - delete single and double quotes
+///   since quotes interfere with terminal tab-completion,
 /// - lower-case all letters in the commit message summary (but not the ticket name)
 fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
     let raw_branch_name = match issue {
@@ -56,7 +58,7 @@ fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
     let branch_name = sanitize_git_ref_onelevel(&raw_branch_name).replace(['(', ')'], "-");
     RE_MULTIPLE_HYPHENS
         .replace_all(&branch_name, "-")
-        .to_string()
+        .replace(['\'', '"'], "")
 }
 
 fn execute(command: &[&str]) -> Result<()> {
