@@ -1,6 +1,7 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:nixos/nixpkgs";
+    flake-utils.url = "github:numtide/flake-utils";
     crane = {
       url = "github:ipetkov/crane";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -9,8 +10,11 @@
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-utils.url = "github:numtide/flake-utils";
-    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+    pre-commit-hooks = {
+      url = "github:cachix/pre-commit-hooks.nix";
+      inputs.flake-utils.follows = "flake-utils";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -28,14 +32,14 @@
       };
 
       fenix-channel = fenix.packages.${system}.latest;
-      fenix-toolchain = (fenix-channel.withComponents [
+      fenix-toolchain = fenix-channel.withComponents [
         "rustc"
         "cargo"
         "clippy"
         "rust-analysis"
         "rust-src"
         "rustfmt"
-      ]);
+      ];
 
       craneLib = crane.lib.${system}.overrideToolchain fenix-toolchain;
 
@@ -63,12 +67,12 @@
       # Build *just* the cargo dependencies, so we can reuse
       # all of that work (e.g. via cachix) when running in CI
       cargoArtifacts = craneLib.buildDepsOnly (commonArgs
-      // {
-        # Additional arguments specific to this derivation can be added here.
-        # Be warned that using `//` will not do a deep copy of nested
-        # structures
-        pname = "git-disjoint-deps";
-      });
+        // {
+          # Additional arguments specific to this derivation can be added here.
+          # Be warned that using `//` will not do a deep copy of nested
+          # structures
+          pname = "git-disjoint-deps";
+        });
 
       # Run clippy (and deny all warnings) on the crate source,
       # resuing the dependency artifacts (e.g. from build scripts or
@@ -77,26 +81,26 @@
       # Note that this is done as a separate derivation so it
       # does not impact building just the crate by itself.
       myCrateClippy = craneLib.cargoClippy (commonArgs
-      // {
-        # Again we apply some extra arguments only to this derivation
-        # and not every where else. In this case we add some clippy flags
-        inherit cargoArtifacts;
-        cargoClippyExtraArgs = "-- --deny warnings";
-      });
+        // {
+          # Again we apply some extra arguments only to this derivation
+          # and not every where else. In this case we add some clippy flags
+          inherit cargoArtifacts;
+          cargoClippyExtraArgs = "-- --deny warnings";
+        });
 
       # Next, we want to run the tests and collect code-coverage, _but only if
       # the clippy checks pass_ so we do not waste any extra cycles.
       myCrateCoverage = craneLib.cargoNextest (commonArgs
-      // {
-        cargoArtifacts = myCrateClippy;
-      });
+        // {
+          cargoArtifacts = myCrateClippy;
+        });
 
       # Build the actual crate itself, reusing the dependency
       # artifacts from above.
       myCrate = craneLib.buildPackage (commonArgs
-      // {
-        inherit cargoArtifacts;
-      });
+        // {
+          inherit cargoArtifacts;
+        });
 
       pre-commit-check = pre-commit-hooks.lib.${system}.run {
         src = ./.;
