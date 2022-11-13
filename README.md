@@ -1,10 +1,8 @@
 # Git Disjoint
 
 [![Build Status]](https://github.com/EricCrosson/git-disjoint/actions/workflows/release.yml)
-[![Crates.io]](https://crates.io/crates/git-disjoint)
 
 [build status]: https://github.com/EricCrosson/git-disjoint/actions/workflows/release.yml/badge.svg?event=push
-[crates.io]: https://img.shields.io/crates/v/git-disjoint.svg
 
 <p align="center">
   <img src="https://github.com/EricCrosson/git-disjoint/blob/master/assets/logo.png?raw=true" alt="alt-text"/>
