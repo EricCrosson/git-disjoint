@@ -1,3 +1,5 @@
+## [0.7.21](https://github.com/EricCrosson/git-disjoint/compare/v0.7.20...v0.7.21) (2022-11-13)
+
 ## [0.7.20](https://github.com/EricCrosson/git-disjoint/compare/v0.7.19...v0.7.20) (2022-11-13)
 
 
