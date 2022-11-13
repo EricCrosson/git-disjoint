@@ -51,7 +51,7 @@ jobs:
 
     - name: Calculate next semantic-release version
       id: calculate
-      run: echo "{next-version}={$(npx standard-version --dry-run | grep "tagging release" | awk '{ print $NF }' | tr -d 'v')}" >> $GITHUB_OUTPUT
+      run: echo "next-version=$(npx standard-version --dry-run | grep "tagging release" | awk '{ print $NF }' | tr -d 'v')" >> $GITHUB_OUTPUT
 
   ### Compile release artifacts
   build-release:
@@ -128,7 +128,7 @@ jobs:
         args: semantic-release-rust --version 1.0.0-alpha.8
 
     - name: Prepare semantic-release for Rust
-      run: semantic-release-rust prepare ${{ needs.semantic-version.outputs.next-version }}
+      run: semantic-release-rust prepare ${{ steps.semantic-version.outputs.next-version }}
 
     - name: Cargo build
       uses: actions-rs/cargo@v1
