@@ -9,6 +9,17 @@ readme = "README.md"
 homepage = "https://github.com/ericcrosson/git-disjoint"
 keywords = ["cli", "git", "pull-request"]
 categories = ["command-line-utilities"]
+exclude = [
+  "/.envrc",
+  "/.github",
+  "/.gitignore",
+  "/.releaserc.json",
+  "/CHANGELOG.md",
+  "/flake.{lock,nix}",
+  "/package*.json",
+  "/rust-toolchain",
+  "/assets"
+]
 
 [dependencies]
 anyhow = "=1.0.66"
