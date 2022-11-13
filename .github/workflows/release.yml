@@ -51,7 +51,7 @@ jobs:
 
     - name: Calculate next semantic-release version
       id: calculate
-      run: echo "::set-output name=next-version::$(npx standard-version --dry-run | grep "tagging release" | awk '{ print $NF }' | tr -d 'v')"
+      run: echo "{next-version}={$(npx standard-version --dry-run | grep "tagging release" | awk '{ print $NF }' | tr -d 'v')}" >> $GITHUB_OUTPUT
 
   ### Compile release artifacts
   build-release:
