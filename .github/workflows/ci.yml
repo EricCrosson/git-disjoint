@@ -45,18 +45,3 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-
-  lint:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: Cache install Nix packages
-      uses: mtoohey31/cache-flake-attrs@v2
-      with:
-        key: nix-${{ runner.os }}-${{ hashFiles('flake.lock', 'flake.nix') }}
-
-    - name: Nix flake check
-      run: nix --extra-experimental-features nix-command --extra-experimental-features flakes flake check
