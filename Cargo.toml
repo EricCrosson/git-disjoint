@@ -23,7 +23,7 @@ exclude = [
 
 [dependencies]
 anyhow = "=1.0.66"
-clap = { version = "=4.0.23", features = ["cargo", "derive", "wrap_help"] }
+clap = { version = "=4.0.24", features = ["cargo", "derive", "wrap_help"] }
 git2 = { version = "=0.15.0", default-features = false, features = ["zlib-ng-compat"] }
 indoc = "=1.0.7"
 inquire = "=0.5.2"
