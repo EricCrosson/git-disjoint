@@ -122,7 +122,7 @@
       devShells = {
         default = nixpkgs.legacyPackages.${system}.mkShell {
           buildInputs = commonArgs.buildInputs;
-          nativeBuildInputs = with pkgs;
+          nativeBuildInputs =
             commonArgs.nativeBuildInputs
             ++ [
               fenix-toolchain
