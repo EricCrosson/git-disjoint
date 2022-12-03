@@ -50,11 +50,20 @@
 
         # Add extra inputs here or any other derivation settings
         # doCheck = true;
-        buildInputs = with pkgs; [
-          openssl
-          fenix-channel.rustc
-          fenix-channel.clippy
-        ];
+        buildInputs = with pkgs;
+          [
+            openssl
+            fenix-channel.rustc
+            fenix-channel.clippy
+          ]
+          ++ (
+            if system == "aarch64-darwin"
+            then [
+              darwin.apple_sdk.frameworks.Security
+              libiconv
+            ]
+            else []
+          );
 
         nativeBuildInputs = with pkgs; [
           cmake
