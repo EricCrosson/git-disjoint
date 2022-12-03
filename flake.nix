@@ -31,6 +31,7 @@
       pkgs = import nixpkgs {
         inherit system;
       };
+      inherit (pkgs) stdenv;
 
       fenix-channel = fenix.packages.${system}.latest;
       fenix-toolchain = fenix-channel.withComponents [
@@ -57,7 +58,7 @@
             fenix-channel.clippy
           ]
           ++ (
-            if system == "aarch64-darwin"
+            if stdenv.isDarwin
             then [
               darwin.apple_sdk.frameworks.Security
               libiconv
