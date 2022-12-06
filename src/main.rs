@@ -112,18 +112,23 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository, old_tree: &Tree) ->
 
 fn main() -> Result<()> {
     // DISCUSS: moving the `repo` into SanitizedArgs
-    let SanitizedArgs { since, choose, all } = SanitizedArgs::parse()?;
+    let SanitizedArgs {
+        base,
+        choose,
+        all,
+        separate,
+    } = SanitizedArgs::parse()?;
 
     let repo = Repository::open(".")?;
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
     let originally_checked_out_tree = originally_checked_out_commit.tree()?;
 
-    // Assume `since` indicates a single commit
-    let start_point = repo.revparse_single(&since.0)?;
+    // Assume `base` indicates a single commit
+    let start_point = repo.revparse_single(&base.0)?;
     let start_point_commit = start_point
         .as_commit()
-        .ok_or_else(|| anyhow!("Expected `--since` to identify a commit"))?;
+        .ok_or_else(|| anyhow!("Expected `--base` to identify a commit"))?;
 
     assert_repository_state_is_clean(&repo)?;
     assert_tree_matches_workdir_with_index(&repo, &originally_checked_out_tree)?;
@@ -161,16 +166,22 @@ fn main() -> Result<()> {
         // Parse issue from commit message
         .map(|commit| -> Result<Option<(IssueGroup, Commit)>> {
             let issue = commit.message().and_then(Issue::parse_from_commit_message);
-            // If this commit includes an issue, add this commit to that
-            // issue's group.
-            if let Some(issue) = issue {
-                return Ok(Some((IssueGroup::Issue(issue), commit)));
+            // If:
+            // - we're not treating every commit separately, and
+            // - this commit includes an issue,
+            // then add this commit to that issue's group.
+            if !separate {
+                if let Some(issue) = issue {
+                    return Ok(Some((IssueGroup::Issue(issue), commit)));
+                }
             }
 
-            // If this commit does not include an issue, but the user has
-            // --specified the all flag, add this commit to a unique issue-
-            // --group.
-            if all {
+            // If
+            // - the user requested we treat every issue separately, or
+            // - this commit does not include an issue, but the user has
+            //   --specified the all flag, then
+            // add this commit to a unique issue-group.
+            if separate || all {
                 return Ok(Some((IssueGroup::Commit((&commit).try_into()?), commit)));
             }
 
