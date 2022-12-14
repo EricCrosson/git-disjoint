@@ -28,8 +28,9 @@ impl DefaultBranch {
                 .arg("/repos/{owner}/{repo}")
                 .output()?
                 .stdout,
-        )
-        .with_context(|| {
+        )?;
+
+        let repos: Repos = serde_json::from_str(&stdout).with_context(|| {
             formatdoc!(
                 "
                 Unable to query the repository's default branch from the GitHub API.
@@ -37,15 +38,13 @@ impl DefaultBranch {
                 Do you have hub configured? You should be able to run
                 
                 ```
-                hub /repos/{{owner}}/{{repo}}
+                hub api /repos/{{owner}}/{{repo}}
                 ```
                 
                 without error.
                 "
             )
         })?;
-
-        let repos: Repos = serde_json::from_str(&stdout)?;
 
         // Assumption: `origin` is the upstream/main repositiory
         Ok(DefaultBranch(format!("origin/{}", repos.default_branch)))
