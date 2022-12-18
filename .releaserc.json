@@ -14,7 +14,6 @@
     ],
     "@semantic-release/release-notes-generator",
     "@semantic-release/changelog",
-    "@semantic-release/git",
     "@semantic-release-cargo/semantic-release-cargo",
     [
       "@semantic-release/github",
@@ -46,6 +45,7 @@
           }
         ]
       }
-    ]
+    ],
+    "@semantic-release/git"
   ]
 }
