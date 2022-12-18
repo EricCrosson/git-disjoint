@@ -1,3 +1,10 @@
+## [0.7.31](https://github.com/EricCrosson/git-disjoint/compare/v0.7.30...v0.7.31) (2022-12-18)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate indoc to v1.0.8 ([959e3c0](https://github.com/EricCrosson/git-disjoint/commit/959e3c0490f6065fa11727b591d33f105302c9ae))
+
 ## [0.7.30](https://github.com/EricCrosson/git-disjoint/compare/v0.7.29...v0.7.30) (2022-12-18)
 
 
