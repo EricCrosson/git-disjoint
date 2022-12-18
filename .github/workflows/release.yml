@@ -1,4 +1,5 @@
 ---
+# WISH: use nix for cross-compilation. I'm not sure how to use Nix to cross-compile yet
 
 name: Release
 
@@ -9,18 +10,6 @@ on:
 # Only allow one release workflow to execute at a time, since each release
 # workflow uses shared resources (git tags, package registries)
 concurrency: ${{ github.workflow }}
-
-# semantic-release is built around the following idea:
-#
-# > A release consist in running test, defining the version then releasing
-#
-# - https://github.com/semantic-release/semantic-release/issues/753#issuecomment-384689034
-#
-# So we perform the following actions from the context of semantic-release plugins:
-#
-# - push to Cargo
-# - compile all target binaries
-# - create GitHub release
 
 env:
   CARGO_TERM_COLOR: always
@@ -95,7 +84,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    # WISH: use nix for this. I'm not sure how to use Nix to compile with musl
     - name: Install build inputs
       run: sudo apt install musl-tools
       if: runner.os == 'Linux'
@@ -191,18 +179,13 @@ jobs:
     - name: Combine checksums
       run: cat dist/**/git-disjoint-*-SHASUMS256.txt | tee dist/SHASUMS256.txt
 
-    # WISH: use nix for this. I'm not sure how to use Nix to compile with musl
-    - name: Install build inputs
-      run: sudo apt install musl-tools
-      if: runner.os == 'Linux'
-
     - name: Install toolchain
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: nightly
         override: true
-        target: ${{ matrix.triple.target }}
+        target: x86_64-unknown-linux-gnu
 
     - name: Cache cargo
       uses: actions/cache@v3
