@@ -111,7 +111,7 @@ jobs:
     - name: Install semantic-release-cargo
       uses: taiki-e/install-action@v1
       with:
-        tool: semantic-release-cargo@2.0.0-beta.5
+        tool: semantic-release-cargo@2.0.0-beta.7
 
     - name: Prepare semantic-release for Rust
       run: semantic-release-cargo prepare ${{ needs.semantic-version.outputs.next-version }}
