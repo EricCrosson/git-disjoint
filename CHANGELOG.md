@@ -1,3 +1,10 @@
+## [0.7.32](https://github.com/EricCrosson/git-disjoint/compare/v0.7.31...v0.7.32) (2022-12-18)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate serde_json to v1.0.91 ([4ee2b87](https://github.com/EricCrosson/git-disjoint/commit/4ee2b87a7108ab2c7386c9a379151fff9f49a5ea))
+
 ## [0.7.31](https://github.com/EricCrosson/git-disjoint/compare/v0.7.30...v0.7.31) (2022-12-18)
 
 

@@ -202,7 +202,7 @@ dependencies = [
 
 [[package]]
 name = "git-disjoint"
-version = "0.0.0-semantically-released"
+version = "0.7.31"
 dependencies = [
  "anyhow",
  "clap",
