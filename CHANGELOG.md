@@ -1,3 +1,11 @@
+## [0.7.28](https://github.com/EricCrosson/git-disjoint/compare/v0.7.27...v0.7.28) (2022-12-18)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate clap to v4.0.27 ([e0efbce](https://github.com/EricCrosson/git-disjoint/commit/e0efbce9105ffda4c7db9f012dd319ca7274c992))
+* display helpful error message after the expected error occurs ([910a156](https://github.com/EricCrosson/git-disjoint/commit/910a156ac439aaf0272a795b1354999ab90b805c))
+
 ## [0.7.27](https://github.com/EricCrosson/git-disjoint/compare/v0.7.26...v0.7.27) (2022-11-22)
 
 
