@@ -120,8 +120,15 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+    - name: Install set-cargo-version
+      uses: actions-rs/cargo@v1
+      if: steps.cache-cargo.outputs.cache-hit != 'true'
+      with:
+        command: install
+        args: set-cargo-version --version 1.2.1
+
     - name: Prepare semantic-release for Rust
-      run: cargo set-version ${{ needs.semantic-version.outputs.next-version }}
+      run: set-cargo-version ./Cargo.toml ${{ needs.semantic-version.outputs.next-version }}
 
     - name: Cargo build
       uses: actions-rs/cargo@v1
