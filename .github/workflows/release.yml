@@ -120,15 +120,8 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Install semantic-release-rust
-      uses: actions-rs/cargo@v1
-      if: steps.cache-cargo.outputs.cache-hit != 'true'
-      with:
-        command: install
-        args: semantic-release-rust --version 1.0.0-alpha.8
-
     - name: Prepare semantic-release for Rust
-      run: semantic-release-rust prepare ${{ needs.semantic-version.outputs.next-version }}
+      run: cargo set-version ${{ needs.semantic-version.outputs.next-version }}
 
     - name: Cargo build
       uses: actions-rs/cargo@v1
@@ -215,13 +208,6 @@ jobs:
           ~/.cargo/git/db/
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Install semantic-release-rust
-      uses: actions-rs/cargo@v1
-      if: steps.cache-cargo.outputs.cache-hit != 'true'
-      with:
-        command: install
-        args: semantic-release-rust --version 1.0.0-alpha.8
 
     - name: Invoke semantic-release
       env:
