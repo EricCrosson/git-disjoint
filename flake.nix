@@ -117,6 +117,7 @@
         src = ./.;
         hooks = {
           alejandra.enable = true;
+          prettier.enable = true;
         };
       };
     in {
