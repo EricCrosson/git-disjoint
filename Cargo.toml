@@ -22,7 +22,7 @@ exclude = [
 ]
 
 [dependencies]
-anyhow = "=1.0.66"
+anyhow = "=1.0.68"
 clap = { version = "=4.0.27", features = ["cargo", "derive", "wrap_help"] }
 git2 = { version = "=0.15.0", default-features = false, features = ["zlib-ng-compat"] }
 indoc = "=1.0.7"
