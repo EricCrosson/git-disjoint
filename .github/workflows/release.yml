@@ -104,14 +104,21 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install semantic-release-cargo
-        if: needs.get-next-version.outputs.new-release-published == 'true'
+        # if: needs.get-next-version.outputs.new-release-published == 'true'
         uses: taiki-e/install-action@v1
         with:
           tool: semantic-release-cargo@2.0.0-beta.7
 
+      # DEBUG
+      - name: DEBUG information
+        # if: needs.get-next-version.outputs.new-release-published == 'true'
+        run: |
+          echo $HOME
+          which semantic-release-cargo
+
       - name: Prepare semantic-release for Rust
-        if: needs.get-next-version.outputs.new-release-published == 'true'
-        run: semantic-release-cargo prepare ${{ needs.get-next-version.outputs.new-release-version }}
+        # if: needs.get-next-version.outputs.new-release-published == 'true'
+        run: $HOME/.cargo/bin/semantic-release-cargo --verbose --verbose --verbose prepare ${{ needs.get-next-version.outputs.new-release-version }}
 
       - name: Cargo build
         uses: actions-rs/cargo@v1
