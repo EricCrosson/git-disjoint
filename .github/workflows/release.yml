@@ -5,7 +5,7 @@ name: Release
 
 on:
   push:
-    branches: [ master, alpha, beta ]
+    branches: [master, alpha, beta]
 
 # Only allow one release workflow to execute at a time, since each release
 # workflow uses shared resources (git tags, package registries)
@@ -16,38 +16,41 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-
-  semantic-version:
+  get-next-version:
     runs-on: ubuntu-latest
     outputs:
-      next-version: ${{ steps.calculate.outputs.next-version }}
+      new-release-published: ${{ steps.get-next-version.outputs.new-release-published }}
+      new-release-version: ${{ steps.get-next-version.outputs.new-release-version }}
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        # Fetch all history and tags for calculating next semantic version
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # Fetch all history and tags for calculating next semantic version
+          fetch-depth: 0
 
-    - name: Configure Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: lts/*
-        cache: npm
+      - name: Configure Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+          cache: npm
 
-    - name: Install npm dependencies
-      run: npm ci --ignore-scripts
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
 
-    - name: Calculate next semantic-release version
-      id: calculate
-      run: echo "next-version=$(npx standard-version --dry-run | grep "tagging release" | awk '{ print $NF }' | tr -d 'v')" >> $GITHUB_OUTPUT
+      - name: Calculate next semantic-release version
+        id: get-next-version
+        run: semantic-release --dry-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   ### Compile release artifacts
   build-release:
     runs-on: ${{ matrix.triple.os }}
     container: ${{ matrix.triple.container }}
     needs:
-      - semantic-version
+      - get-next-version
 
     strategy:
       matrix:
@@ -62,11 +65,7 @@ jobs:
               target: "i686-unknown-linux-musl",
               cross: true,
             }
-          - {
-              os: "macOS-latest",
-              target: "x86_64-apple-darwin",
-              cross: false,
-            }
+          - { os: "macOS-latest", target: "x86_64-apple-darwin", cross: false }
           # aarch64
           - {
               os: "ubuntu-latest",
@@ -74,133 +73,138 @@ jobs:
               cross: true,
             }
           # macOS ARM
-          - {
-              os: "macOS-latest",
-              target: "aarch64-apple-darwin",
-              cross: true,
-            }
+          - { os: "macOS-latest", target: "aarch64-apple-darwin", cross: true }
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Install build inputs
-      run: sudo apt install musl-tools
-      if: runner.os == 'Linux'
+      - name: Install build inputs
+        run: sudo apt install musl-tools
+        if: runner.os == 'Linux'
 
-    - name: Install toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-        target: ${{ matrix.triple.target }}
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          target: ${{ matrix.triple.target }}
 
-    - name: Cache cargo
-      uses: actions/cache@v3
-      id: cache-cargo
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo
+        uses: actions/cache@v3
+        id: cache-cargo
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Install semantic-release-cargo
-      uses: taiki-e/install-action@v1
-      with:
-        tool: semantic-release-cargo@2.0.0-beta.7
+      - name: Install semantic-release-cargo
+        if: needs.get-next-version.outputs.new-release-published == 'true'
+        uses: taiki-e/install-action@v1
+        with:
+          tool: semantic-release-cargo@2.0.0-beta.7
 
-    - name: Prepare semantic-release for Rust
-      run: semantic-release-cargo prepare ${{ needs.semantic-version.outputs.next-version }}
+      - name: Prepare semantic-release for Rust
+        if: needs.get-next-version.outputs.new-release-published == 'true'
+        run: semantic-release-cargo prepare ${{ needs.get-next-version.outputs.new-release-version }}
 
-    - name: Cargo build
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --all-targets --verbose --target=${{ matrix.triple.target }} --release
-        use-cross: ${{ matrix.triple.cross }}
+      - name: Cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all-targets --verbose --target=${{ matrix.triple.target }} --release
+          use-cross: ${{ matrix.triple.cross }}
 
-    - name: Create release archive
-      run: |
-        mkdir dist
-        mkdir -p builds/git-disjoint-${{ matrix.triple.target }}
-        cp target/${{ matrix.triple.target }}/release/git-disjoint builds/git-disjoint-${{ matrix.triple.target }}/
-        tar -C builds -czvf dist/git-disjoint-${{ matrix.triple.target }}.tar.gz git-disjoint-${{ matrix.triple.target }}
+      - name: Create release archive
+        run: |
+          mkdir dist
+          mkdir -p builds/git-disjoint-${{ matrix.triple.target }}
+          cp target/${{ matrix.triple.target }}/release/git-disjoint builds/git-disjoint-${{ matrix.triple.target }}/
+          tar -C builds -czvf dist/git-disjoint-${{ matrix.triple.target }}.tar.gz git-disjoint-${{ matrix.triple.target }}
 
-    # Create a checksum of the tar archive for manual checksum verification of the archive before extraction.
-    - name: Create tar checksum
-      run: shasum --algorithm 256 git-disjoint-${{ matrix.triple.target }}.tar.gz > git-disjoint-${{ matrix.triple.target }}-SHASUMS256.txt
-      working-directory: ./dist
+      # Create a checksum of the tar archive for manual checksum verification of the archive before extraction.
+      - name: Create tar checksum
+        run: shasum --algorithm 256 git-disjoint-${{ matrix.triple.target }}.tar.gz > git-disjoint-${{ matrix.triple.target }}-SHASUMS256.txt
+        working-directory: ./dist
 
-    # Create a checksum of the binary for automatic checksum verification in the post-install hook. In this code
-    # path, the tar archive is streamed from the GitHub release page and the stream is untarred before a file
-    # is ever written to disk, to minimize disk usage. This makes it impossible to validate the checksum of the
-    # entire tar archive, so we calculate a checksum of the untarred binary instead.
-    - name: Create binary checksum
-      run: shasum --algorithm 256 --binary git-disjoint | tee ../../dist/git-disjoint-${{ matrix.triple.target }}-binary-SHASUMS256.txt
-      working-directory: ./builds/git-disjoint-${{ matrix.triple.target }}
+      # Create a checksum of the binary for automatic checksum verification in the post-install hook. In this code
+      # path, the tar archive is streamed from the GitHub release page and the stream is untarred before a file
+      # is ever written to disk, to minimize disk usage. This makes it impossible to validate the checksum of the
+      # entire tar archive, so we calculate a checksum of the untarred binary instead.
+      - name: Create binary checksum
+        run: shasum --algorithm 256 --binary git-disjoint | tee ../../dist/git-disjoint-${{ matrix.triple.target }}-binary-SHASUMS256.txt
+        working-directory: ./builds/git-disjoint-${{ matrix.triple.target }}
 
-    - name: Upload release artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.triple.target }}
-        path: |
-          dist/git-disjoint-${{ matrix.triple.target }}.tar.gz
-          dist/git-disjoint-${{ matrix.triple.target }}-binary-SHASUMS256.txt
-          dist/git-disjoint-${{ matrix.triple.target }}-SHASUMS256.txt
-        if-no-files-found: error
-        retention-days: 1
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.triple.target }}
+          path: |
+            dist/git-disjoint-${{ matrix.triple.target }}.tar.gz
+            dist/git-disjoint-${{ matrix.triple.target }}-binary-SHASUMS256.txt
+            dist/git-disjoint-${{ matrix.triple.target }}-SHASUMS256.txt
+          if-no-files-found: error
+          retention-days: 1
 
   ### Perform the semantic-release
   release:
     runs-on: ubuntu-latest
     needs:
-      - semantic-version
+      - get-next-version
       - build-release
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Download release artifacts
-      uses: actions/download-artifact@v3
-      with:
-        path: dist
+      - name: Download release artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: dist
 
-    - name: Display downloaded release artifacts
-      run: ls -R
-      working-directory: dist
+      - name: Display downloaded release artifacts
+        run: ls -R
+        working-directory: dist
 
-    - name: Combine checksums
-      run: cat dist/**/git-disjoint-*-SHASUMS256.txt | tee dist/SHASUMS256.txt
+      - name: Combine checksums
+        run: cat dist/**/git-disjoint-*-SHASUMS256.txt | tee dist/SHASUMS256.txt
 
-    - name: Install toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-        target: x86_64-unknown-linux-gnu
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          target: x86_64-unknown-linux-gnu
 
-    - name: Cache cargo
-      uses: actions/cache@v3
-      id: cache-cargo
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo
+        uses: actions/cache@v3
+        id: cache-cargo
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Invoke semantic-release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      run: |
-        npm ci --ignore-scripts
-        npx semantic-release
+      - name: Configure Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Invoke semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: npx semantic-release
