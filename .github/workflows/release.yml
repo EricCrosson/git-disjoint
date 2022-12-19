@@ -17,6 +17,7 @@ env:
 
 jobs:
   get-next-version:
+    name: Calculate next release
     runs-on: ubuntu-latest
     outputs:
       new-release-published: ${{ steps.get-next-version.outputs.new-release-published }}
@@ -155,12 +156,14 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs:
-      - get-next-version
       - build-release
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          # Fetch all history and tags for calculating next semantic version
+          fetch-depth: 0
 
       - name: Download release artifacts
         uses: actions/download-artifact@v3
@@ -199,6 +202,14 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
+
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: .npm/cache
+          key: npm-cache-ubuntu-latest-publish
+          restore-keys: |
+            npm-cache-
 
       - name: Install npm dependencies
         run: npm ci --ignore-scripts
