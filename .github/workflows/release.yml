@@ -36,15 +36,20 @@ jobs:
           node-version: lts/*
           cache: npm
 
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: .npm/cache
+          key: npm-cache-ubuntu-latest-publish
+          restore-keys: |
+            npm-cache-
+
       - name: Install npm dependencies
         run: npm ci --ignore-scripts
 
       - name: Calculate next semantic-release version
         id: get-next-version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: ./node_modules/.bin/semantic-release --dry-run
+        run: ./node_modules/.bin/semantic-release --dry-run --verify-conditions semantic-release-export-data --generate-notes semantic-release-export-data
 
   ### Compile release artifacts
   build-release:
