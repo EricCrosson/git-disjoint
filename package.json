@@ -2,7 +2,7 @@
   "name": "git-disjoint",
   "version": "0.0.0-semantically-released",
   "devDependencies": {
-    "@semantic-release-cargo/semantic-release-cargo": "2.0.6",
+    "@semantic-release-cargo/semantic-release-cargo": "2.0.10",
     "@semantic-release/changelog": "6.0.2",
     "@semantic-release/git": "10.0.1",
     "semantic-release": "19.0.5",
