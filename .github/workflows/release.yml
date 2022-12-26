@@ -36,15 +36,15 @@ jobs:
           node-version: lts/*
           cache: npm
 
-      - name: Cache NPM dependencies
+      - name: Cache npm dependencies
         uses: actions/cache@v3
+        id: cache-node-modules
         with:
-          path: .npm/cache
-          key: npm-cache-ubuntu-latest-publish
-          restore-keys: |
-            npm-cache-
+          path: node_modules
+          key: ${{ runner.os }}-master-node-${{ hashFiles('package-lock.json') }}
 
-      - name: Install npm dependencies
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci --ignore-scripts
 
       - name: Calculate next semantic-release version
@@ -208,15 +208,15 @@ jobs:
           node-version: lts/*
           cache: npm
 
-      - name: Cache NPM dependencies
+      - name: Cache npm dependencies
         uses: actions/cache@v3
+        id: cache-node-modules
         with:
-          path: .npm/cache
-          key: npm-cache-ubuntu-latest-publish
-          restore-keys: |
-            npm-cache-
+          path: node_modules
+          key: ${{ runner.os }}-master-node-${{ hashFiles('package-lock.json') }}
 
-      - name: Install npm dependencies
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci --ignore-scripts
 
       - name: Invoke semantic-release
