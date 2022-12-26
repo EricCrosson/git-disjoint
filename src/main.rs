@@ -2,6 +2,7 @@
 #![feature(exit_status_error)]
 
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{anyhow, ensure, Result};
@@ -110,6 +111,16 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository, old_tree: &Tree) ->
     Ok(())
 }
 
+fn get_repository_root() -> Result<PathBuf> {
+    let output_buffer = Command::new("git")
+        .arg("rev-parse")
+        .arg("--show-toplevel")
+        .output()?
+        .stdout;
+    let output = String::from_utf8(output_buffer)?.trim().to_owned();
+    Ok(PathBuf::from(output))
+}
+
 fn main() -> Result<()> {
     // DISCUSS: moving the `repo` into SanitizedArgs
     let SanitizedArgs {
@@ -119,7 +130,8 @@ fn main() -> Result<()> {
         separate,
     } = SanitizedArgs::parse()?;
 
-    let repo = Repository::open(".")?;
+    let root = get_repository_root()?;
+    let repo = Repository::open(root)?;
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
     let originally_checked_out_tree = originally_checked_out_commit.tree()?;
