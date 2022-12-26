@@ -1,3 +1,10 @@
+## [0.7.36](https://github.com/EricCrosson/git-disjoint/compare/v0.7.35...v0.7.36) (2022-12-26)
+
+
+### Bug Fixes
+
+* support invocation from subdirectory of git repository ([a845303](https://github.com/EricCrosson/git-disjoint/commit/a84530376f913f6ee61d848f4aebd3bfe82d3090)), closes [#35](https://github.com/EricCrosson/git-disjoint/issues/35)
+
 ## [0.7.35](https://github.com/EricCrosson/git-disjoint/compare/v0.7.34...v0.7.35) (2022-12-23)
 
 
