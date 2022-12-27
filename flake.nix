@@ -66,9 +66,6 @@
           cmake
           pkg-config
         ];
-
-        # DEBUG:
-        dontUseCmakeConfigure = true;
       };
 
       # Build *just* the cargo dependencies, so we can reuse
