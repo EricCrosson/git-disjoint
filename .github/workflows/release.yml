@@ -125,11 +125,11 @@ jobs:
         run: semantic-release-cargo --verbose --verbose --verbose prepare ${{ needs.get-next-version.outputs.new-release-version }}
 
       - name: Cross-compile release binary
-        if: ${{ matrix.triple.cross == true }}
+        if: matrix.triple.cross == true
         run: cross build --release --target ${{ matrix.triple.target }} --verbose
 
       - name: Compile release binary
-        if: ${{ matrix.triple.cross == false }}
+        if: matrix.triple.cross == false
         run: cargo build --release --target ${{ matrix.triple.target }} --verbose
 
       - name: Create release archive
