@@ -1,3 +1,11 @@
+## [0.7.37](https://github.com/EricCrosson/git-disjoint/compare/v0.7.36...v0.7.37) (2022-12-27)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate serde to v1.0.152 ([9084056](https://github.com/EricCrosson/git-disjoint/commit/9084056d3fb77ab6030c0fc8b515c4eafcdd2bc5))
+* **nix:** install git-disjoint man page ([de3c036](https://github.com/EricCrosson/git-disjoint/commit/de3c036b671695f0de7bbee0feb112ed5d70185d)), closes [#30](https://github.com/EricCrosson/git-disjoint/issues/30)
+
 ## [0.7.36](https://github.com/EricCrosson/git-disjoint/compare/v0.7.35...v0.7.36) (2022-12-26)
 
 
