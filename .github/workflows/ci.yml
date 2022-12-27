@@ -39,6 +39,4 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ steps.rust-toolchain.outputs.cachekey }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+        run: cargo test
