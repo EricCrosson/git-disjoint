@@ -41,3 +41,7 @@ proptest-derive = "=0.3.0"
 lto = true
 codegen-units = 1
 strip = true
+
+[build-dependencies]
+clap = { version = "=4.0.32", features = ["cargo", "derive", "wrap_help"] }
+clap_mangen = "0.2.6"

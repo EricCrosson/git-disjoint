@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{anyhow, ensure, Result};
-use args::SanitizedArgs;
 use git2::{Commit, Repository, RepositoryState, Tree};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -17,10 +16,12 @@ mod default_branch;
 mod interact;
 mod issue;
 mod issue_group;
+mod sanitized_args;
 mod user_config;
 
 use crate::issue::Issue;
 use crate::issue_group::IssueGroup;
+use crate::sanitized_args::SanitizedArgs;
 use crate::user_config::{get_user_remote, UserConfig};
 
 // git2 resources:
