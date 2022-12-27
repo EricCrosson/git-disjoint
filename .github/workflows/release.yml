@@ -130,7 +130,7 @@ jobs:
 
       - name: Compile release binary
         if: ${{ matrix.triple.cross == false }}
-        run: cross build --release --target ${{ matrix.triple.target }} --verbose
+        run: cargo build --release --target ${{ matrix.triple.target }} --verbose
 
       - name: Create release archive
         run: |
