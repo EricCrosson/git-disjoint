@@ -40,20 +40,23 @@ You must have the [hub] command installed and configured.
 
 ## Installing
 
-### Cargo
+### From GitHub releases
+
+You can install **git-disjoint** with [cargo binstall].
+
+Otherwise, download a release compatible with your OS and architecture from the
+[Releases] page, extract the binary, and put it somewhere in your `$PATH`.
+
+[cargo binstall]: https://github.com/cargo-bins/cargo-binstall
+[releases]: https://github.com/EricCrosson/git-disjoint/releases/latest
+
+### From source
 
 If `cargo` is installed on your system, run:
 
 ```
 cargo +nightly install git-disjoint
 ```
-
-### Manual
-
-Otherwise, download a release compatible with your OS and architecture from the
-[Releases] page, extract the binary, and put it somewhere in your `$PATH`.
-
-[releases]: https://github.com/EricCrosson/git-disjoint/releases/latest
 
 ## Making commits
 
@@ -73,21 +76,21 @@ Otherwise, download a release compatible with your OS and architecture from the
    Closes Ticket: COOL-123
    ```
 
-   Or use the GitHub [format][gh]: 
+   Or use the GitHub [format][gh]:
 
-    ```
-    Closes #123
-    ```
+   ```
+   Closes #123
+   ```
 
    [jira]: https://support.atlassian.com/jira-software-cloud/docs/reference-issues-in-your-development-work/
    [gh]: https://github.blog/2013-01-22-closing-issues-via-commit-messages/
 
 ## Opening PRs
 
- When you're ready to:
+When you're ready to:
 
 1. turn the set of commits addressing each ticket into its own feature branch,
-1. push that branch, and 
+1. push that branch, and
 1. create a draft PR,
 
 run `git disjoint`.
