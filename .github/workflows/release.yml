@@ -82,6 +82,7 @@ jobs:
 
   ### Compile release artifacts
   build-release:
+    name: Build CLI ${{ matrix.triple.target }}
     runs-on: ${{ matrix.triple.os }}
     container: ${{ matrix.triple.container }}
     needs:
@@ -194,8 +195,8 @@ jobs:
 
   ### Perform the semantic-release
   release:
-    runs-on: ubuntu-latest
     name: Release
+    runs-on: ubuntu-latest
     needs:
       - build-release
       - test
