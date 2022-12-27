@@ -60,6 +60,7 @@ jobs:
       - get-next-version
 
     strategy:
+      fail-fast: false
       matrix:
         triple:
           - {
