@@ -1,3 +1,10 @@
+## [0.7.38](https://github.com/EricCrosson/git-disjoint/compare/v0.7.37...v0.7.38) (2022-12-27)
+
+
+### Bug Fixes
+
+* **docs:** document cargo binstall support ([e83d8e1](https://github.com/EricCrosson/git-disjoint/commit/e83d8e1bc65e5a24643551555a9322f389e26cb9)), closes [#157](https://github.com/EricCrosson/git-disjoint/issues/157)
+
 ## [0.7.37](https://github.com/EricCrosson/git-disjoint/compare/v0.7.36...v0.7.37) (2022-12-27)
 
 
