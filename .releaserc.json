@@ -24,6 +24,10 @@
             "label": "x86_64-unknown-linux-musl"
           },
           {
+            "path": "dist/i686-unknown-linux-musl/git-disjoint-i686-unknown-linux-musl.tar.gz",
+            "label": "i686-unknown-linux-musl"
+          },
+          {
             "path": "dist/x86_64-apple-darwin/git-disjoint-x86_64-apple-darwin.tar.gz",
             "label": "x86_64-apple-darwin"
           },
