@@ -196,6 +196,7 @@ jobs:
   ### Perform the semantic-release
   release:
     name: Release
+    if: needs.get-next-version.outputs.new-release-published == 'true'
     runs-on: ubuntu-latest
     needs:
       - build-release
