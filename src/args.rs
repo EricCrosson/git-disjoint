@@ -1,31 +1,56 @@
-use clap::{crate_version, Parser};
-
-#[derive(Parser)]
-#[clap(
-    name = "git-disjoint",
-    author,
-    version = crate_version!(),
-    about,
-)]
+#[derive(clap::Parser)]
+#[command(author, version, about)]
 pub(crate) struct Args {
-    /// The lower-bound (exclusive) of commits to act on
-    #[clap(short, long)]
-    pub base: Option<String>,
-
-    /// Prompt the user to select which issues to create PRs for
-    #[clap(short, long, action)]
-    pub choose: bool,
-
-    /// Create a branch for all commits, even without an associated issue
-    #[clap(short, long, action)]
-    pub all: bool,
-
-    /// Treat every commit separately; do not group by ticket
+    /// Do not ignore commits without an issue footer.
+    ///
+    /// Commits without an issue footer are considered to be their own
+    /// group, so will be the only commit in their PR.
+    ///
+    /// There is no change to commits with an issue footer.
+    ///
+    /// This flag can be combined with the --choose flag.
     #[clap(
         short,
         long,
-        action,
-        help = "Treat every commit separately; do not group by ticket",
+        help = "Consider every commit, even commits without an issue footer"
+    )]
+    pub all: bool,
+
+    /// The starting point (exclusive) of commits to act on.
+    ///
+    /// Defaults to the repository's default branch.
+    #[clap(
+        short,
+        long,
+        help = "The starting point (exclusive) of commits to act on"
+    )]
+    pub base: Option<String>,
+
+    /// Prompt the user to select which issues to create PRs for.
+    ///
+    /// Select a whitelist of issues (or commits, if the --all flag is active)
+    /// in a terminal UI.
+    #[clap(
+        short,
+        long,
+        help = "Prompt the user to select which issues to create PRs for"
+    )]
+    pub choose: bool,
+
+    /// Do not group commits by issue.
+    ///
+    /// Treat each commit independently, regardless of issue footer. Each
+    /// PR created will have one and only one commit associated with it.
+    ///
+    /// This is the same behavior as when no commit has an issue footer and
+    /// the --all flag is active.
+    ///
+    /// This can be useful when you have numerous changes that belong under
+    /// one issue, but would be better reviewed independently.
+    #[clap(
+        short,
+        long,
+        help = "Treat every commit separately; do not group by issue",
         long_help
     )]
     pub separate: bool,
