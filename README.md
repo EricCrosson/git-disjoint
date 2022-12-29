@@ -1,4 +1,4 @@
-# Git Disjoint
+# git disjoint
 
 [![Build Status]](https://github.com/EricCrosson/git-disjoint/actions/workflows/release.yml)
 
@@ -9,27 +9,56 @@
 </p>
 
 **git-disjoint** automates an optimal git workflow for PR authors and reviewers
-by grouping commits by issue onto unique branches, referencing issues in
-branch names, and creating PRs.
+by grouping commits by issue into GitHub PRs.
 
 This encourages the submission of small, independent PRs, minimizing cognitive
-load on reviewers and keeping cycle time low.
+load on reviewers, maximizing the utility of your git history, and keeping
+cycle time low.
+
+## Elevator Pitch
+
+You're working on a feature. As you work, you create some commits that don't directly
+implement your feature. Maybe you improve some documentation, fix a minor bug, or
+first refactor to make the change easy, before making the easy change[^1]. In any case,
+you commit directly to master[^2] as you go, because you want each change to persist
+in your development environment, even before it's gone through code review and landed
+upstream.
+
+When you come to a natural stopping point, you are ready to ship several
+commits. Each commit is atomic, relating to just one topic. It comes with a
+detailed commit message referencing an issue in your work tracker, passing
+unit tests, and documentation. You don't want to shove all these changes into
+a single PR, because they deal with orthogonal concerns. You trust your team to
+contribute quality code reviews, and iterating on one changeset shouldn't delay
+unrelated changes from merging.
+
+Instead of creating a PR directly from your master, or manually moving commits into separate
+branches, do this:
+
+```shell
+git disjoint
+```
+
+**git-disjoint** will identify which commits relate to the same issue, batch these commits
+into a new branch, and create a PR.
+
+[^1]: https://www.adamtal.me/2019/05/first-make-the-change-easy-then-make-the-easy-change
+[^2]: https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html
 
 ## How does it work?
 
-**git-disjoint** uses commit messages to determine which issue a commit relates
-to. Following formalized conventions for commit messages, **git-disjoint**
-automatically creates a PR for each issue and associates the PR to an existing
-issue in your work tracker.
+**git-disjoint** looks for footers in each commit message to determine which
+issue a commit relates to. By default, it creates one PR for each issue and
+associates the PR to an existing issue in your work tracker.
 
-When the PR merges, the existing issue closes and your git history updates to
-reflect the upstream changes.
+When a PR merges, your next `git pull` effectively moves upstream's master from
+behind your local commits to ahead of them.
 
 ## Supported Integrations
 
-**git-disjoint** may add value to your workflow if you
+**git-disjoint** adds value to your workflow if you:
 
-- use a work tracker (currently supports Jira and GitHub Issues)
+- use a work tracker (supports Jira and GitHub Issues)
 - use GitHub and Pull Requests
 
 ## Requirements
@@ -42,31 +71,22 @@ You must have the [hub] command installed and configured.
 
 ### From GitHub releases
 
-You can install **git-disjoint** with [cargo binstall].
+The easiest way to install **git-disjoint** is to download a release compatible
+with your OS and architecture from the [Releases] page.
 
-Otherwise, download a release compatible with your OS and architecture from the
-[Releases] page, extract the binary, and put it somewhere in your `$PATH`.
+Alternatively, install **git-disjoint** with one of the following package managers:
 
-[cargo binstall]: https://github.com/cargo-bins/cargo-binstall
+| Repository     | Command                                               |
+| -------------- | ----------------------------------------------------- |
+| Cargo          | `cargo +nightly install git-disjoint`                 |
+| Cargo binstall | `cargo binstall git-disjoint`                         |
+| Nix            | `nix profile install github:EricCrosson/git-disjoint` |
+
 [releases]: https://github.com/EricCrosson/git-disjoint/releases/latest
 
-### Using Nix
+## Use
 
-Use the Nix flake:
-
-```shell
-nix shell github:EricCrosson/git-disjoint
-```
-
-### From source
-
-If `cargo` is installed on your system, run:
-
-```shell
-cargo +nightly install git-disjoint
-```
-
-## Make commits
+### Make commits
 
 1. [Add all of your commits to the repository's default branch][workflow].
 
@@ -90,10 +110,10 @@ cargo +nightly install git-disjoint
    Closes #123
    ```
 
-   [jira]: https://support.atlassian.com/jira-software-cloud/docs/reference-issues-in-your-development-work/
-   [github]: https://github.blog/2013-01-22-closing-issues-via-commit-messages/
+[jira]: https://support.atlassian.com/jira-software-cloud/docs/reference-issues-in-your-development-work/
+[github]: https://github.blog/2013-01-22-closing-issues-via-commit-messages/
 
-## Open PRs
+### Open PRs
 
 When you're ready to:
 
@@ -103,9 +123,13 @@ When you're ready to:
 
 run `git disjoint`.
 
-[workflow]: https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html
+## How-to Guide
 
-## Ignore commits
+### How do I ignore certain commits?
 
 To ignore commits associated with an issue, use the `--choose` flag. This will
 open a menu where you can select the issues to create PRs for.
+
+### How do I use git-disjoint on commits without an associated issue?
+
+Use the `--all` flag to include commits without a recognized footer.
