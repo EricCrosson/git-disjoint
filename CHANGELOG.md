@@ -1,3 +1,10 @@
+## [0.7.39](https://github.com/EricCrosson/git-disjoint/compare/v0.7.38...v0.7.39) (2022-12-29)
+
+
+### Bug Fixes
+
+* topologically sort the --choose list ([685d565](https://github.com/EricCrosson/git-disjoint/commit/685d56569cc1185603775ed87a90e017cdbc6a1f)), closes [#115](https://github.com/EricCrosson/git-disjoint/issues/115)
+
 ## [0.7.38](https://github.com/EricCrosson/git-disjoint/compare/v0.7.37...v0.7.38) (2022-12-27)
 
 
