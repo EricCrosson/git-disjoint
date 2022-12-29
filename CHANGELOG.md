@@ -1,3 +1,10 @@
+## [0.7.42](https://github.com/EricCrosson/git-disjoint/compare/v0.7.41...v0.7.42) (2022-12-29)
+
+
+### Bug Fixes
+
+* add support for -gnu release binaries ([42bf219](https://github.com/EricCrosson/git-disjoint/commit/42bf219b177c1ee8b1b85715badfd52c0896dadf))
+
 ## [0.7.41](https://github.com/EricCrosson/git-disjoint/compare/v0.7.40...v0.7.41) (2022-12-29)
 
 
