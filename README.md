@@ -27,7 +27,7 @@ reflect the upstream changes.
 
 ## Supported Integrations
 
-`git-disjoint` may add value to your workflow if you
+**git-disjoint** may add value to your workflow if you
 
 - use a work tracker (currently supports Jira and GitHub Issues)
 - use GitHub and Pull Requests
