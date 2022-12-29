@@ -1,3 +1,10 @@
+## [0.7.43](https://github.com/EricCrosson/git-disjoint/compare/v0.7.42...v0.7.43) (2022-12-29)
+
+
+### Bug Fixes
+
+* **docs:** rewrite readme ([a5fabb9](https://github.com/EricCrosson/git-disjoint/commit/a5fabb9fa62161e299ee20cf9da021102f533be8)), closes [#110](https://github.com/EricCrosson/git-disjoint/issues/110)
+
 ## [0.7.42](https://github.com/EricCrosson/git-disjoint/compare/v0.7.41...v0.7.42) (2022-12-29)
 
 
