@@ -13,8 +13,8 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
     name: Cargo test
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout

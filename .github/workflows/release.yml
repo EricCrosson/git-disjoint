@@ -58,50 +58,47 @@ jobs:
 
   ### Compile release artifacts
   build-release:
-    name: Build CLI ${{ matrix.triple.target }}
-    runs-on: ${{ matrix.triple.os }}
-    container: ${{ matrix.triple.container }}
+    name: Build CLI ${{ matrix.build.target }}
+    runs-on: ${{ matrix.build.os }}
     needs:
       - get-next-version
+    env:
+      CARGO: cargo
 
     strategy:
       fail-fast: false
       matrix:
-        triple:
-          - {
-              os: "ubuntu-latest",
-              target: "x86_64-unknown-linux-musl",
-              cross: false,
-            }
-          - {
-              os: "ubuntu-latest",
-              target: "i686-unknown-linux-musl",
-              cross: true,
-            }
-          - { os: "macOS-latest", target: "x86_64-apple-darwin", cross: false }
-          # aarch64
-          - {
-              os: "ubuntu-latest",
-              target: "aarch64-unknown-linux-musl",
-              cross: true,
-            }
-          # macOS ARM
-          - { os: "macOS-latest", target: "aarch64-apple-darwin", cross: true }
+        build:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            cross: false
+          - os: ubuntu-latest
+            target: i686-unknown-linux-musl
+            cross: true
+          - os: macOS-latest
+            target: x86_64-apple-darwin
+            cross: false
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            cross: true
+          - os: macOS-latest
+            target: aarch64-apple-darwin
+            cross: true
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Install build inputs
+        if: runner.os == 'Linux' && !matrix.build.cross
         run: sudo apt install musl-tools
-        if: runner.os == 'Linux' && matrix.triple.cross == false
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         id: rust-toolchain
         with:
           toolchain: nightly
-          target: ${{ matrix.triple.target }}
+          target: ${{ matrix.build.target }}
 
       - name: Install cross
         uses: taiki-e/install-action@v2
@@ -130,24 +127,23 @@ jobs:
         if: needs.get-next-version.outputs.new-release-published == 'true'
         run: semantic-release-cargo --verbose --verbose --verbose prepare ${{ needs.get-next-version.outputs.new-release-version }}
 
-      - name: Cross-compile release binary
-        if: matrix.triple.cross == true
-        run: cross build --release --target ${{ matrix.triple.target }} --verbose
+      - name: Configure cross
+        if: matrix.build.cross
+        run: echo "CARGO=cross" >> "$GITHUB_ENV"
 
-      - name: Compile release binary
-        if: matrix.triple.cross == false
-        run: cargo build --release --target ${{ matrix.triple.target }} --verbose
+      - name: Ccompile release binary
+        run: ${{ env.CARGO }} build --release --target ${{ matrix.build.target }} --verbose
 
       - name: Create release archive
         run: |
           mkdir dist
-          mkdir -p builds/git-disjoint-${{ matrix.triple.target }}
-          cp target/${{ matrix.triple.target }}/release/git-disjoint builds/git-disjoint-${{ matrix.triple.target }}/
-          tar -C builds -czvf dist/git-disjoint-${{ matrix.triple.target }}.tar.gz git-disjoint-${{ matrix.triple.target }}
+          mkdir -p builds/git-disjoint-${{ matrix.build.target }}
+          cp target/${{ matrix.build.target }}/release/git-disjoint builds/git-disjoint-${{ matrix.build.target }}/
+          tar -C builds -czvf dist/git-disjoint-${{ matrix.build.target }}.tar.gz git-disjoint-${{ matrix.build.target }}
 
       # Create a checksum of the tar archive for manual checksum verification of the archive before extraction.
       - name: Create tar checksum
-        run: shasum --algorithm 256 git-disjoint-${{ matrix.triple.target }}.tar.gz > git-disjoint-${{ matrix.triple.target }}-SHASUMS256.txt
+        run: shasum --algorithm 256 git-disjoint-${{ matrix.build.target }}.tar.gz > git-disjoint-${{ matrix.build.target }}-SHASUMS256.txt
         working-directory: ./dist
 
       # Create a checksum of the binary for automatic checksum verification in the post-install hook. In this code
@@ -155,17 +151,17 @@ jobs:
       # is ever written to disk, to minimize disk usage. This makes it impossible to validate the checksum of the
       # entire tar archive, so we calculate a checksum of the untarred binary instead.
       - name: Create binary checksum
-        run: shasum --algorithm 256 --binary git-disjoint | tee ../../dist/git-disjoint-${{ matrix.triple.target }}-binary-SHASUMS256.txt
-        working-directory: ./builds/git-disjoint-${{ matrix.triple.target }}
+        run: shasum --algorithm 256 --binary git-disjoint | tee ../../dist/git-disjoint-${{ matrix.build.target }}-binary-SHASUMS256.txt
+        working-directory: ./builds/git-disjoint-${{ matrix.build.target }}
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.triple.target }}
+          name: ${{ matrix.build.target }}
           path: |
-            dist/git-disjoint-${{ matrix.triple.target }}.tar.gz
-            dist/git-disjoint-${{ matrix.triple.target }}-binary-SHASUMS256.txt
-            dist/git-disjoint-${{ matrix.triple.target }}-SHASUMS256.txt
+            dist/git-disjoint-${{ matrix.build.target }}.tar.gz
+            dist/git-disjoint-${{ matrix.build.target }}-binary-SHASUMS256.txt
+            dist/git-disjoint-${{ matrix.build.target }}-SHASUMS256.txt
           if-no-files-found: error
           retention-days: 1
 
@@ -176,6 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-release
+      - get-next-version
       - test
 
     steps:
@@ -230,7 +227,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --loglevel error
 
       - name: Invoke semantic-release
         env:
