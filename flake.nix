@@ -64,7 +64,6 @@
 
         nativeBuildInputs = with pkgs; [
           cmake
-          pkg-config
         ];
       };
 
@@ -129,13 +128,18 @@
       };
       devShells = {
         default = nixpkgs.legacyPackages.${system}.mkShell {
-          buildInputs = commonArgs.buildInputs;
-          nativeBuildInputs =
+          buildInputs = with pkgs;
+            commonArgs.buildInputs
+            ++ [
+              git
+              hub
+            ];
+          nativeBuildInputs = with pkgs;
             commonArgs.nativeBuildInputs
             ++ [
               fenix-toolchain
               fenix.packages.${system}.rust-analyzer
-              pkgs.nodejs
+              nodejs
             ];
 
           inherit (self.checks.${system}.pre-commit-check) shellHook;
