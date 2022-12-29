@@ -88,7 +88,7 @@ Alternatively, install **git-disjoint** with one of the following package manage
 
 ### Make commits
 
-1. [Add all of your commits to the repository's default branch][workflow].
+1. Add all of your commits to the repository's default branch.
 
 1. In each commit message, include a reference to the relevant ticket.
 
