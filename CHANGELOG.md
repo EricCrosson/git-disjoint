@@ -1,3 +1,10 @@
+## [0.7.41](https://github.com/EricCrosson/git-disjoint/compare/v0.7.40...v0.7.41) (2022-12-29)
+
+
+### Bug Fixes
+
+* **docs:** improve --help documentation ([ed4fcb8](https://github.com/EricCrosson/git-disjoint/commit/ed4fcb84fe658bf12d867511da65d6f42ee3af37))
+
 ## [0.7.40](https://github.com/EricCrosson/git-disjoint/compare/v0.7.39...v0.7.40) (2022-12-29)
 
 
