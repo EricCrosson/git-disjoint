@@ -1,12 +1,12 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
-use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{anyhow, ensure, Result};
 use git2::{Commit, Repository, RepositoryState, Tree};
+use indexmap::IndexMap;
 use lazy_static::lazy_static;
 use regex::Regex;
 use sanitize_git_ref::sanitize_git_ref_onelevel;
@@ -172,9 +172,7 @@ fn main() -> Result<()> {
         remote: get_user_remote(&repo)?,
     };
 
-    // DISCUSS: instead of sorting by issue, consider sorting by proximity to origin/master.
-    // IndexMap preserves insertion order
-    let commits_by_issue: BTreeMap<IssueGroup, Vec<Commit>> = commits
+    let commits_by_issue: IndexMap<IssueGroup, Vec<Commit>> = commits
         .into_iter()
         // Parse issue from commit message
         .map(|commit| -> Result<Option<(IssueGroup, Commit)>> {
@@ -210,7 +208,7 @@ fn main() -> Result<()> {
         .into_iter()
         // drop the None values
         .flatten()
-        .fold(BTreeMap::new(), |mut map, (issue, commit)| {
+        .fold(IndexMap::new(), |mut map, (issue, commit)| {
             let commits = map.entry(issue).or_default();
             commits.push(commit);
             map
@@ -232,6 +230,7 @@ fn main() -> Result<()> {
             if let Some(whitelist) = &selected_issues {
                 return whitelist.contains(issue);
             }
+            // If there is no whitelist, then operate on every ticket
             true
         })
         .try_for_each(|(issue, commits)| -> Result<()> {
