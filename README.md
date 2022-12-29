@@ -88,9 +88,9 @@ Alternatively, install **git-disjoint** with one of the following package manage
 
 ### Make commits
 
-1. Add all of your commits to a single branch (I recommend using the repository's default branch).
+1. Add all of your commits to a single branch. I recommend using the repository's default branch.
 
-1. In each commit message, include a reference to the relevant ticket.
+1. In each commit message, include a reference to the relevant issue.
 
    For example, use the Jira automation [format][jira]:
 
@@ -117,7 +117,7 @@ Alternatively, install **git-disjoint** with one of the following package manage
 
 When you're ready to:
 
-1. turn the set of commits addressing each ticket into its own feature branch,
+1. turn the set of commits addressing each issue into its own branch,
 1. push that branch, and
 1. create a draft PR,
 
