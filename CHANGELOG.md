@@ -1,3 +1,10 @@
+## [0.7.40](https://github.com/EricCrosson/git-disjoint/compare/v0.7.39...v0.7.40) (2022-12-29)
+
+
+### Bug Fixes
+
+* **deps:** pin rust crate indexmap to =1.9.2 ([95cd148](https://github.com/EricCrosson/git-disjoint/commit/95cd14869978c40d904b2957ba49feb709851470))
+
 ## [0.7.39](https://github.com/EricCrosson/git-disjoint/compare/v0.7.38...v0.7.39) (2022-12-29)
 
 
