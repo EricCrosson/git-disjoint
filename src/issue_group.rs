@@ -46,3 +46,22 @@ impl Display for IssueGroup {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{issue_group::GitCommitSummary, Issue, IssueGroup};
+
+    #[test]
+    fn display_human_readable_issue() {
+        let issue = Issue::from("COOL-123");
+        let issue_group = IssueGroup::Issue(issue);
+        assert_eq!("COOL-123", format!("{}", issue_group));
+    }
+
+    #[test]
+    fn display_human_readable_commit() {
+        let summary = GitCommitSummary(String::from("this is a cool summary"));
+        let issue_group = IssueGroup::Commit(summary);
+        assert_eq!("this is a cool summary", format!("{}", issue_group));
+    }
+}
