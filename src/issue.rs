@@ -42,9 +42,15 @@ mod test {
 
     use crate::issue::Issue;
 
+    impl From<&str> for Issue {
+        fn from(s: &str) -> Self {
+            Issue(s.to_owned())
+        }
+    }
+
     #[test]
     fn display_issue() {
-        let issue = Issue(String::from("GD-0"));
+        let issue = Issue::from("GD-0");
         assert_eq!(format!("{}", issue), "GD-0");
     }
 
@@ -73,7 +79,7 @@ mod test {
             Ticket: AB-123     
             "
         ),
-        Issue(String::from("AB-123"))
+        Issue::from("AB-123")
     );
 
     test_parses!(
@@ -86,7 +92,7 @@ mod test {
         
             ",
         ),
-        Issue(String::from("AB-123"))
+        Issue::from("AB-123")
     );
 
     test_parses!(
@@ -99,7 +105,7 @@ mod test {
             Footer: http://example.com
             ",
         ),
-        Issue(String::from("AB-123"))
+        Issue::from("AB-123")
     );
 
     test_parses!(
@@ -111,7 +117,7 @@ mod test {
             Closes Ticket: AB-123
             ",
         ),
-        Issue(String::from("AB-123"))
+        Issue::from("AB-123")
     );
 
     test_parses!(
@@ -124,7 +130,7 @@ mod test {
 
             ",
         ),
-        Issue(String::from("AB-123"))
+        Issue::from("AB-123")
     );
 
     test_parses!(
@@ -137,7 +143,7 @@ mod test {
             Footer: http://example.com
             ",
         ),
-        Issue(String::from("AB-123"))
+        Issue::from("AB-123")
     );
 
     test_parses!(
@@ -149,7 +155,7 @@ mod test {
             Closes #123
             ",
         ),
-        Issue(String::from("123"))
+        Issue::from("123")
     );
 
     test_parses!(
@@ -161,7 +167,7 @@ mod test {
             Closes #123
             "
         ),
-        Issue(String::from("123"))
+        Issue::from("123")
     );
 
     test_parses!(
@@ -174,7 +180,7 @@ mod test {
             Footer: http://example.com
             ",
         ),
-        Issue(String::from("123"))
+        Issue::from("123")
     );
 
     test_parses!(
@@ -186,7 +192,7 @@ mod test {
             Closes #123
             ",
         ),
-        Issue(String::from("123"))
+        Issue::from("123")
     );
 
     test_parses!(
@@ -199,7 +205,7 @@ mod test {
 
             ",
         ),
-        Issue(String::from("123"))
+        Issue::from("123")
     );
 
     test_parses!(
@@ -212,7 +218,7 @@ mod test {
             Footer: http://example.com
             ",
         ),
-        Issue(String::from("123"))
+        Issue::from("123")
     );
 
     #[test]
