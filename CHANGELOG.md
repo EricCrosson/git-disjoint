@@ -1,3 +1,10 @@
+## [0.7.44](https://github.com/EricCrosson/git-disjoint/compare/v0.7.43...v0.7.44) (2022-12-30)
+
+
+### Bug Fixes
+
+* use display instead of debug ([f6816c1](https://github.com/EricCrosson/git-disjoint/commit/f6816c1f5cf8ad2e201bc9275e13ebf319dc1bb6))
+
 ## [0.7.43](https://github.com/EricCrosson/git-disjoint/compare/v0.7.42...v0.7.43) (2022-12-29)
 
 
