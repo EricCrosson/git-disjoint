@@ -99,12 +99,20 @@
           inherit cargoArtifacts;
 
           nativeBuildInputs = with pkgs; [
+            findutils
             installShellFiles
+            makeWrapper
           ];
 
           postInstall = ''
-            installManPage "$(jq --raw-output <"$cargoBuildLog" 'select(.reason == "build-script-executed" and (.package_id | startswith("git-disjoint"))).out_dir')/git-disjoint.1"
-            ls -R $out
+            installManPage "$(find /build/source/target/release/build -type f -name git-disjoint.1)"
+            installShellCompletion \
+              "$(find /build/source/target/release/build -type f -name git-disjoint.bash)" \
+              "$(find /build/source/target/release/build -type f -name git-disjoint.fish)" \
+              --zsh "$(find /build/source/target/release/build -type f -name _git-disjoint)"
+
+            wrapProgram $out/bin/git-disjoint \
+              --prefix PATH ${pkgs.lib.makeBinPath [pkgs.gitMinimal pkgs.hub]}
           '';
         });
 
@@ -130,8 +138,9 @@
         default = nixpkgs.legacyPackages.${system}.mkShell {
           buildInputs = with pkgs;
             commonArgs.buildInputs
+            # REFACTOR: avoid duplicating this list in the postInstall hook
             ++ [
-              git
+              gitMinimal
               hub
             ];
           nativeBuildInputs = with pkgs;
