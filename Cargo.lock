@@ -221,10 +221,11 @@ dependencies = [
 
 [[package]]
 name = "git-disjoint"
-version = "0.7.43"
+version = "0.8.0"
 dependencies = [
  "anyhow",
  "clap",
+ "clap_complete",
  "clap_mangen",
  "git2",
  "indexmap",

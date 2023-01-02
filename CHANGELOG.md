@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/EricCrosson/git-disjoint/compare/v0.7.44...v0.8.0) (2023-01-02)
+
+
+### Features
+
+* **nix:** generate and install shell completions ([3c279fc](https://github.com/EricCrosson/git-disjoint/commit/3c279fcbe3bba5b0fd36f4191903fd494336976c)), closes [#155](https://github.com/EricCrosson/git-disjoint/issues/155) [#166](https://github.com/EricCrosson/git-disjoint/issues/166)
+
 ## [0.7.44](https://github.com/EricCrosson/git-disjoint/compare/v0.7.43...v0.7.44) (2022-12-30)
 
 
