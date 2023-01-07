@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/EricCrosson/git-disjoint/compare/v0.8.0...v0.8.1) (2023-01-07)
+
+
+### Bug Fixes
+
+* **ci:** use reusable release workflow ([cd6c781](https://github.com/EricCrosson/git-disjoint/commit/cd6c781927d6ef8829cee539f7e0d13b2ee08add))
+
 # [0.8.0](https://github.com/EricCrosson/git-disjoint/compare/v0.7.44...v0.8.0) (2023-01-02)
 
 
