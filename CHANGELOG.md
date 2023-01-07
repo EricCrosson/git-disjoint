@@ -1,3 +1,10 @@
+## [0.8.5](https://github.com/EricCrosson/git-disjoint/compare/v0.8.4...v0.8.5) (2023-01-07)
+
+
+### Bug Fixes
+
+* **ci:** force another release with fixed github assets ([5d2c5b6](https://github.com/EricCrosson/git-disjoint/commit/5d2c5b64e58d46e7f53e23e90c4077572af4a659))
+
 ## [0.8.4](https://github.com/EricCrosson/git-disjoint/compare/v0.8.3...v0.8.4) (2023-01-07)
 
 
