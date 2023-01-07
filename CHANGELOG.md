@@ -1,3 +1,10 @@
+## [0.8.4](https://github.com/EricCrosson/git-disjoint/compare/v0.8.3...v0.8.4) (2023-01-07)
+
+
+### Bug Fixes
+
+* **ci:** release new binaries without target suffix ([f7767fe](https://github.com/EricCrosson/git-disjoint/commit/f7767fec7e0d8265338928431de107ccd8a723a3))
+
 ## [0.8.3](https://github.com/EricCrosson/git-disjoint/compare/v0.8.2...v0.8.3) (2023-01-07)
 
 
