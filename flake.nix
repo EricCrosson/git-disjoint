@@ -143,12 +143,11 @@
               gitMinimal
               hub
             ];
-          nativeBuildInputs = with pkgs;
+          nativeBuildInputs =
             commonArgs.nativeBuildInputs
             ++ [
               fenix-toolchain
               fenix.packages.${system}.rust-analyzer
-              nodejs
             ];
 
           inherit (self.checks.${system}.pre-commit-check) shellHook;
