@@ -1,3 +1,10 @@
+## [0.8.3](https://github.com/EricCrosson/git-disjoint/compare/v0.8.2...v0.8.3) (2023-01-07)
+
+
+### Bug Fixes
+
+* force new release to fix release binaries ([4e58f46](https://github.com/EricCrosson/git-disjoint/commit/4e58f463545e6cae21724887caecc76d2bce652e))
+
 ## [0.8.2](https://github.com/EricCrosson/git-disjoint/compare/v0.8.1...v0.8.2) (2023-01-07)
 
 
