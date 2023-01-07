@@ -1,3 +1,10 @@
+## [0.8.2](https://github.com/EricCrosson/git-disjoint/compare/v0.8.1...v0.8.2) (2023-01-07)
+
+
+### Bug Fixes
+
+* **ci:** use release workflow's semantic-release config ([98f5f14](https://github.com/EricCrosson/git-disjoint/commit/98f5f14ba5e602dbefe3211c5041498d13a69388))
+
 ## [0.8.1](https://github.com/EricCrosson/git-disjoint/compare/v0.8.0...v0.8.1) (2023-01-07)
 
 
