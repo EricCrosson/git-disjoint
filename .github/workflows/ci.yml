@@ -6,6 +6,6 @@ on:
 
 jobs:
   test:
-    uses: EricCrosson/rust-action/.github/workflows/ci.yml@v1
+    uses: EricCrosson/rust-action/.github/workflows/ci.yml@v2
     with:
       toolchain: nightly
