@@ -1,3 +1,12 @@
+## [0.8.6](https://github.com/EricCrosson/git-disjoint/compare/v0.8.5...v0.8.6) (2023-01-09)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate inquire to v0.5.3 ([0836843](https://github.com/EricCrosson/git-disjoint/commit/08368438f1933557a94bd5fa10c5d875e21dd0fd))
+* **deps:** update rust crate sanitize-git-ref to v1.0.8 ([fd99754](https://github.com/EricCrosson/git-disjoint/commit/fd997546a0f71f47d5a00873bcff60a634b38ea1))
+* update rust-action to v2 ([9471df5](https://github.com/EricCrosson/git-disjoint/commit/9471df5d73f32b146e5dc0db964df178cb453436))
+
 ## [0.8.5](https://github.com/EricCrosson/git-disjoint/compare/v0.8.4...v0.8.5) (2023-01-07)
 
 
