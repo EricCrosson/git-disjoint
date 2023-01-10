@@ -1,3 +1,10 @@
+## [0.8.8](https://github.com/EricCrosson/git-disjoint/compare/v0.8.7...v0.8.8) (2023-01-10)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate sanitize-git-ref to v1.0.9 ([f911541](https://github.com/EricCrosson/git-disjoint/commit/f911541e4e71eefaa863aa73d53bd261a7cbc96b))
+
 ## [0.8.7](https://github.com/EricCrosson/git-disjoint/compare/v0.8.6...v0.8.7) (2023-01-10)
 
 
