@@ -788,9 +788,9 @@ checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 
 [[package]]
 name = "sanitize-git-ref"
-version = "1.0.8"
+version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e220fa7189c7cae8d7b601d32de9a6eb0a3136ea037b7d32a741b4562a14919c"
+checksum = "8054ef3b720c24788a8c6d46e977d42f42c77886cd0e9468b39c1281c7304405"
 dependencies = [
  "lazy_static",
  "regex",
