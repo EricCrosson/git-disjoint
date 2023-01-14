@@ -14,7 +14,7 @@ on:
 
 jobs:
   release:
-    uses: EricCrosson/rust-action/.github/workflows/release-binary.yml@v2
+    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v2
     with:
       toolchain: nightly
       binary-name: git-disjoint
