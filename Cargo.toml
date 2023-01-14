@@ -23,7 +23,7 @@ exclude = [
 
 [dependencies]
 anyhow = "=1.0.68"
-clap = { version = "=4.0.32", features = ["cargo", "derive", "wrap_help"] }
+clap = { version = "=4.1.1", features = ["cargo", "derive", "wrap_help"] }
 git2 = { version = "=0.16.0", default-features = false, features = ["zlib-ng-compat"] }
 indexmap = "=1.9.2"
 indoc = "=1.0.8"
@@ -44,6 +44,6 @@ codegen-units = 1
 strip = true
 
 [build-dependencies]
-clap = { version = "=4.0.32", features = ["cargo", "derive", "wrap_help"] }
+clap = { version = "=4.1.1", features = ["cargo", "derive", "wrap_help"] }
 clap_complete = "=4.0.7"
 clap_mangen = "=0.2.7"
