@@ -1,3 +1,10 @@
+## [0.8.10](https://github.com/EricCrosson/git-disjoint/compare/v0.8.9...v0.8.10) (2023-01-14)
+
+
+### Bug Fixes
+
+* **deps:** migrate to semantic-release-action/next-release-version ([7c68cee](https://github.com/EricCrosson/git-disjoint/commit/7c68cee4a4c5ac36b03d65237d70e5c2a94f5097))
+
 ## [0.8.9](https://github.com/EricCrosson/git-disjoint/compare/v0.8.8...v0.8.9) (2023-01-11)
 
 
