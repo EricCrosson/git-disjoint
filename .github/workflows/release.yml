@@ -14,9 +14,8 @@ on:
 
 jobs:
   release:
-    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v2
+    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v4
     with:
       toolchain: nightly
-      binary-name: git-disjoint
     secrets:
       cargo-registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
