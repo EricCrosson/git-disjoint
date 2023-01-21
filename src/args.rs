@@ -37,6 +37,15 @@ pub(crate) struct Args {
     )]
     pub choose: bool,
 
+    /// Combine multiple issue groups into one PR.
+    ///
+    /// When this flag is active, git-disjoint will create only one PR.
+    ///
+    /// This can be useful when you have multiple commits with no footer that
+    /// would be better reviewed or merged together.
+    #[clap(short, long, help = "Combine multiple issue groups into one PR")]
+    pub overlay: bool,
+
     /// Do not group commits by issue.
     ///
     /// Treat each commit independently, regardless of issue footer. Each
