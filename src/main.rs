@@ -157,6 +157,7 @@ fn main() -> Result<()> {
         base,
         choose,
         all,
+        overlay,
         separate,
     } = SanitizedArgs::parse()?;
 
@@ -223,7 +224,7 @@ fn main() -> Result<()> {
             map
         });
 
-    let selected_issues = if choose {
+    let selected_issues = if choose || overlay {
         let keys = commits_by_issue.keys().collect();
         Some(
             interact::select_issues(keys)
@@ -233,13 +234,43 @@ fn main() -> Result<()> {
         None
     };
 
-    commits_by_issue
+    // Construct this map assuming `overlay` is not active:
+    // Each issue group gets its own branch and PR.
+    let processed_commits_by_issue: Vec<(IssueGroup, Vec<Commit>)> = commits_by_issue
         .into_iter()
         .filter(|(issue, _commit)| {
             if let Some(whitelist) = &selected_issues {
                 return whitelist.contains(issue);
             }
-            // If there is no whitelist, then operate on every ticket
+            // If there is no whitelist, then operate on every issue
+            true
+        })
+        .collect();
+
+    // If `overlay` is active, smoosh all the issue groups into one.
+    let processed_commits_by_issue: Vec<(IssueGroup, Vec<Commit>)> = if overlay {
+        processed_commits_by_issue.into_iter().fold(
+            Vec::new(),
+            |mut accumulator, (issue_group, mut commits)| {
+                if accumulator.is_empty() {
+                    accumulator.push((issue_group, commits));
+                } else {
+                    accumulator.get_mut(0).unwrap().1.append(&mut commits);
+                }
+                accumulator
+            },
+        )
+    } else {
+        processed_commits_by_issue
+    };
+
+    processed_commits_by_issue
+        .into_iter()
+        .filter(|(issue, _commit)| {
+            if let Some(whitelist) = &selected_issues {
+                return whitelist.contains(issue);
+            }
+            // If there is no whitelist, then operate on every issue
             true
         })
         .try_for_each(|(issue, commits)| -> Result<()> {
