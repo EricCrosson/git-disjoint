@@ -50,8 +50,7 @@ pub(crate) struct Args {
     #[clap(
         short,
         long,
-        help = "Treat every commit separately; do not group by issue",
-        long_help
+        help = "Treat every commit separately; do not group by issue"
     )]
     pub separate: bool,
 }
