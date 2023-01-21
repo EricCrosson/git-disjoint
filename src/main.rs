@@ -101,7 +101,11 @@ fn get_commits_from_base<'repo>(
 /// - lower-case all letters in the commit message summary (but not the ticket name)
 fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
     let raw_branch_name = match issue {
-        IssueGroup::Issue(issue) => format!("{}-{}", issue, summary.to_lowercase()),
+        IssueGroup::Issue(issue_group) => format!(
+            "{}-{}",
+            issue_group.issue_identifier(),
+            summary.to_lowercase()
+        ),
         IssueGroup::Commit(summary) => summary.0.clone().to_lowercase(),
     };
     let branch_name = sanitize_git_ref_onelevel(&raw_branch_name).replace(['(', ')'], "-");

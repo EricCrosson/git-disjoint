@@ -25,7 +25,7 @@ pub(crate) enum Issue {
 }
 
 impl Issue {
-    pub(crate) fn parse_from_commit_message<S: AsRef<str>>(commit_message: S) -> Option<Issue> {
+    pub fn parse_from_commit_message<S: AsRef<str>>(commit_message: S) -> Option<Issue> {
         if let Some(jira_captures) = RE_JIRA_ISSUE.captures(commit_message.as_ref()) {
             return Some(Issue::Jira(
                 jira_captures[jira_captures.len() - 1].to_owned(),
@@ -38,6 +38,13 @@ impl Issue {
         }
         None
     }
+
+    pub fn issue_identifier(&self) -> String {
+        match self {
+            Issue::Jira(ticket) => ticket.clone(),
+            Issue::GitHub(issue) => issue.clone(),
+        }
+    }
 }
 
 impl Display for Issue {
@@ -49,10 +56,7 @@ impl Display for Issue {
                 Issue::Jira(_) => "Jira ",
                 Issue::GitHub(_) => "GitHub #",
             },
-            match self {
-                Issue::Jira(ticket) => ticket,
-                Issue::GitHub(issue) => issue,
-            }
+            self.issue_identifier()
         )
     }
 }
