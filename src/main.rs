@@ -187,7 +187,7 @@ fn main() -> Result<()> {
                 }
             }
 
-            // If
+            // If:
             // - the user requested we treat every issue separately, or
             // - this commit does not include an issue, but the user has
             //   --specified the all flag, then
