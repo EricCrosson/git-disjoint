@@ -45,30 +45,31 @@ macro_rules! filter_try {
     };
 }
 
+/// Return the list of commits from `base` to `HEAD`, sorted parent-first,
+/// children-last.
 fn get_commits_from_base<'repo>(
     repo: &'repo Repository,
-    start_point: &git2::Object,
+    base: &git2::Object,
 ) -> Result<Vec<Commit<'repo>>> {
+    // Identifies output commits by traversing commits starting from HEAD and
+    // working towards base, then reversing the list.
     let mut revwalk = repo.revwalk()?;
     revwalk.push_head()?;
 
     revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
 
-    let commits: Vec<Commit> = {
-        let mut commits: Vec<Commit> = revwalk
-            .filter_map(|id| {
-                let id = filter_try!(id);
-                let commit = filter_try!(repo.find_commit(id));
-                Some(commit)
-            })
-            // Only include commits after the `start_point`
-            .take_while(|commit| !start_point.id().eq(&commit.id()))
-            .collect();
+    let mut commits: Vec<Commit> = revwalk
+        .filter_map(|id| {
+            let id = filter_try!(id);
+            let commit = filter_try!(repo.find_commit(id));
+            Some(commit)
+        })
+        // Only include commits after the `start_point`
+        .take_while(|commit| !base.id().eq(&commit.id()))
+        .collect();
 
-        // Order commits parent-first, children-last
-        commits.reverse();
-        commits
-    };
+    // Order commits parent-first, children-last
+    commits.reverse();
 
     Ok(commits)
 }
@@ -174,7 +175,6 @@ fn main() -> Result<()> {
     assert_repository_state_is_clean(&repo)?;
     assert_tree_matches_workdir_with_index(&repo, &originally_checked_out_tree)?;
 
-    // Traverse commits starting from HEAD
     let commits = get_commits_from_base(&repo, &start_point)?;
 
     let user_config = UserConfig {
