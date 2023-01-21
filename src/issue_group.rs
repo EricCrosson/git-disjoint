@@ -53,9 +53,9 @@ mod tests {
 
     #[test]
     fn display_human_readable_issue() {
-        let issue = Issue::from("COOL-123");
+        let issue = Issue::Jira("COOL-123".to_string());
         let issue_group = IssueGroup::Issue(issue);
-        assert_eq!("COOL-123", format!("{}", issue_group));
+        assert_eq!("Jira COOL-123", format!("{}", issue_group));
     }
 
     #[test]

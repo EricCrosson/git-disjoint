@@ -2,11 +2,12 @@
 #![feature(exit_status_error)]
 
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use anyhow::{anyhow, ensure, Result};
 use git2::{Commit, Repository, RepositoryState, Tree};
 use indexmap::IndexMap;
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sanitize_git_ref::sanitize_git_ref_onelevel;
@@ -30,6 +31,23 @@ use crate::user_config::{get_user_remote, UserConfig};
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
+
+struct CommitWork<'repo> {
+    commit: Commit<'repo>,
+    progress_bar: ProgressBar,
+}
+
+struct WorkOrder<'repo> {
+    issue_group: IssueGroup,
+    commit_work: Vec<CommitWork<'repo>>,
+    progress_bar: ProgressBar,
+}
+
+impl<'repo> WorkOrder<'repo> {
+    fn smoosh(&mut self, mut commits: Vec<CommitWork<'repo>>) {
+        self.commit_work.append(&mut commits);
+    }
+}
 
 lazy_static! {
     static ref RE_MULTIPLE_HYPHENS: Regex =
@@ -83,7 +101,11 @@ fn get_commits_from_base<'repo>(
 /// - lower-case all letters in the commit message summary (but not the ticket name)
 fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
     let raw_branch_name = match issue {
-        IssueGroup::Issue(issue) => format!("{}-{}", issue, summary.to_lowercase()),
+        IssueGroup::Issue(issue_group) => format!(
+            "{}-{}",
+            issue_group.issue_identifier(),
+            summary.to_lowercase()
+        ),
         IssueGroup::Commit(summary) => summary.0.clone().to_lowercase(),
     };
     let branch_name = sanitize_git_ref_onelevel(&raw_branch_name).replace(['(', ')'], "-");
@@ -92,8 +114,19 @@ fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
         .replace(['\'', '"'], "")
 }
 
-fn execute(command: &[&str]) -> Result<()> {
+#[derive(Debug, Eq, PartialEq)]
+enum RedirectOutput {
+    DevNull,
+    None,
+}
+
+fn execute(command: &[&str], redirect_output: RedirectOutput) -> Result<()> {
     let mut runner = Command::new(command[0]);
+
+    if redirect_output == RedirectOutput::DevNull {
+        runner.stdout(Stdio::null());
+    }
+
     for argument in command.iter().skip(1) {
         runner.arg(argument);
     }
@@ -154,9 +187,10 @@ fn get_repository_root() -> Result<PathBuf> {
 fn main() -> Result<()> {
     // DISCUSS: moving the `repo` into SanitizedArgs
     let SanitizedArgs {
+        all,
         base,
         choose,
-        all,
+        dry_run,
         overlay,
         separate,
     } = SanitizedArgs::parse()?;
@@ -236,53 +270,117 @@ fn main() -> Result<()> {
 
     // Construct this map assuming `overlay` is not active:
     // Each issue group gets its own branch and PR.
-    let processed_commits_by_issue: Vec<(IssueGroup, Vec<Commit>)> = commits_by_issue
+    let processed_commits_by_issue: Vec<WorkOrder> = commits_by_issue
         .into_iter()
-        .filter(|(issue, _commit)| {
+        .filter_map(|(issue_group, commits)| {
+            let num_commits: u64 = commits.len().try_into().unwrap();
             if let Some(whitelist) = &selected_issues {
-                return whitelist.contains(issue);
+                return match whitelist.contains(&issue_group) {
+                    true => Some(WorkOrder {
+                        issue_group,
+                        commit_work: commits
+                            .into_iter()
+                            .map(|commit| CommitWork {
+                                commit,
+                                progress_bar: ProgressBar::new(1),
+                            })
+                            .collect(),
+                        progress_bar: ProgressBar::new(num_commits),
+                    }),
+                    false => None,
+                };
             }
             // If there is no whitelist, then operate on every issue
-            true
+            Some(WorkOrder {
+                issue_group,
+                commit_work: commits
+                    .into_iter()
+                    .map(|commit| CommitWork {
+                        commit,
+                        progress_bar: ProgressBar::new(1),
+                    })
+                    .collect(),
+                progress_bar: ProgressBar::new(num_commits),
+            })
         })
         .collect();
 
     // If `overlay` is active, smoosh all the issue groups into one.
-    let processed_commits_by_issue: Vec<(IssueGroup, Vec<Commit>)> = if overlay {
-        processed_commits_by_issue.into_iter().fold(
-            Vec::new(),
-            |mut accumulator, (issue_group, mut commits)| {
+    let processed_commits_by_issue: Vec<WorkOrder> = if overlay {
+        processed_commits_by_issue
+            .into_iter()
+            .fold(Vec::new(), |mut accumulator, work_order| {
                 if accumulator.is_empty() {
-                    accumulator.push((issue_group, commits));
+                    accumulator.push(work_order);
                 } else {
-                    accumulator.get_mut(0).unwrap().1.append(&mut commits);
+                    accumulator
+                        .get_mut(0)
+                        .unwrap()
+                        .smoosh(work_order.commit_work);
                 }
                 accumulator
-            },
-        )
+            })
     } else {
         processed_commits_by_issue
     };
 
+    // Short-circuit early if there is no work to do.
+    if processed_commits_by_issue.is_empty() {
+        return Ok(());
+    }
+
+    let style_issue_group_pending = ProgressStyle::with_template("  {msg}").unwrap();
+    let style_issue_group_working = ProgressStyle::with_template("> {msg}").unwrap();
+    let style_issue_group_done = ProgressStyle::with_template("✔ {msg}").unwrap();
+    let style_commit_pending = ProgressStyle::with_template("    {msg}").unwrap();
+    let style_commit_working = ProgressStyle::with_template("  > {msg}").unwrap();
+    let style_commit_done = ProgressStyle::with_template("  ✔ {msg}").unwrap();
+
+    let multi_progress_bar = MultiProgress::new();
+
+    for work_order in processed_commits_by_issue.iter() {
+        // Insert one progress bar for the issue group
+        work_order
+            .progress_bar
+            .set_style(style_issue_group_pending.clone());
+        multi_progress_bar.insert_from_back(0, work_order.progress_bar.clone());
+        work_order
+            .progress_bar
+            .set_message(format!("{}", work_order.issue_group));
+
+        // and one progress bar for each ticket
+        for commit_work in work_order.commit_work.iter() {
+            commit_work
+                .progress_bar
+                .set_style(style_commit_pending.clone());
+            multi_progress_bar.insert_from_back(0, commit_work.progress_bar.clone());
+            commit_work
+                .progress_bar
+                .set_message(format!("{}", commit_work.commit.summary().unwrap()));
+        }
+    }
+
     processed_commits_by_issue
         .into_iter()
-        .filter(|(issue, _commit)| {
+        .filter(|work_order| {
             if let Some(whitelist) = &selected_issues {
-                return whitelist.contains(issue);
+                return whitelist.contains(&work_order.issue_group);
             }
             // If there is no whitelist, then operate on every issue
             true
         })
-        .try_for_each(|(issue, commits)| -> Result<()> {
-            // DEBUG:
-            println!("{}: {:#?}", issue, commits);
+        .try_for_each(|work_order| -> Result<()> {
+            work_order
+                .progress_bar
+                .set_style(style_issue_group_working.clone());
+            work_order.progress_bar.tick();
 
             // Grab the first summary to convert into a branch name.
             // We only choose the first summary because we know each Vec is
             // non-empty and the first element is convenient.
             let summary = {
-                let commit = &commits[0];
-                commits[0].summary().ok_or_else(|| {
+                let commit = &work_order.commit_work[0].commit;
+                commit.summary().ok_or_else(|| {
                     anyhow!(
                         "Summary for commit {:?} is not a valid UTF-8 string",
                         commit.id()
@@ -290,7 +388,7 @@ fn main() -> Result<()> {
                 })?
             };
 
-            let branch_name = get_branch_name(&issue, summary);
+            let branch_name = get_branch_name(&work_order.issue_group, summary);
             let branch_ref = format!("refs/heads/{}", branch_name);
             let branch_obj = repo.revparse_single(&branch_ref);
 
@@ -302,43 +400,75 @@ fn main() -> Result<()> {
                 return Ok(());
             }
 
-            // Create a branch
-            repo.branch(&branch_name, start_point_commit, true)?;
+            if !dry_run {
+                // Create a branch
+                repo.branch(&branch_name, start_point_commit, true)?;
 
-            // Check out the new branch
-            let branch_obj = repo.revparse_single(&branch_ref)?;
-            repo.checkout_tree(&branch_obj, None)?;
-            repo.set_head(&branch_ref)?;
-
-            // Cherry-pick commits related to the target issue
-            for commit in commits.iter() {
-                // DEBUG:
-                println!("Cherry-picking commit {}", &commit.id());
-                execute(&[
-                    "git",
-                    "cherry-pick",
-                    "--allow-empty",
-                    &commit.id().to_string(),
-                ])?;
+                // Check out the new branch
+                let branch_obj = repo.revparse_single(&branch_ref)?;
+                repo.checkout_tree(&branch_obj, None)?;
+                repo.set_head(&branch_ref)?;
             }
 
-            // Push the branch
-            execute(&["git", "push", &user_config.remote, &branch_name])?;
+            // Cherry-pick commits related to the target issue
+            for commit_work in work_order.commit_work.iter() {
+                commit_work
+                    .progress_bar
+                    .set_style(style_commit_working.clone());
 
-            // Open a pull request
-            // Only ask the user to edit the PR metadata when multiple commits
-            // create ambiguity about the contents of the PR title and body.
-            let edit = commits.len() > 1;
-            execute(&[
-                "hub",
-                "pull-request",
-                "--browse",
-                "--draft",
-                if edit { "--edit" } else { "--no-edit" },
-            ])?;
+                if dry_run {
+                    for _ in 1..50 {
+                        std::thread::sleep(std::time::Duration::from_millis(15));
+                        commit_work.progress_bar.tick();
+                    }
+                } else {
+                    execute(
+                        &[
+                            "git",
+                            "cherry-pick",
+                            "--allow-empty",
+                            &commit_work.commit.id().to_string(),
+                        ],
+                        RedirectOutput::DevNull,
+                    )?;
+                }
 
-            // Finally, check out the original ref
-            execute(&["git", "checkout", "-"])?;
+                commit_work
+                    .progress_bar
+                    .set_style(style_commit_done.clone());
+                commit_work.progress_bar.finish()
+            }
+
+            if !dry_run {
+                // Push the branch
+                execute(
+                    &["git", "push", &user_config.remote, &branch_name],
+                    RedirectOutput::DevNull,
+                )?;
+
+                // Open a pull request
+                // Only ask the user to edit the PR metadata when multiple commits
+                // create ambiguity about the contents of the PR title and body.
+                let edit = work_order.commit_work.len() > 1;
+                execute(
+                    &[
+                        "hub",
+                        "pull-request",
+                        "--browse",
+                        "--draft",
+                        if edit { "--edit" } else { "--no-edit" },
+                    ],
+                    RedirectOutput::None,
+                )?;
+
+                // Finally, check out the original ref
+                execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
+            }
+
+            work_order
+                .progress_bar
+                .set_style(style_issue_group_done.clone());
+            work_order.progress_bar.finish();
 
             Ok(())
         })?;

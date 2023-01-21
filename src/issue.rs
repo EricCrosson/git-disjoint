@@ -19,20 +19,45 @@ lazy_static! {
 /// Jira or GitHub issue identifier.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(test, derive(Arbitrary))]
-pub(crate) struct Issue(String);
+pub(crate) enum Issue {
+    Jira(String),
+    GitHub(String),
+}
 
 impl Issue {
-    pub(crate) fn parse_from_commit_message<S: AsRef<str>>(commit_message: S) -> Option<Issue> {
-        let captures = RE_JIRA_ISSUE
-            .captures(commit_message.as_ref())
-            .or_else(|| RE_GITHUB_ISSUE.captures(commit_message.as_ref()))?;
-        Some(Issue(captures[captures.len() - 1].to_owned()))
+    pub fn parse_from_commit_message<S: AsRef<str>>(commit_message: S) -> Option<Issue> {
+        if let Some(jira_captures) = RE_JIRA_ISSUE.captures(commit_message.as_ref()) {
+            return Some(Issue::Jira(
+                jira_captures[jira_captures.len() - 1].to_owned(),
+            ));
+        }
+        if let Some(github_captures) = RE_GITHUB_ISSUE.captures(commit_message.as_ref()) {
+            return Some(Issue::GitHub(
+                github_captures[github_captures.len() - 1].to_owned(),
+            ));
+        }
+        None
+    }
+
+    pub fn issue_identifier(&self) -> String {
+        match self {
+            Issue::Jira(ticket) => ticket.clone(),
+            Issue::GitHub(issue) => issue.clone(),
+        }
     }
 }
 
 impl Display for Issue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(
+            f,
+            "{}{}",
+            match self {
+                Issue::Jira(_) => "Jira ",
+                Issue::GitHub(_) => "GitHub #",
+            },
+            self.issue_identifier()
+        )
     }
 }
 
@@ -42,16 +67,16 @@ mod test {
 
     use crate::issue::Issue;
 
-    impl From<&str> for Issue {
-        fn from(s: &str) -> Self {
-            Issue(s.to_owned())
-        }
+    #[test]
+    fn display_jira_issue() {
+        let issue = Issue::Jira("GD-0".to_string());
+        assert_eq!(format!("{}", issue), "Jira GD-0");
     }
 
     #[test]
-    fn display_issue() {
-        let issue = Issue::from("GD-0");
-        assert_eq!(format!("{}", issue), "GD-0");
+    fn display_github_issue() {
+        let issue = Issue::GitHub("123".to_string());
+        assert_eq!(format!("{}", issue), "GitHub #123");
     }
 
     macro_rules! test_parses {
@@ -79,7 +104,7 @@ mod test {
             Ticket: AB-123     
             "
         ),
-        Issue::from("AB-123")
+        Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
@@ -92,7 +117,7 @@ mod test {
         
             ",
         ),
-        Issue::from("AB-123")
+        Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
@@ -105,7 +130,7 @@ mod test {
             Footer: http://example.com
             ",
         ),
-        Issue::from("AB-123")
+        Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
@@ -117,7 +142,7 @@ mod test {
             Closes Ticket: AB-123
             ",
         ),
-        Issue::from("AB-123")
+        Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
@@ -130,7 +155,7 @@ mod test {
 
             ",
         ),
-        Issue::from("AB-123")
+        Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
@@ -143,7 +168,7 @@ mod test {
             Footer: http://example.com
             ",
         ),
-        Issue::from("AB-123")
+        Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
@@ -155,7 +180,7 @@ mod test {
             Closes #123
             ",
         ),
-        Issue::from("123")
+        Issue::GitHub("123".to_string())
     );
 
     test_parses!(
@@ -167,7 +192,7 @@ mod test {
             Closes #123
             "
         ),
-        Issue::from("123")
+        Issue::GitHub("123".to_string())
     );
 
     test_parses!(
@@ -180,7 +205,7 @@ mod test {
             Footer: http://example.com
             ",
         ),
-        Issue::from("123")
+        Issue::GitHub("123".to_string())
     );
 
     test_parses!(
@@ -192,7 +217,7 @@ mod test {
             Closes #123
             ",
         ),
-        Issue::from("123")
+        Issue::GitHub("123".to_string())
     );
 
     test_parses!(
@@ -205,7 +230,7 @@ mod test {
 
             ",
         ),
-        Issue::from("123")
+        Issue::GitHub("123".to_string())
     );
 
     test_parses!(
@@ -218,7 +243,7 @@ mod test {
             Footer: http://example.com
             ",
         ),
-        Issue::from("123")
+        Issue::GitHub("123".to_string())
     );
 
     #[test]
