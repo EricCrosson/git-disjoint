@@ -37,6 +37,14 @@ pub(crate) struct Args {
     )]
     pub choose: bool,
 
+    /// Show the work that would be performed without taking any action.
+    #[clap(
+        short,
+        long,
+        help = "Show the work that would be performed without taking any action"
+    )]
+    pub dry_run: bool,
+
     /// Combine multiple issue groups into one PR.
     ///
     /// When this flag is active, git-disjoint will create only one PR.

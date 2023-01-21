@@ -8,6 +8,7 @@ pub(crate) struct SanitizedArgs {
     pub all: bool,
     pub base: DefaultBranch,
     pub choose: bool,
+    pub dry_run: bool,
     pub overlay: bool,
     pub separate: bool,
 }
@@ -26,6 +27,7 @@ impl TryFrom<Args> for SanitizedArgs {
             all,
             base,
             choose,
+            dry_run,
             overlay,
             separate,
         } = value;
@@ -39,6 +41,7 @@ impl TryFrom<Args> for SanitizedArgs {
                 .ok_or_else(|| anyhow!("User has not provided a default branch"))
                 .or_else(|_| DefaultBranch::try_get_default())?,
             choose,
+            dry_run,
             overlay,
             separate,
         })
