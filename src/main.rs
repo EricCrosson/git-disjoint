@@ -2,7 +2,7 @@
 #![feature(exit_status_error)]
 
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use anyhow::{anyhow, ensure, Result};
 use git2::{Commit, Repository, RepositoryState, Tree};
@@ -110,8 +110,19 @@ fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
         .replace(['\'', '"'], "")
 }
 
-fn execute(command: &[&str]) -> Result<()> {
+#[derive(Debug, Eq, PartialEq)]
+enum RedirectOutput {
+    DevNull,
+    None,
+}
+
+fn execute(command: &[&str], redirect_output: RedirectOutput) -> Result<()> {
     let mut runner = Command::new(command[0]);
+
+    if redirect_output == RedirectOutput::DevNull {
+        runner.stdout(Stdio::null());
+    }
+
     for argument in command.iter().skip(1) {
         runner.arg(argument);
     }
@@ -407,14 +418,15 @@ fn main() -> Result<()> {
                         commit_work.progress_bar.tick();
                     }
                 } else {
-                    // DEBUG:
-                    println!("Cherry-picking commit {}", &commit_work.commit.id());
-                    execute(&[
-                        "git",
-                        "cherry-pick",
-                        "--allow-empty",
-                        &commit_work.commit.id().to_string(),
-                    ])?;
+                    execute(
+                        &[
+                            "git",
+                            "cherry-pick",
+                            "--allow-empty",
+                            &commit_work.commit.id().to_string(),
+                        ],
+                        RedirectOutput::DevNull,
+                    )?;
                 }
 
                 commit_work
@@ -425,22 +437,28 @@ fn main() -> Result<()> {
 
             if !dry_run {
                 // Push the branch
-                execute(&["git", "push", &user_config.remote, &branch_name])?;
+                execute(
+                    &["git", "push", &user_config.remote, &branch_name],
+                    RedirectOutput::DevNull,
+                )?;
 
                 // Open a pull request
                 // Only ask the user to edit the PR metadata when multiple commits
                 // create ambiguity about the contents of the PR title and body.
                 let edit = work_order.commit_work.len() > 1;
-                execute(&[
-                    "hub",
-                    "pull-request",
-                    "--browse",
-                    "--draft",
-                    if edit { "--edit" } else { "--no-edit" },
-                ])?;
+                execute(
+                    &[
+                        "hub",
+                        "pull-request",
+                        "--browse",
+                        "--draft",
+                        if edit { "--edit" } else { "--no-edit" },
+                    ],
+                    RedirectOutput::None,
+                )?;
 
                 // Finally, check out the original ref
-                execute(&["git", "checkout", "-"])?;
+                execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
             }
 
             work_order
