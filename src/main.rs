@@ -45,6 +45,34 @@ macro_rules! filter_try {
     };
 }
 
+fn get_commits_from_base<'repo>(
+    repo: &'repo Repository,
+    start_point: &git2::Object,
+) -> Result<Vec<Commit<'repo>>> {
+    let mut revwalk = repo.revwalk()?;
+    revwalk.push_head()?;
+
+    revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
+
+    let commits: Vec<Commit> = {
+        let mut commits: Vec<Commit> = revwalk
+            .filter_map(|id| {
+                let id = filter_try!(id);
+                let commit = filter_try!(repo.find_commit(id));
+                Some(commit)
+            })
+            // Only include commits after the `start_point`
+            .take_while(|commit| !start_point.id().eq(&commit.id()))
+            .collect();
+
+        // Order commits parent-first, children-last
+        commits.reverse();
+        commits
+    };
+
+    Ok(commits)
+}
+
 /// Create a valid git branch name, by:
 /// - concatenating the issue and summary, separated by a hyphen
 /// - replace parenthesis with hyphens
@@ -147,26 +175,7 @@ fn main() -> Result<()> {
     assert_tree_matches_workdir_with_index(&repo, &originally_checked_out_tree)?;
 
     // Traverse commits starting from HEAD
-    let mut revwalk = repo.revwalk()?;
-    revwalk.push_head()?;
-
-    revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
-
-    let commits: Vec<Commit> = {
-        let mut commits: Vec<Commit> = revwalk
-            .filter_map(|id| {
-                let id = filter_try!(id);
-                let commit = filter_try!(repo.find_commit(id));
-                Some(commit)
-            })
-            // Only include commits after the `start_point`
-            .take_while(|commit| !start_point.id().eq(&commit.id()))
-            .collect();
-
-        // Order commits parent-first, children-last
-        commits.reverse();
-        commits
-    };
+    let commits = get_commits_from_base(&repo, &start_point)?;
 
     let user_config = UserConfig {
         remote: get_user_remote(&repo)?,
