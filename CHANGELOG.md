@@ -1,3 +1,16 @@
+# [0.10.0](https://github.com/EricCrosson/git-disjoint/compare/v0.9.0...v0.10.0) (2023-01-21)
+
+
+### Bug Fixes
+
+* do not pass through stdout from subcommands ([1c63017](https://github.com/EricCrosson/git-disjoint/commit/1c6301768f4236d98a20f6f7b5156f89045893c1)), closes [#161](https://github.com/EricCrosson/git-disjoint/issues/161)
+* only use issue identifier in branch names ([71472e0](https://github.com/EricCrosson/git-disjoint/commit/71472e0369629777ecb43c3a8dab3f976e9f519a)), closes [#161](https://github.com/EricCrosson/git-disjoint/issues/161)
+
+
+### Features
+
+* clean up output with terminal ui ([18b702e](https://github.com/EricCrosson/git-disjoint/commit/18b702e4e47e11579e8c9242490c5f9a71074e19)), closes [#161](https://github.com/EricCrosson/git-disjoint/issues/161)
+
 # [0.9.0](https://github.com/EricCrosson/git-disjoint/compare/v0.8.12...v0.9.0) (2023-01-21)
 
 
