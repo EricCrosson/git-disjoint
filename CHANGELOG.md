@@ -1,3 +1,10 @@
+# [0.9.0](https://github.com/EricCrosson/git-disjoint/compare/v0.8.12...v0.9.0) (2023-01-21)
+
+
+### Features
+
+* implement overlay ([4171394](https://github.com/EricCrosson/git-disjoint/commit/41713941c8c17e3cac83e6b5ea14cd3ef8df81c6)), closes [#182](https://github.com/EricCrosson/git-disjoint/issues/182)
+
 ## [0.8.12](https://github.com/EricCrosson/git-disjoint/compare/v0.8.11...v0.8.12) (2023-01-21)
 
 
