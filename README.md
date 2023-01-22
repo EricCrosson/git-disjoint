@@ -5,7 +5,7 @@
 [build status]: https://github.com/EricCrosson/git-disjoint/actions/workflows/release.yml/badge.svg?event=push
 
 <p align="center">
-  <img src="https://github.com/EricCrosson/git-disjoint/blob/master/assets/logo.png?raw=true" alt="alt-text"/>
+  <img src="https://github.com/EricCrosson/git-disjoint/blob/master/assets/logo.png?raw=true" alt="conceptual diagram of git-disjoint operation"/>
 </p>
 
 **git-disjoint** automates an optimal git workflow for PR authors and reviewers
@@ -16,6 +16,10 @@ load on reviewers, maximizing the utility of your git history, and keeping
 cycle time low.
 
 ## Elevator Pitch
+
+<p align="center">
+  <img src="https://i.imgur.com/bUuxI8c.gif" alt="git-disjoint demo" width="65%" height="65%">
+</p>
 
 You're working on a feature. As you work, you create some commits that don't directly
 implement your feature. Maybe you improve some documentation, fix a minor bug, or
