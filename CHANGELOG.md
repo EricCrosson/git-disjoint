@@ -1,3 +1,12 @@
+## [0.10.2](https://github.com/EricCrosson/git-disjoint/compare/v0.10.1...v0.10.2) (2023-01-22)
+
+
+### Bug Fixes
+
+* **docs:** add demonstration to readme ([fcb090c](https://github.com/EricCrosson/git-disjoint/commit/fcb090cb0334fc1ffb18c9f07b8124ff56879670)), closes [#75](https://github.com/EricCrosson/git-disjoint/issues/75)
+* **docs:** adjust demo size ([ab01b08](https://github.com/EricCrosson/git-disjoint/commit/ab01b0877a02fc0646523d3ee9bdc3a056d3b663))
+* replace footer with the technical term trailer ([20649d2](https://github.com/EricCrosson/git-disjoint/commit/20649d255fb647898f7ccdd56e77301dc9b22478))
+
 ## [0.10.1](https://github.com/EricCrosson/git-disjoint/compare/v0.10.0...v0.10.1) (2023-01-22)
 
 
