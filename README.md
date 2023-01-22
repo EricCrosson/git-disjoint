@@ -18,7 +18,7 @@ cycle time low.
 ## Elevator Pitch
 
 <p align="center">
-  <img src="https://i.imgur.com/bUuxI8c.gif" alt="git-disjoint demo" width="65%" height="65%">
+  <img src="https://i.imgur.com/bUuxI8c.gif" alt="git-disjoint demo">
 </p>
 
 You're working on a feature. As you work, you create some commits that don't directly
