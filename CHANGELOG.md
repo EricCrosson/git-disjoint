@@ -1,3 +1,10 @@
+## [0.10.1](https://github.com/EricCrosson/git-disjoint/compare/v0.10.0...v0.10.1) (2023-01-22)
+
+
+### Bug Fixes
+
+* allow specifying dry-run through environment ([e2a4400](https://github.com/EricCrosson/git-disjoint/commit/e2a4400d95b7c9e207e9d48ec9bcd7254e9dfb6f))
+
 # [0.10.0](https://github.com/EricCrosson/git-disjoint/compare/v0.9.0...v0.10.0) (2023-01-21)
 
 
