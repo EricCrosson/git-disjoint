@@ -41,6 +41,7 @@ pub(crate) struct Args {
     #[clap(
         short,
         long,
+        env = "GIT_DISJOINT_DRY_RUN",
         help = "Show the work that would be performed without taking any action"
     )]
     pub dry_run: bool,
