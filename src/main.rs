@@ -242,7 +242,7 @@ fn main() -> Result<()> {
 
             // Otherwise, skip this commit.
             eprintln!(
-                "Warning: ignoring commit without issue footer: {:?}",
+                "Warning: ignoring commit without issue trailer: {:?}",
                 commit.id()
             );
             Ok(None)

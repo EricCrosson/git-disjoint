@@ -51,12 +51,14 @@ into a new branch, and create a PR.
 
 ## How does it work?
 
-**git-disjoint** looks for footers in each commit message to determine which
-issue a commit relates to. By default, it creates one PR for each issue and
-associates the PR to an existing issue in your work tracker.
+**git-disjoint** looks for trailers[^3] in each commit message to determine
+which issue a commit relates to. By default, it creates one PR for each issue
+and associates the PR to an existing issue in your work tracker.
 
 When a PR merges, your next `git pull` effectively moves upstream's master from
 behind your local commits to ahead of them.
+
+[^3]: https://git-scm.com/docs/git-interpret-trailers
 
 ## Supported Integrations
 
@@ -136,4 +138,4 @@ open a menu where you can select the issues to create PRs for.
 
 ### How do I use git-disjoint on commits without an associated issue?
 
-Use the `--all` flag to include commits without a recognized footer.
+Use the `--all` flag to include commits without a recognized trailer.

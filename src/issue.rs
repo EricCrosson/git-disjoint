@@ -121,7 +121,7 @@ mod test {
     );
 
     test_parses!(
-        successfully_parse_jira_ticket_from_commit_message_with_footer,
+        successfully_parse_jira_ticket_from_commit_message_with_trailer,
         formatdoc!(
             "
             feat(foo): add hyperdrive
@@ -159,7 +159,7 @@ mod test {
     );
 
     test_parses!(
-        successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_footer,
+        successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_trailer,
         formatdoc!(
             "
             feat(foo): add hyperdrive
@@ -196,7 +196,7 @@ mod test {
     );
 
     test_parses!(
-        successfully_parse_github_issue_from_commit_message_with_footer,
+        successfully_parse_github_issue_from_commit_message_with_trailer,
         formatdoc!(
             "
             feat(foo): add hyperdrive
@@ -234,7 +234,7 @@ mod test {
     );
 
     test_parses!(
-        successfully_parse_github_issue_closes_ticket_from_commit_message_with_footer,
+        successfully_parse_github_issue_closes_ticket_from_commit_message_with_trailer,
         formatdoc!(
             "
             feat(foo): add hyperdrive
