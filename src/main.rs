@@ -14,12 +14,14 @@ use sanitize_git_ref::sanitize_git_ref_onelevel;
 
 mod args;
 mod default_branch;
+mod editor;
 mod interact;
 mod issue;
 mod issue_group;
 mod sanitized_args;
 mod user_config;
 
+use crate::editor::{interactive_get_pr_metadata, PullRequestMetadata};
 use crate::issue::Issue;
 use crate::issue_group::IssueGroup;
 use crate::sanitized_args::SanitizedArgs;
@@ -32,11 +34,13 @@ use crate::user_config::{get_user_remote, UserConfig};
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
 
+#[derive(Debug)]
 struct CommitWork<'repo> {
     commit: Commit<'repo>,
     progress_bar: ProgressBar,
 }
 
+#[derive(Debug)]
 struct WorkOrder<'repo> {
     issue_group: IssueGroup,
     commit_work: Vec<CommitWork<'repo>>,
@@ -125,6 +129,7 @@ fn execute(command: &[&str], redirect_output: RedirectOutput) -> Result<()> {
 
     if redirect_output == RedirectOutput::DevNull {
         runner.stdout(Stdio::null());
+        runner.stderr(Stdio::null());
     }
 
     for argument in command.iter().skip(1) {
@@ -196,7 +201,7 @@ fn main() -> Result<()> {
     } = SanitizedArgs::parse()?;
 
     let root = get_repository_root()?;
-    let repo = Repository::open(root)?;
+    let repo = Repository::open(&root)?;
 
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
     let originally_checked_out_tree = originally_checked_out_commit.tree()?;
@@ -449,16 +454,38 @@ fn main() -> Result<()> {
                 // Open a pull request
                 // Only ask the user to edit the PR metadata when multiple commits
                 // create ambiguity about the contents of the PR title and body.
-                let edit = work_order.commit_work.len() > 1;
+                let needs_edit = work_order.commit_work.len() > 1;
+
+                let pr_metadata = match needs_edit {
+                    true => interactive_get_pr_metadata(
+                        &root,
+                        work_order
+                            .commit_work
+                            .iter()
+                            .map(|commit_work| &commit_work.commit)
+                            .collect(),
+                    )?,
+                    false => {
+                        let commit = &work_order.commit_work.get(0).unwrap().commit;
+                        PullRequestMetadata {
+                            title: commit.summary().unwrap().to_owned(),
+                            body: commit.body().unwrap().to_owned(),
+                        }
+                    }
+                };
+
                 execute(
                     &[
-                        "hub",
-                        "pull-request",
-                        "--browse",
+                        "gh",
+                        "pr",
+                        "create",
                         "--draft",
-                        if edit { "--edit" } else { "--no-edit" },
+                        "--title",
+                        &pr_metadata.title,
+                        "--body",
+                        &pr_metadata.body,
                     ],
-                    RedirectOutput::None,
+                    RedirectOutput::DevNull,
                 )?;
 
                 // Finally, check out the original ref

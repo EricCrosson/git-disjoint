@@ -69,9 +69,9 @@ behind your local commits to ahead of them.
 
 ## Requirements
 
-You must have the [hub] command installed and configured.
+You must have the [gh] command installed and configured.
 
-[hub]: https://github.com/github/hub
+[gh]: https://github.com/cli/cli
 
 ## Install
 

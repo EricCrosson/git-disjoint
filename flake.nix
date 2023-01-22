@@ -112,7 +112,7 @@
               --zsh "$(find /build/source/target/release/build -type f -name _git-disjoint)"
 
             wrapProgram $out/bin/git-disjoint \
-              --prefix PATH ${pkgs.lib.makeBinPath [pkgs.gitMinimal pkgs.hub]}
+              --prefix PATH ${pkgs.lib.makeBinPath [pkgs.gitMinimal pkgs.gh]}
           '';
         });
 
@@ -141,7 +141,7 @@
             # REFACTOR: avoid duplicating this list in the postInstall hook
             ++ [
               gitMinimal
-              hub
+              gh
             ];
           nativeBuildInputs =
             commonArgs.nativeBuildInputs
