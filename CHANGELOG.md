@@ -1,3 +1,10 @@
+## [0.10.3](https://github.com/EricCrosson/git-disjoint/compare/v0.10.2...v0.10.3) (2023-01-22)
+
+
+### Bug Fixes
+
+* avoid unnecessary stdout ([ab13b7c](https://github.com/EricCrosson/git-disjoint/commit/ab13b7c5bcc28f054941334238e686e6a6f1748a)), closes [#189](https://github.com/EricCrosson/git-disjoint/issues/189)
+
 ## [0.10.2](https://github.com/EricCrosson/git-disjoint/compare/v0.10.1...v0.10.2) (2023-01-22)
 
 
