@@ -1,3 +1,10 @@
+## [0.10.4](https://github.com/EricCrosson/git-disjoint/compare/v0.10.3...v0.10.4) (2023-01-23)
+
+
+### Bug Fixes
+
+* **refactor:** for maintenance ([9e9a49c](https://github.com/EricCrosson/git-disjoint/commit/9e9a49c30bf61a9234931712ed4cf289cd48a5e9))
+
 ## [0.10.3](https://github.com/EricCrosson/git-disjoint/compare/v0.10.2...v0.10.3) (2023-01-22)
 
 
