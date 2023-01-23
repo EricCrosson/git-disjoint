@@ -2,7 +2,7 @@
 #![feature(exit_status_error)]
 
 use std::env::temp_dir;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -16,6 +16,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use sanitize_git_ref::sanitize_git_ref_onelevel;
 use sanitized_args::{CommitGrouping, CommitsToConsider, OverlayCommitsIntoOnePullRequest};
+use serde::{Deserialize, Serialize};
 
 mod args;
 mod default_branch;
@@ -24,13 +25,11 @@ mod interact;
 mod issue;
 mod issue_group;
 mod sanitized_args;
-mod user_config;
 
 use crate::editor::{interactive_get_pr_metadata, PullRequestMetadata};
 use crate::issue::Issue;
 use crate::issue_group::IssueGroup;
 use crate::sanitized_args::SanitizedArgs;
-use crate::user_config::{get_user_remote, UserConfig};
 
 // git2 resources:
 // - https://siciarz.net/24-days-rust-git2/
@@ -91,6 +90,22 @@ impl<'repo> From<(IssueGroup, Vec<Commit<'repo>>)> for WorkOrder<'repo> {
             progress_bar,
         }
     }
+}
+
+// https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
+#[derive(Debug, Serialize)]
+struct CreatePullRequestRequest {
+    title: String,
+    body: String,
+    head: String,
+    base: String,
+    draft: bool,
+}
+
+// https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
+#[derive(Debug, Deserialize)]
+struct CreatePullRequestResponse {
+    url: String,
 }
 
 macro_rules! filter_try {
@@ -188,26 +203,6 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<()> {
     Ok(())
 }
 
-fn get_repository_root() -> Result<PathBuf> {
-    let output_buffer = Command::new("git")
-        .arg("rev-parse")
-        .arg("--show-toplevel")
-        .output()?
-        .stdout;
-    let output = String::from_utf8(output_buffer)?.trim().to_owned();
-    Ok(PathBuf::from(output))
-}
-
-fn get_repository(root: &Path) -> Result<Repository> {
-    Ok(Repository::open(&root)?)
-}
-
-fn get_user_config(repo: &Repository) -> Result<UserConfig> {
-    Ok(UserConfig {
-        remote: get_user_remote(repo)?,
-    })
-}
-
 fn get_log_file() -> PathBuf {
     let start = SystemTime::now();
     temp_dir().join(format!(
@@ -216,9 +211,10 @@ fn get_log_file() -> PathBuf {
     ))
 }
 
-fn get_base_commit(repo: &Repository, base: DefaultBranch) -> Result<Commit> {
-    // Assume `base` indicates a single commit
-    let start_point = repo.revparse_single(&base.0)?;
+fn get_base_commit<'repo>(repo: &'repo Repository, base: &DefaultBranch) -> Result<Commit<'repo>> {
+    // Assumption: `base` indicates a single commit
+    // Assumption: `origin` is the upstream/main repositiory
+    let start_point = repo.revparse_single(&format!("origin/{}", &base.0))?;
     start_point
         .as_commit()
         .ok_or_else(|| anyhow!("Expected `--base` to identify a commit"))
@@ -345,24 +341,21 @@ fn apply_overlay<'repo>(
     }
 }
 
-fn do_git_disjoint(
-    sanitized_args: SanitizedArgs,
-    user_config: UserConfig,
-    repo_root: &Path,
-    repo: Repository,
-    log_file: PathBuf,
-) -> Result<()> {
+fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<()> {
     let SanitizedArgs {
         all,
         base,
         choose,
         dry_run,
+        github_token,
         overlay,
         separate,
+        repository,
+        repository_metadata,
     } = sanitized_args;
 
-    let base_commit = get_base_commit(&repo, base)?;
-    let commits = get_commits_since_base(&repo, &base_commit)?;
+    let base_commit = get_base_commit(&repository, &base)?;
+    let commits = get_commits_since_base(&repository, &base_commit)?;
     // We have to make a first pass to determine the issue groups in play
     let commits_by_issue_group = group_commits_by_issue_group(commits, all, separate)?;
     let selected_issue_groups = select_issues(&commits_by_issue_group, choose, overlay)?;
@@ -380,6 +373,8 @@ fn do_git_disjoint(
     if work_orders.is_empty() {
         return Ok(());
     }
+
+    let http_client = reqwest::blocking::Client::new();
 
     let multi_progress_bar = MultiProgress::new();
 
@@ -420,7 +415,7 @@ fn do_git_disjoint(
 
             let branch_name = get_branch_name(&work_order.issue_group, summary);
             let branch_ref = format!("refs/heads/{}", branch_name);
-            let branch_obj = repo.revparse_single(&branch_ref);
+            let branch_obj = repository.revparse_single(&branch_ref);
 
             // If branch already exists, assume we've already handled this ticket
             // DISCUSS: in the future, we could compare this branch against the desired
@@ -432,12 +427,12 @@ fn do_git_disjoint(
 
             if !dry_run {
                 // Create a branch
-                repo.branch(&branch_name, &base_commit, true)?;
+                repository.branch(&branch_name, &base_commit, true)?;
 
                 // Check out the new branch
-                let branch_obj = repo.revparse_single(&branch_ref)?;
-                repo.checkout_tree(&branch_obj, None)?;
-                repo.set_head(&branch_ref)?;
+                let branch_obj = repository.revparse_single(&branch_ref)?;
+                repository.checkout_tree(&branch_obj, None)?;
+                repository.set_head(&branch_ref)?;
             }
 
             // Cherry-pick commits related to the target issue
@@ -468,7 +463,7 @@ fn do_git_disjoint(
             if !dry_run {
                 // Push the branch
                 execute(
-                    &["git", "push", &user_config.remote, &branch_name],
+                    &["git", "push", &repository_metadata.remote, &branch_name],
                     RedirectOutput::DevNull,
                 )?;
 
@@ -479,7 +474,7 @@ fn do_git_disjoint(
 
                 let pr_metadata = match needs_edit {
                     true => interactive_get_pr_metadata(
-                        repo_root,
+                        &repository_metadata.root,
                         work_order
                             .commit_work
                             .iter()
@@ -495,19 +490,31 @@ fn do_git_disjoint(
                     }
                 };
 
-                execute(
-                    &[
-                        "gh",
-                        "pr",
-                        "create",
-                        "--draft",
-                        "--title",
-                        &pr_metadata.title,
-                        "--body",
-                        &pr_metadata.body,
-                    ],
-                    RedirectOutput::DevNull,
-                )?;
+                let response: CreatePullRequestResponse = http_client
+                    .post(format!(
+                        "https://api.github.com/repos/{}/{}/pulls",
+                        repository_metadata.owner, repository_metadata.name
+                    ))
+                    .header("User-Agent", "git-disjoint")
+                    .header("Accept", "application/vnd.github.v3+json")
+                    .header("Authorization", format!("token {}", github_token))
+                    .json(&CreatePullRequestRequest {
+                        title: pr_metadata.title.clone(),
+                        body: pr_metadata.body.clone(),
+                        head: format!("{}:{}", repository_metadata.forker, branch_name),
+                        base: base.0.clone(),
+                        draft: true,
+                    })
+                    .send()
+                    .map_err(|request_error| {
+                        anyhow!("Error contacting the GitHub API: {request_error}")
+                    })?
+                    .json()
+                    .map_err(|response_error| {
+                        anyhow!("Error parsing the GitHub API response: {response_error}")
+                    })?;
+
+                // TODO: open the url in a browser
 
                 // Finally, check out the original ref
                 execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
@@ -524,14 +531,11 @@ fn do_git_disjoint(
 
 fn main() -> Result<()> {
     let sanitized_args = SanitizedArgs::parse()?;
-    let repo_root = get_repository_root()?;
-    let repo = get_repository(&repo_root)?;
-    let user_config = get_user_config(&repo)?;
     let log_file = get_log_file();
 
-    assert_repository_state_is_clean(&repo)?;
-    assert_tree_matches_workdir_with_index(&repo)?;
+    assert_repository_state_is_clean(&sanitized_args.repository)?;
+    assert_tree_matches_workdir_with_index(&sanitized_args.repository)?;
 
     // TODO: rename for clarity
-    do_git_disjoint(sanitized_args, user_config, &repo_root, repo, log_file)
+    do_git_disjoint(sanitized_args, log_file)
 }

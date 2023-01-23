@@ -46,6 +46,11 @@ pub(crate) struct Args {
     )]
     pub dry_run: bool,
 
+    /// GitHub API token.
+    // TODO: document minimum-required permisisons
+    #[clap(long, env = "GITHUB_TOKEN", help = "GitHub API token")]
+    pub github_token: String,
+
     /// Combine multiple issue groups into one PR.
     ///
     /// When this flag is active, git-disjoint will create only one PR.
