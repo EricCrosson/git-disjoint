@@ -1,3 +1,10 @@
+## [0.10.6](https://github.com/EricCrosson/git-disjoint/compare/v0.10.5...v0.10.6) (2023-01-23)
+
+
+### Bug Fixes
+
+* re-support repositories using the fork model ([01d465c](https://github.com/EricCrosson/git-disjoint/commit/01d465cba6e370d1de7a2c4ccc142f4a63fafc15))
+
 ## [0.10.5](https://github.com/EricCrosson/git-disjoint/compare/v0.10.4...v0.10.5) (2023-01-23)
 
 
