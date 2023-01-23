@@ -4,13 +4,73 @@ use clap::Parser;
 use crate::args::Args;
 use crate::default_branch::DefaultBranch;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CommitsToConsider {
+    All,
+    WithTrailer,
+}
+
+impl From<bool> for CommitsToConsider {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::All,
+            false => Self::WithTrailer,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum PromptUserToChooseCommits {
+    Yes,
+    No,
+}
+
+impl From<bool> for PromptUserToChooseCommits {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::Yes,
+            false => Self::No,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum OverlayCommitsIntoOnePullRequest {
+    Yes,
+    No,
+}
+
+impl From<bool> for OverlayCommitsIntoOnePullRequest {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::Yes,
+            false => Self::No,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CommitGrouping {
+    Individual,
+    ByIssue,
+}
+
+impl From<bool> for CommitGrouping {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::Individual,
+            false => Self::ByIssue,
+        }
+    }
+}
+
 pub(crate) struct SanitizedArgs {
-    pub all: bool,
+    pub all: CommitsToConsider,
     pub base: DefaultBranch,
-    pub choose: bool,
+    pub choose: PromptUserToChooseCommits,
     pub dry_run: bool,
-    pub overlay: bool,
-    pub separate: bool,
+    pub overlay: OverlayCommitsIntoOnePullRequest,
+    pub separate: CommitGrouping,
 }
 
 impl SanitizedArgs {
@@ -32,7 +92,7 @@ impl TryFrom<Args> for SanitizedArgs {
             separate,
         } = value;
         Ok(Self {
-            all,
+            all: all.into(),
             // Clap doesn't provide a way to supply a default value coming from
             // a function when the user has not supplied a required value.
             // This TryFrom bridges the gap.
@@ -40,10 +100,10 @@ impl TryFrom<Args> for SanitizedArgs {
                 .map(|s| DefaultBranch(s))
                 .ok_or_else(|| anyhow!("User has not provided a default branch"))
                 .or_else(|_| DefaultBranch::try_get_default())?,
-            choose,
+            choose: choose.into(),
             dry_run,
-            overlay,
-            separate,
+            overlay: overlay.into(),
+            separate: separate.into(),
         })
     }
 }

@@ -1,16 +1,21 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
-use std::path::PathBuf;
+use std::env::temp_dir;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, ensure, Result};
-use git2::{Commit, Repository, RepositoryState, Tree};
+use default_branch::DefaultBranch;
+use git2::{Commit, Repository, RepositoryState};
 use indexmap::IndexMap;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use interact::{select_issues, IssueGroupWhitelist};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sanitize_git_ref::sanitize_git_ref_onelevel;
+use sanitized_args::{CommitGrouping, CommitsToConsider, OverlayCommitsIntoOnePullRequest};
 
 mod args;
 mod default_branch;
@@ -34,10 +39,36 @@ use crate::user_config::{get_user_remote, UserConfig};
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
 
+const PREFIX_PENDING: &'static str = " ";
+const PREFIX_WORKING: &'static str = ">";
+const PREFIX_DONE: &'static str = "✔";
+
+lazy_static! {
+    static ref RE_MULTIPLE_HYPHENS: Regex =
+        Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
+    static ref STYLE_ISSUE_GROUP: ProgressStyle =
+        ProgressStyle::with_template("{prefix} {msg}").unwrap();
+    static ref STYLE_COMMIT: ProgressStyle =
+        ProgressStyle::with_template("  {prefix} {msg}").unwrap();
+}
+
 #[derive(Debug)]
 struct CommitWork<'repo> {
     commit: Commit<'repo>,
     progress_bar: ProgressBar,
+}
+
+impl<'repo> From<Commit<'repo>> for CommitWork<'repo> {
+    fn from(commit: Commit<'repo>) -> Self {
+        let progress_bar = ProgressBar::new(1);
+        progress_bar.set_style(STYLE_COMMIT.clone());
+        progress_bar.set_prefix(PREFIX_PENDING);
+        progress_bar.set_message(format!("{}", commit.summary().unwrap()));
+        Self {
+            commit,
+            progress_bar,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -47,15 +78,19 @@ struct WorkOrder<'repo> {
     progress_bar: ProgressBar,
 }
 
-impl<'repo> WorkOrder<'repo> {
-    fn smoosh(&mut self, mut commits: Vec<CommitWork<'repo>>) {
-        self.commit_work.append(&mut commits);
+impl<'repo> From<(IssueGroup, Vec<Commit<'repo>>)> for WorkOrder<'repo> {
+    fn from((issue_group, commits): (IssueGroup, Vec<Commit<'repo>>)) -> Self {
+        let num_commits: u64 = commits.len().try_into().unwrap();
+        let progress_bar = ProgressBar::new(num_commits);
+        progress_bar.set_style(STYLE_ISSUE_GROUP.clone());
+        progress_bar.set_prefix(PREFIX_PENDING);
+        progress_bar.set_message(format!("{}", issue_group));
+        WorkOrder {
+            issue_group,
+            commit_work: commits.into_iter().map(CommitWork::from).collect(),
+            progress_bar,
+        }
     }
-}
-
-lazy_static! {
-    static ref RE_MULTIPLE_HYPHENS: Regex =
-        Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
 }
 
 macro_rules! filter_try {
@@ -65,35 +100,6 @@ macro_rules! filter_try {
             Err(_) => return None,
         }
     };
-}
-
-/// Return the list of commits from `base` to `HEAD`, sorted parent-first,
-/// children-last.
-fn get_commits_from_base<'repo>(
-    repo: &'repo Repository,
-    base: &git2::Object,
-) -> Result<Vec<Commit<'repo>>> {
-    // Identifies output commits by traversing commits starting from HEAD and
-    // working towards base, then reversing the list.
-    let mut revwalk = repo.revwalk()?;
-    revwalk.push_head()?;
-
-    revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
-
-    let mut commits: Vec<Commit> = revwalk
-        .filter_map(|id| {
-            let id = filter_try!(id);
-            let commit = filter_try!(repo.find_commit(id));
-            Some(commit)
-        })
-        // Only include commits after the `start_point`
-        .take_while(|commit| !base.id().eq(&commit.id()))
-        .collect();
-
-    // Order commits parent-first, children-last
-    commits.reverse();
-
-    Ok(commits)
 }
 
 /// Create a valid git branch name, by:
@@ -167,9 +173,12 @@ fn assert_repository_state_is_clean(repo: &Repository) -> Result<()> {
 /// staged, deletec, etc.
 ///
 /// This check currently excludes untracked files, but I'm not tied to this behavior.
-fn assert_tree_matches_workdir_with_index(repo: &Repository, old_tree: &Tree) -> Result<()> {
+fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<()> {
+    let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
+    let originally_checked_out_tree = originally_checked_out_commit.tree()?;
+
     let files_changed = repo
-        .diff_tree_to_workdir_with_index(Some(old_tree), None)?
+        .diff_tree_to_workdir_with_index(Some(&originally_checked_out_tree), None)?
         .stats()?
         .files_changed();
     ensure!(
@@ -189,59 +198,89 @@ fn get_repository_root() -> Result<PathBuf> {
     Ok(PathBuf::from(output))
 }
 
-fn main() -> Result<()> {
-    // DISCUSS: moving the `repo` into SanitizedArgs
-    let SanitizedArgs {
-        all,
-        base,
-        choose,
-        dry_run,
-        overlay,
-        separate,
-    } = SanitizedArgs::parse()?;
+fn get_repository(root: &Path) -> Result<Repository> {
+    Ok(Repository::open(&root)?)
+}
 
-    let root = get_repository_root()?;
-    let repo = Repository::open(&root)?;
+fn get_user_config(repo: &Repository) -> Result<UserConfig> {
+    Ok(UserConfig {
+        remote: get_user_remote(repo)?,
+    })
+}
 
-    let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
-    let originally_checked_out_tree = originally_checked_out_commit.tree()?;
+fn get_log_file() -> PathBuf {
+    let start = SystemTime::now();
+    temp_dir().join(format!(
+        "git-disjoint-{:?}",
+        start.duration_since(UNIX_EPOCH).unwrap()
+    ))
+}
 
+fn get_base_commit(repo: &Repository, base: DefaultBranch) -> Result<Commit> {
     // Assume `base` indicates a single commit
     let start_point = repo.revparse_single(&base.0)?;
-    let start_point_commit = start_point
+    start_point
         .as_commit()
-        .ok_or_else(|| anyhow!("Expected `--base` to identify a commit"))?;
+        .ok_or_else(|| anyhow!("Expected `--base` to identify a commit"))
+        .cloned()
+}
 
-    assert_repository_state_is_clean(&repo)?;
-    assert_tree_matches_workdir_with_index(&repo, &originally_checked_out_tree)?;
+/// Return the list of commits from `base` to `HEAD`, sorted parent-first,
+/// children-last.
+fn get_commits_since_base<'repo>(
+    repo: &'repo Repository,
+    base: &git2::Commit,
+) -> Result<Vec<Commit<'repo>>> {
+    // Identifies output commits by traversing commits starting from HEAD and
+    // working towards base, then reversing the list.
+    let mut revwalk = repo.revwalk()?;
+    revwalk.push_head()?;
 
-    let commits = get_commits_from_base(&repo, &start_point)?;
+    revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
 
-    let user_config = UserConfig {
-        remote: get_user_remote(&repo)?,
-    };
+    let mut commits: Vec<Commit> = revwalk
+        .filter_map(|id| {
+            let id = filter_try!(id);
+            let commit = filter_try!(repo.find_commit(id));
+            Some(commit)
+        })
+        // Only include commits after the `start_point`
+        .take_while(|commit| !base.id().eq(&commit.id()))
+        .collect();
 
+    // Order commits parent-first, children-last
+    commits.reverse();
+
+    Ok(commits)
+}
+
+fn group_commits_by_issue_group<'repo>(
+    commits: Vec<Commit<'repo>>,
+    commits_to_consider: CommitsToConsider,
+    commit_grouping: CommitGrouping,
+) -> Result<IndexMap<IssueGroup, Vec<Commit>>> {
     let commits_by_issue: IndexMap<IssueGroup, Vec<Commit>> = commits
         .into_iter()
         // Parse issue from commit message
         .map(|commit| -> Result<Option<(IssueGroup, Commit)>> {
             let issue = commit.message().and_then(Issue::parse_from_commit_message);
             // If:
-            // - we're not treating every commit separately, and
+            // - we're grouping commits by issue, and
             // - this commit includes an issue,
             // then add this commit to that issue's group.
-            if !separate {
+            if commit_grouping == CommitGrouping::ByIssue {
                 if let Some(issue) = issue {
                     return Ok(Some((IssueGroup::Issue(issue), commit)));
                 }
             }
 
             // If:
-            // - the user requested we treat every issue separately, or
-            // - this commit does not include an issue, but the user has
-            //   --specified the all flag, then
+            // - we're treating every issue separately, or
+            // - we're considering all commits (even commits without an issue),
             // add this commit to a unique issue-group.
-            if separate || all {
+            if commit_grouping == CommitGrouping::Individual
+                || commits_to_consider == CommitsToConsider::All
+            {
                 return Ok(Some((IssueGroup::Commit((&commit).try_into()?), commit)));
             }
 
@@ -263,121 +302,107 @@ fn main() -> Result<()> {
             map
         });
 
-    let selected_issues = if choose || overlay {
-        let keys = commits_by_issue.keys().collect();
-        Some(
-            interact::select_issues(keys)
-                .map_err(|_| anyhow!("Unable to process issue selection"))?,
-        )
-    } else {
-        None
-    };
+    Ok(commits_by_issue)
+}
 
-    // Construct this map assuming `overlay` is not active:
-    // Each issue group gets its own branch and PR.
-    let processed_commits_by_issue: Vec<WorkOrder> = commits_by_issue
-        .into_iter()
-        .filter_map(|(issue_group, commits)| {
-            let num_commits: u64 = commits.len().try_into().unwrap();
-            if let Some(whitelist) = &selected_issues {
-                return match whitelist.contains(&issue_group) {
-                    true => Some(WorkOrder {
-                        issue_group,
-                        commit_work: commits
-                            .into_iter()
-                            .map(|commit| CommitWork {
-                                commit,
-                                progress_bar: ProgressBar::new(1),
-                            })
-                            .collect(),
-                        progress_bar: ProgressBar::new(num_commits),
-                    }),
-                    false => None,
-                };
-            }
-            // If there is no whitelist, then operate on every issue
-            Some(WorkOrder {
-                issue_group,
-                commit_work: commits
-                    .into_iter()
-                    .map(|commit| CommitWork {
-                        commit,
-                        progress_bar: ProgressBar::new(1),
-                    })
-                    .collect(),
-                progress_bar: ProgressBar::new(num_commits),
-            })
-        })
-        .collect();
-
-    // If `overlay` is active, smoosh all the issue groups into one.
-    let processed_commits_by_issue: Vec<WorkOrder> = if overlay {
-        processed_commits_by_issue
+fn filter_issue_groups_by_whitelist<'repo>(
+    commits_by_issue_group: IndexMap<IssueGroup, Vec<Commit<'repo>>>,
+    selected_issue_groups: &IssueGroupWhitelist,
+) -> IndexMap<IssueGroup, Vec<Commit<'repo>>> {
+    match &selected_issue_groups {
+        // If there is a whitelist, only operate on issue_groups in the whitelist
+        IssueGroupWhitelist::Whitelist(whitelist) => commits_by_issue_group
             .into_iter()
-            .fold(Vec::new(), |mut accumulator, work_order| {
-                if accumulator.is_empty() {
-                    accumulator.push(work_order);
-                } else {
-                    accumulator
-                        .get_mut(0)
-                        .unwrap()
-                        .smoosh(work_order.commit_work);
-                }
+            .filter(|(issue_group, _commits)| whitelist.contains(&issue_group))
+            .collect(),
+        // If there is no whitelist, then operate on every issue
+        IssueGroupWhitelist::WhitelistDNE => commits_by_issue_group,
+    }
+}
+
+fn apply_overlay<'repo>(
+    commits_by_issue_group: IndexMap<IssueGroup, Vec<Commit<'repo>>>,
+    overlay: OverlayCommitsIntoOnePullRequest,
+) -> IndexMap<IssueGroup, Vec<Commit<'repo>>> {
+    match overlay {
+        // If we are overlaying all active issue groups into one PR,
+        // combine all active commits under the first issue group
+        OverlayCommitsIntoOnePullRequest::Yes => commits_by_issue_group
+            .into_iter()
+            .reduce(|mut accumulator, mut item| {
+                accumulator.1.append(&mut item.1);
                 accumulator
             })
-    } else {
-        processed_commits_by_issue
-    };
+            // Map the option back into an IndexMap
+            .map(|(issue_group, commits)| {
+                let mut map = IndexMap::with_capacity(1);
+                map.insert(issue_group, commits);
+                map
+            })
+            .unwrap_or_default(),
+        // If we are not overlaying issue groups, keep them separate
+        OverlayCommitsIntoOnePullRequest::No => commits_by_issue_group,
+    }
+}
+
+fn do_git_disjoint(
+    sanitized_args: SanitizedArgs,
+    user_config: UserConfig,
+    repo_root: &Path,
+    repo: Repository,
+    log_file: PathBuf,
+) -> Result<()> {
+    let SanitizedArgs {
+        all,
+        base,
+        choose,
+        dry_run,
+        overlay,
+        separate,
+    } = sanitized_args;
+
+    let base_commit = get_base_commit(&repo, base)?;
+    let commits = get_commits_since_base(&repo, &base_commit)?;
+    // We have to make a first pass to determine the issue groups in play
+    let commits_by_issue_group = group_commits_by_issue_group(commits, all, separate)?;
+    let selected_issue_groups = select_issues(&commits_by_issue_group, choose, overlay)?;
+    // Now filter the set of all issue groups to just the whitelisted issue groups
+    let commits_by_issue_group =
+        filter_issue_groups_by_whitelist(commits_by_issue_group, &selected_issue_groups);
+    let commits_by_issue_group = apply_overlay(commits_by_issue_group, overlay);
+
+    let work_orders: Vec<WorkOrder> = commits_by_issue_group
+        .into_iter()
+        .map(WorkOrder::from)
+        .collect();
 
     // Short-circuit early if there is no work to do.
-    if processed_commits_by_issue.is_empty() {
+    if work_orders.is_empty() {
         return Ok(());
     }
 
-    let style_issue_group_pending = ProgressStyle::with_template("  {msg}").unwrap();
-    let style_issue_group_working = ProgressStyle::with_template("> {msg}").unwrap();
-    let style_issue_group_done = ProgressStyle::with_template("✔ {msg}").unwrap();
-    let style_commit_pending = ProgressStyle::with_template("    {msg}").unwrap();
-    let style_commit_working = ProgressStyle::with_template("  > {msg}").unwrap();
-    let style_commit_done = ProgressStyle::with_template("  ✔ {msg}").unwrap();
-
     let multi_progress_bar = MultiProgress::new();
 
-    for work_order in processed_commits_by_issue.iter() {
+    for work_order in work_orders.iter() {
         // Insert one progress bar for the issue group
-        work_order
-            .progress_bar
-            .set_style(style_issue_group_pending.clone());
         multi_progress_bar.insert_from_back(0, work_order.progress_bar.clone());
-        work_order
-            .progress_bar
-            .set_message(format!("{}", work_order.issue_group));
-
         // and one progress bar for each ticket
         for commit_work in work_order.commit_work.iter() {
-            commit_work
-                .progress_bar
-                .set_style(style_commit_pending.clone());
             multi_progress_bar.insert_from_back(0, commit_work.progress_bar.clone());
-            commit_work
-                .progress_bar
-                .set_message(format!("{}", commit_work.commit.summary().unwrap()));
         }
     }
 
-    processed_commits_by_issue
+    work_orders
         .into_iter()
         .filter(|work_order| {
-            if let Some(whitelist) = &selected_issues {
+            if let IssueGroupWhitelist::Whitelist(whitelist) = &selected_issue_groups {
                 return whitelist.contains(&work_order.issue_group);
             }
             // If there is no whitelist, then operate on every issue
             true
         })
         .try_for_each(|work_order| -> Result<()> {
-            work_order
-                .progress_bar
-                .set_style(style_issue_group_working.clone());
+            work_order.progress_bar.set_prefix(PREFIX_WORKING);
             work_order.progress_bar.tick();
 
             // Grab the first summary to convert into a branch name.
@@ -407,7 +432,7 @@ fn main() -> Result<()> {
 
             if !dry_run {
                 // Create a branch
-                repo.branch(&branch_name, start_point_commit, true)?;
+                repo.branch(&branch_name, &base_commit, true)?;
 
                 // Check out the new branch
                 let branch_obj = repo.revparse_single(&branch_ref)?;
@@ -417,9 +442,7 @@ fn main() -> Result<()> {
 
             // Cherry-pick commits related to the target issue
             for commit_work in work_order.commit_work.iter() {
-                commit_work
-                    .progress_bar
-                    .set_style(style_commit_working.clone());
+                commit_work.progress_bar.set_prefix(PREFIX_WORKING);
 
                 if dry_run {
                     for _ in 1..50 {
@@ -438,9 +461,7 @@ fn main() -> Result<()> {
                     )?;
                 }
 
-                commit_work
-                    .progress_bar
-                    .set_style(style_commit_done.clone());
+                commit_work.progress_bar.set_prefix(PREFIX_DONE);
                 commit_work.progress_bar.finish()
             }
 
@@ -458,7 +479,7 @@ fn main() -> Result<()> {
 
                 let pr_metadata = match needs_edit {
                     true => interactive_get_pr_metadata(
-                        &root,
+                        repo_root,
                         work_order
                             .commit_work
                             .iter()
@@ -492,13 +513,25 @@ fn main() -> Result<()> {
                 execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
             }
 
-            work_order
-                .progress_bar
-                .set_style(style_issue_group_done.clone());
+            work_order.progress_bar.set_prefix(PREFIX_DONE);
             work_order.progress_bar.finish();
 
             Ok(())
         })?;
 
     Ok(())
+}
+
+fn main() -> Result<()> {
+    let sanitized_args = SanitizedArgs::parse()?;
+    let repo_root = get_repository_root()?;
+    let repo = get_repository(&repo_root)?;
+    let user_config = get_user_config(&repo)?;
+    let log_file = get_log_file();
+
+    assert_repository_state_is_clean(&repo)?;
+    assert_tree_matches_workdir_with_index(&repo)?;
+
+    // TODO: rename for clarity
+    do_git_disjoint(sanitized_args, user_config, &repo_root, repo, log_file)
 }
