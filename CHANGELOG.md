@@ -1,3 +1,10 @@
+## [0.10.5](https://github.com/EricCrosson/git-disjoint/compare/v0.10.4...v0.10.5) (2023-01-23)
+
+
+### Bug Fixes
+
+* **ci:** do not publish cross-compiled release artifacts to crates.io ([9c6eda7](https://github.com/EricCrosson/git-disjoint/commit/9c6eda7d2c005abc97b5323bf119ddbe9f5c046f)), closes [#195](https://github.com/EricCrosson/git-disjoint/issues/195)
+
 ## [0.10.4](https://github.com/EricCrosson/git-disjoint/compare/v0.10.3...v0.10.4) (2023-01-23)
 
 
