@@ -514,7 +514,7 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
                         anyhow!("Error parsing the GitHub API response: {response_error}")
                     })?;
 
-                // TODO: open the url in a browser
+                open::that(response.url)?;
 
                 // Finally, check out the original ref
                 execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
