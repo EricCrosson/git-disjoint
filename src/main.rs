@@ -105,7 +105,7 @@ struct CreatePullRequestRequest {
 // https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
 #[derive(Debug, Deserialize)]
 struct CreatePullRequestResponse {
-    url: String,
+    html_url: String,
 }
 
 macro_rules! filter_try {
@@ -510,7 +510,7 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
                         anyhow!("Error parsing the GitHub API response: {response_error}")
                     })?;
 
-                open::that(response.url)?;
+                open::that(response.html_url)?;
 
                 // Finally, check out the original ref
                 execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
