@@ -130,6 +130,7 @@ fn get_repo_metadata(repository: &Repository) -> Result<GithubRepositoryMetadata
     })
 }
 
+// TODO: rename for clarity
 pub(crate) struct SanitizedArgs {
     pub all: CommitsToConsider,
     pub base: DefaultBranch,
