@@ -1,3 +1,10 @@
+## [0.10.10](https://github.com/EricCrosson/git-disjoint/compare/v0.10.9...v0.10.10) (2023-01-24)
+
+
+### Bug Fixes
+
+* prevent double progress-bar render issue ([af438f8](https://github.com/EricCrosson/git-disjoint/commit/af438f8e9abfabf82138d37e6f0d4387205ad4bc))
+
 ## [0.10.9](https://github.com/EricCrosson/git-disjoint/compare/v0.10.8...v0.10.9) (2023-01-24)
 
 
