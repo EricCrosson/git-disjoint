@@ -31,9 +31,6 @@ use crate::issue::Issue;
 use crate::issue_group::IssueGroup;
 use crate::sanitized_args::SanitizedArgs;
 
-// git2 resources:
-// - https://siciarz.net/24-days-rust-git2/
-
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
