@@ -59,10 +59,10 @@ struct CommitWork<'repo> {
 
 impl<'repo> From<Commit<'repo>> for CommitWork<'repo> {
     fn from(commit: Commit<'repo>) -> Self {
-        let progress_bar = ProgressBar::new(1);
-        progress_bar.set_style(STYLE_COMMIT.clone());
-        progress_bar.set_prefix(PREFIX_PENDING);
-        progress_bar.set_message(format!("{}", commit.summary().unwrap()));
+        let progress_bar = ProgressBar::new(1)
+            .with_style(STYLE_COMMIT.clone())
+            .with_prefix(PREFIX_PENDING)
+            .with_message(format!("{}", commit.summary().unwrap()));
         Self {
             commit,
             progress_bar,
@@ -80,10 +80,10 @@ struct WorkOrder<'repo> {
 impl<'repo> From<(IssueGroup, Vec<Commit<'repo>>)> for WorkOrder<'repo> {
     fn from((issue_group, commits): (IssueGroup, Vec<Commit<'repo>>)) -> Self {
         let num_commits: u64 = commits.len().try_into().unwrap();
-        let progress_bar = ProgressBar::new(num_commits);
-        progress_bar.set_style(STYLE_ISSUE_GROUP.clone());
-        progress_bar.set_prefix(PREFIX_PENDING);
-        progress_bar.set_message(format!("{}", issue_group));
+        let progress_bar = ProgressBar::new(num_commits)
+            .with_style(STYLE_ISSUE_GROUP.clone())
+            .with_prefix(PREFIX_PENDING)
+            .with_message(format!("{}", issue_group));
         WorkOrder {
             issue_group,
             commit_work: commits.into_iter().map(CommitWork::from).collect(),
@@ -379,11 +379,14 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
     let multi_progress_bar = MultiProgress::new();
 
     for work_order in work_orders.iter() {
-        // Insert one progress bar for the issue group
+        // Insert one progress bar for the issue group.
         multi_progress_bar.insert_from_back(0, work_order.progress_bar.clone());
-        // and one progress bar for each ticket
+        work_order.progress_bar.tick();
+        // and one progress bar for each ticket.
+        // `tick` is necessary to force a repaint
         for commit_work in work_order.commit_work.iter() {
             multi_progress_bar.insert_from_back(0, commit_work.progress_bar.clone());
+            commit_work.progress_bar.tick();
         }
     }
 
