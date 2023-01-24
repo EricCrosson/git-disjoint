@@ -8,14 +8,6 @@ use crate::sanitized_args::GithubRepositoryMetadata;
 #[derive(Clone, Debug)]
 pub(crate) struct DefaultBranch(pub String);
 
-impl FromStr for DefaultBranch {
-    type Err = anyhow::Error;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Ok(Self(value.to_owned()))
-    }
-}
-
 #[derive(Debug, Deserialize)]
 struct GetRepositoryResponse {
     default_branch: String,
