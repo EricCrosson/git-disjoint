@@ -1,3 +1,10 @@
+## [0.10.11](https://github.com/EricCrosson/git-disjoint/compare/v0.10.10...v0.10.11) (2023-01-24)
+
+
+### Bug Fixes
+
+* open the non-api PR url ([1a52df9](https://github.com/EricCrosson/git-disjoint/commit/1a52df94ccf3cc9fab89047199b0391a75485c41))
+
 ## [0.10.10](https://github.com/EricCrosson/git-disjoint/compare/v0.10.9...v0.10.10) (2023-01-24)
 
 
