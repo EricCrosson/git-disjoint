@@ -1,3 +1,10 @@
+## [0.10.7](https://github.com/EricCrosson/git-disjoint/compare/v0.10.6...v0.10.7) (2023-01-24)
+
+
+### Bug Fixes
+
+* open url in web browser after creation ([e181fd0](https://github.com/EricCrosson/git-disjoint/commit/e181fd0a5e41ba3deb8de85b0136b5417f052e98)), closes [#194](https://github.com/EricCrosson/git-disjoint/issues/194)
+
 ## [0.10.6](https://github.com/EricCrosson/git-disjoint/compare/v0.10.5...v0.10.6) (2023-01-23)
 
 
