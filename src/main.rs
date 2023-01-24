@@ -389,13 +389,6 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
 
     work_orders
         .into_iter()
-        .filter(|work_order| {
-            if let IssueGroupWhitelist::Whitelist(whitelist) = &selected_issue_groups {
-                return whitelist.contains(&work_order.issue_group);
-            }
-            // If there is no whitelist, then operate on every issue
-            true
-        })
         .try_for_each(|work_order| -> Result<()> {
             work_order.progress_bar.set_prefix(PREFIX_WORKING);
             work_order.progress_bar.tick();
