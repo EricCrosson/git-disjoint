@@ -1,3 +1,10 @@
+## [0.10.8](https://github.com/EricCrosson/git-disjoint/compare/v0.10.7...v0.10.8) (2023-01-24)
+
+
+### Bug Fixes
+
+* **deps:** pin rust crate git-url-parse to =0.4.4 ([c037a84](https://github.com/EricCrosson/git-disjoint/commit/c037a845ea414527c19970653eeb7e29697ce08d))
+
 ## [0.10.7](https://github.com/EricCrosson/git-disjoint/compare/v0.10.6...v0.10.7) (2023-01-24)
 
 
