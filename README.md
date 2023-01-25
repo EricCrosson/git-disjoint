@@ -69,9 +69,11 @@ behind your local commits to ahead of them.
 
 ## Requirements
 
-You must have the [gh] command installed and configured.
+You need a GitHub [personal access token] with `repo` scope. Either export this
+as the `GITHUB_TOKEN` environment variable or pass it to **git-disjoint** with
+the `--token` option.
 
-[gh]: https://github.com/cli/cli
+[personal access token]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
 
 ## Install
 
