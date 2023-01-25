@@ -335,7 +335,7 @@ fn group_commits_by_issue_group<'repo>(
             }
 
             // If:
-            // - we're treating every issue separately, or
+            // - we're treating every commit separately, or
             // - we're considering all commits (even commits without an issue),
             // add this commit to a unique issue-group.
             if commit_grouping == CommitGrouping::Individual
