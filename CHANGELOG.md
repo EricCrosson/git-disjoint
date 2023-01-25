@@ -1,3 +1,10 @@
+## [0.10.12](https://github.com/EricCrosson/git-disjoint/compare/v0.10.11...v0.10.12) (2023-01-25)
+
+
+### Bug Fixes
+
+* **docs:** update requirements ([fa1b20e](https://github.com/EricCrosson/git-disjoint/commit/fa1b20ede29e7b39bfbf10fbf2a294d450994cb1)), closes [#200](https://github.com/EricCrosson/git-disjoint/issues/200)
+
 ## [0.10.11](https://github.com/EricCrosson/git-disjoint/compare/v0.10.10...v0.10.11) (2023-01-24)
 
 
