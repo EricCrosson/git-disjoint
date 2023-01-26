@@ -1,3 +1,10 @@
+## [0.10.13](https://github.com/EricCrosson/git-disjoint/compare/v0.10.12...v0.10.13) (2023-01-26)
+
+
+### Bug Fixes
+
+* move git work to a separate thread ([0b3fc15](https://github.com/EricCrosson/git-disjoint/commit/0b3fc150ab6b358cd264611a6dd12ba35316cb5f)), closes [#193](https://github.com/EricCrosson/git-disjoint/issues/193)
+
 ## [0.10.12](https://github.com/EricCrosson/git-disjoint/compare/v0.10.11...v0.10.12) (2023-01-25)
 
 
