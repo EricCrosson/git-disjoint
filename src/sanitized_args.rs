@@ -144,15 +144,11 @@ pub(crate) struct SanitizedArgs {
 }
 
 impl SanitizedArgs {
-    pub(crate) fn parse() -> Result<SanitizedArgs> {
-        Args::parse().try_into()
+    pub(crate) async fn parse() -> Result<SanitizedArgs> {
+        Self::try_from(Args::parse()).await
     }
-}
 
-impl TryFrom<Args> for SanitizedArgs {
-    type Error = anyhow::Error;
-
-    fn try_from(value: Args) -> Result<Self, Self::Error> {
+    async fn try_from(value: Args) -> Result<Self> {
         let repo_root = get_repository_root()?;
         let repo = get_repository(&repo_root)?;
         let repository_metadata = get_repo_metadata(&repo)?;
@@ -165,15 +161,20 @@ impl TryFrom<Args> for SanitizedArgs {
             separate,
             github_token,
         } = value;
+        let base = base
+            .map(DefaultBranch)
+            .ok_or_else(|| anyhow!("User has not provided a default branch"));
+        let base = if let Ok(base) = base {
+            base
+        } else {
+            DefaultBranch::try_get_default(&repository_metadata, &github_token).await?
+        };
         Ok(Self {
             all: all.into(),
             // Clap doesn't provide a way to supply a default value coming from
             // a function when the user has not supplied a required value.
             // This TryFrom bridges the gap.
-            base: base
-                .map(DefaultBranch)
-                .ok_or_else(|| anyhow!("User has not provided a default branch"))
-                .or_else(|_| DefaultBranch::try_get_default(&repository_metadata, &github_token))?,
+            base,
             choose: choose.into(),
             dry_run,
             github_token,

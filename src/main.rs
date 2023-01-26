@@ -4,10 +4,14 @@
 use std::env::temp_dir;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, ensure, Result};
+use async_executors::{TokioTp, TokioTpBuilder};
+use async_nursery::{NurseExt, Nursery};
 use default_branch::DefaultBranch;
+use futures::task::Spawn;
+use futures::TryStreamExt;
 use git2::{Commit, Repository, RepositoryState};
 use indexmap::IndexMap;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -44,8 +48,10 @@ lazy_static! {
         Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
     static ref STYLE_ISSUE_GROUP: ProgressStyle =
         ProgressStyle::with_template("{prefix} {msg}").unwrap();
-    static ref STYLE_COMMIT: ProgressStyle =
+    static ref STYLE_COMMIT_STABLE: ProgressStyle =
         ProgressStyle::with_template("  {prefix} {msg}").unwrap();
+    static ref STYLE_COMMIT_WORKING: ProgressStyle =
+        ProgressStyle::with_template("  {spinner:.yellow} {msg}").unwrap();
 }
 
 #[derive(Debug)]
@@ -57,7 +63,7 @@ struct CommitWork<'repo> {
 impl<'repo> From<Commit<'repo>> for CommitWork<'repo> {
     fn from(commit: Commit<'repo>) -> Self {
         let progress_bar = ProgressBar::new(1)
-            .with_style(STYLE_COMMIT.clone())
+            .with_style(STYLE_COMMIT_STABLE.clone())
             .with_prefix(PREFIX_PENDING)
             .with_message(format!("{}", commit.summary().unwrap()));
         Self {
@@ -338,7 +344,30 @@ fn apply_overlay<'repo>(
     }
 }
 
-fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<()> {
+async fn cherry_pick(commit: String) -> Result<()> {
+    execute(
+        &["git", "cherry-pick", "--allow-empty", &commit],
+        RedirectOutput::DevNull,
+    )
+}
+
+async fn update_spinner(progress_bar: ProgressBar) -> Result<()> {
+    loop {
+        progress_bar.tick();
+        tokio::time::sleep(Duration::from_millis(15)).await;
+    }
+}
+
+async fn sleep(duration: Duration) -> Result<()> {
+    tokio::time::sleep(duration).await;
+    Ok(())
+}
+
+async fn do_git_disjoint(
+    exec: TokioTp,
+    sanitized_args: SanitizedArgs,
+    log_file: PathBuf,
+) -> Result<()> {
     let SanitizedArgs {
         all,
         base,
@@ -371,7 +400,7 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
         return Ok(());
     }
 
-    let http_client = reqwest::blocking::Client::new();
+    let http_client = reqwest::Client::new();
 
     let multi_progress_bar = MultiProgress::new();
 
@@ -428,25 +457,34 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
 
         // Cherry-pick commits related to the target issue
         for commit_work in work_order.commit_work.iter() {
-            commit_work.progress_bar.set_prefix(PREFIX_WORKING);
+            commit_work
+                .progress_bar
+                .set_style(STYLE_COMMIT_WORKING.clone());
+
+            // If we need to update the UI and perform a blocking action, spawn
+            // a worker thread. If there's no work to do, we can keep the UI
+            // activity on the main thread. But we don't, so the dry_run flag
+            // exercises more of the same code paths as a live run does.
+            let (nursery, mut output) = Nursery::<TokioTp, Result<()>>::new(exec.clone());
+            nursery.nurse(update_spinner(commit_work.progress_bar.clone()))?;
 
             if dry_run {
-                for _ in 1..50 {
-                    std::thread::sleep(std::time::Duration::from_millis(15));
-                    commit_work.progress_bar.tick();
-                }
+                nursery.nurse(sleep(Duration::from_millis(750)))?;
             } else {
-                execute(
-                    &[
-                        "git",
-                        "cherry-pick",
-                        "--allow-empty",
-                        &commit_work.commit.id().to_string(),
-                    ],
-                    RedirectOutput::DevNull,
-                )?;
+                let commit_hash = commit_work.commit.id().to_string();
+                nursery.nurse(cherry_pick(commit_hash))?;
             }
 
+            // Prevent new tasks from spawning
+            drop(nursery);
+            // Wait for the cherry-pick to terminate
+            output.try_next().await?;
+            // Cancel the infinite spinner
+            drop(output);
+
+            commit_work
+                .progress_bar
+                .set_style(STYLE_COMMIT_STABLE.clone());
             commit_work.progress_bar.set_prefix(PREFIX_DONE);
             commit_work.progress_bar.finish()
         }
@@ -497,10 +535,12 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
                     draft: true,
                 })
                 .send()
+                .await
                 .map_err(|request_error| {
                     anyhow!("Error contacting the GitHub API: {request_error}")
                 })?
                 .json()
+                .await
                 .map_err(|response_error| {
                     anyhow!("Error parsing the GitHub API response: {response_error}")
                 })?;
@@ -519,12 +559,18 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
 }
 
 fn main() -> Result<()> {
-    let sanitized_args = SanitizedArgs::parse()?;
-    let log_file = get_log_file();
+    let exec: TokioTp = TokioTpBuilder::new().build()?;
 
-    assert_repository_state_is_clean(&sanitized_args.repository)?;
-    assert_tree_matches_workdir_with_index(&sanitized_args.repository)?;
+    let program = async {
+        let sanitized_args = SanitizedArgs::parse().await?;
+        let log_file = get_log_file();
 
-    // TODO: rename for clarity
-    do_git_disjoint(sanitized_args, log_file)
+        assert_repository_state_is_clean(&sanitized_args.repository)?;
+        assert_tree_matches_workdir_with_index(&sanitized_args.repository)?;
+
+        // TODO: rename for clarity
+        do_git_disjoint(exec.clone(), sanitized_args, log_file).await
+    };
+
+    Ok(exec.block_on(program)?)
 }

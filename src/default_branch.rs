@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 
@@ -14,11 +12,11 @@ struct GetRepositoryResponse {
 }
 
 impl DefaultBranch {
-    pub(crate) fn try_get_default(
+    pub(crate) async fn try_get_default(
         repository_metadata: &GithubRepositoryMetadata,
         github_token: &str,
     ) -> Result<DefaultBranch> {
-        let http_client = reqwest::blocking::Client::new();
+        let http_client = reqwest::Client::new();
         let response: GetRepositoryResponse = http_client
             .get(format!(
                 "https://api.github.com/repos/{}/{}",
@@ -28,8 +26,10 @@ impl DefaultBranch {
             .header("Accept", "application/vnd.github+json")
             .header("Authorization", format!("token {}", github_token))
             .send()
+            .await
             .map_err(|request_error| anyhow!("Error contacting the GitHub API: {request_error}"))?
             .json()
+            .await
             .map_err(|response_error| {
                 anyhow!("Error parsing the GitHub API response: {response_error}")
             })?;
