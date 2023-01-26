@@ -19,7 +19,9 @@ use interact::{select_issues, IssueGroupWhitelist};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sanitize_git_ref::sanitize_git_ref_onelevel;
-use sanitized_args::{CommitGrouping, CommitsToConsider, OverlayCommitsIntoOnePullRequest};
+use sanitized_args::{
+    CommitGrouping, CommitsToConsider, GithubRepositoryMetadata, OverlayCommitsIntoOnePullRequest,
+};
 use serde::{Deserialize, Serialize};
 
 mod args;
@@ -363,11 +365,48 @@ async fn sleep(duration: Duration) -> Result<()> {
     Ok(())
 }
 
+async fn create_pull_request(
+    http_client: reqwest::Client,
+    repository_metadata: GithubRepositoryMetadata,
+    pr_metadata: PullRequestMetadata,
+    github_token: String,
+    branch_name: String,
+    base: DefaultBranch,
+) -> Result<()> {
+    let response: CreatePullRequestResponse = http_client
+        .post(format!(
+            "https://api.github.com/repos/{}/{}/pulls",
+            repository_metadata.owner, repository_metadata.name
+        ))
+        .header("User-Agent", "git-disjoint")
+        .header("Accept", "application/vnd.github.v3+json")
+        .header("Authorization", format!("token {}", github_token))
+        .json(&CreatePullRequestRequest {
+            title: pr_metadata.title.clone(),
+            body: pr_metadata.body.clone(),
+            head: format!("{}:{}", repository_metadata.forker, branch_name),
+            base: base.0.clone(),
+            draft: true,
+        })
+        .send()
+        .await
+        .map_err(|request_error| anyhow!("Error contacting the GitHub API: {request_error}"))?
+        .json()
+        .await
+        .map_err(|response_error| {
+            anyhow!("Error parsing the GitHub API response: {response_error}")
+        })?;
+
+    Ok(open::that(response.html_url)?)
+}
+
 async fn do_git_disjoint(
     exec: TokioTp,
     sanitized_args: SanitizedArgs,
     log_file: PathBuf,
 ) -> Result<()> {
+    let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<()>>::new(exec.clone());
+
     let SanitizedArgs {
         all,
         base,
@@ -519,33 +558,14 @@ async fn do_git_disjoint(
                 }
             };
 
-            let response: CreatePullRequestResponse = http_client
-                .post(format!(
-                    "https://api.github.com/repos/{}/{}/pulls",
-                    repository_metadata.owner, repository_metadata.name
-                ))
-                .header("User-Agent", "git-disjoint")
-                .header("Accept", "application/vnd.github.v3+json")
-                .header("Authorization", format!("token {}", github_token))
-                .json(&CreatePullRequestRequest {
-                    title: pr_metadata.title.clone(),
-                    body: pr_metadata.body.clone(),
-                    head: format!("{}:{}", repository_metadata.forker, branch_name),
-                    base: base.0.clone(),
-                    draft: true,
-                })
-                .send()
-                .await
-                .map_err(|request_error| {
-                    anyhow!("Error contacting the GitHub API: {request_error}")
-                })?
-                .json()
-                .await
-                .map_err(|response_error| {
-                    anyhow!("Error parsing the GitHub API response: {response_error}")
-                })?;
-
-            open::that(response.html_url)?;
+            pr_nursery.nurse(create_pull_request(
+                http_client.clone(),
+                repository_metadata.clone(),
+                pr_metadata,
+                github_token.clone(),
+                branch_name.clone(),
+                base.clone(),
+            ))?;
 
             // Finally, check out the original ref
             execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
@@ -554,6 +574,9 @@ async fn do_git_disjoint(
         work_order.progress_bar.set_prefix(PREFIX_DONE);
         work_order.progress_bar.finish();
     }
+
+    drop(pr_nursery);
+    while pr_stream.try_next().await?.is_some() {}
 
     Ok(())
 }

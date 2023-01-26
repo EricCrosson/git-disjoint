@@ -70,6 +70,7 @@ impl From<bool> for CommitGrouping {
     }
 }
 
+#[derive(Clone, Debug)]
 pub(crate) struct GithubRepositoryMetadata {
     pub owner: String,
     // Terminology from https://stackoverflow.com/a/72018520
