@@ -1,3 +1,10 @@
+## [0.10.14](https://github.com/EricCrosson/git-disjoint/compare/v0.10.13...v0.10.14) (2023-01-26)
+
+
+### Bug Fixes
+
+* do not block on http requests ([ab3a741](https://github.com/EricCrosson/git-disjoint/commit/ab3a741fe7cee80cd9f768e690e1531f09e26253)), closes [#205](https://github.com/EricCrosson/git-disjoint/issues/205)
+
 ## [0.10.13](https://github.com/EricCrosson/git-disjoint/compare/v0.10.12...v0.10.13) (2023-01-26)
 
 
