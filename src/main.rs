@@ -387,137 +387,133 @@ fn do_git_disjoint(sanitized_args: SanitizedArgs, log_file: PathBuf) -> Result<(
         }
     }
 
-    work_orders
-        .into_iter()
-        .try_for_each(|work_order| -> Result<()> {
-            work_order.progress_bar.set_prefix(PREFIX_WORKING);
-            work_order.progress_bar.tick();
+    for work_order in work_orders {
+        work_order.progress_bar.set_prefix(PREFIX_WORKING);
+        work_order.progress_bar.tick();
 
-            // Grab the first summary to convert into a branch name.
-            // We only choose the first summary because we know each Vec is
-            // non-empty and the first element is convenient.
-            let summary = {
-                let commit = &work_order.commit_work[0].commit;
-                commit.summary().ok_or_else(|| {
-                    anyhow!(
-                        "Summary for commit {:?} is not a valid UTF-8 string",
-                        commit.id()
-                    )
-                })?
-            };
+        // Grab the first summary to convert into a branch name.
+        // We only choose the first summary because we know each Vec is
+        // non-empty and the first element is convenient.
+        let summary = {
+            let commit = &work_order.commit_work[0].commit;
+            commit.summary().ok_or_else(|| {
+                anyhow!(
+                    "Summary for commit {:?} is not a valid UTF-8 string",
+                    commit.id()
+                )
+            })?
+        };
 
-            let branch_name = get_branch_name(&work_order.issue_group, summary);
-            let branch_ref = format!("refs/heads/{}", branch_name);
-            let branch_obj = repository.revparse_single(&branch_ref);
+        let branch_name = get_branch_name(&work_order.issue_group, summary);
+        let branch_ref = format!("refs/heads/{}", branch_name);
+        let branch_obj = repository.revparse_single(&branch_ref);
 
-            // If branch already exists, assume we've already handled this ticket
-            // DISCUSS: in the future, we could compare this branch against the desired
-            // commits, and add any missing commits to this branch and then update the remote
-            if branch_obj.is_ok() {
-                eprintln!("Warning: a branch named {:?} already exists", branch_name);
-                return Ok(());
-            }
+        // If branch already exists, assume we've already handled this ticket
+        // DISCUSS: in the future, we could compare this branch against the desired
+        // commits, and add any missing commits to this branch and then update the remote
+        if branch_obj.is_ok() {
+            eprintln!("Warning: a branch named {:?} already exists", branch_name);
+            return Ok(());
+        }
 
-            if !dry_run {
-                // Create a branch
-                repository.branch(&branch_name, &base_commit, true)?;
+        if !dry_run {
+            // Create a branch
+            repository.branch(&branch_name, &base_commit, true)?;
 
-                // Check out the new branch
-                let branch_obj = repository.revparse_single(&branch_ref)?;
-                repository.checkout_tree(&branch_obj, None)?;
-                repository.set_head(&branch_ref)?;
-            }
+            // Check out the new branch
+            let branch_obj = repository.revparse_single(&branch_ref)?;
+            repository.checkout_tree(&branch_obj, None)?;
+            repository.set_head(&branch_ref)?;
+        }
 
-            // Cherry-pick commits related to the target issue
-            for commit_work in work_order.commit_work.iter() {
-                commit_work.progress_bar.set_prefix(PREFIX_WORKING);
+        // Cherry-pick commits related to the target issue
+        for commit_work in work_order.commit_work.iter() {
+            commit_work.progress_bar.set_prefix(PREFIX_WORKING);
 
-                if dry_run {
-                    for _ in 1..50 {
-                        std::thread::sleep(std::time::Duration::from_millis(15));
-                        commit_work.progress_bar.tick();
-                    }
-                } else {
-                    execute(
-                        &[
-                            "git",
-                            "cherry-pick",
-                            "--allow-empty",
-                            &commit_work.commit.id().to_string(),
-                        ],
-                        RedirectOutput::DevNull,
-                    )?;
+            if dry_run {
+                for _ in 1..50 {
+                    std::thread::sleep(std::time::Duration::from_millis(15));
+                    commit_work.progress_bar.tick();
                 }
-
-                commit_work.progress_bar.set_prefix(PREFIX_DONE);
-                commit_work.progress_bar.finish()
-            }
-
-            if !dry_run {
-                // Push the branch
+            } else {
                 execute(
-                    &["git", "push", &repository_metadata.remote, &branch_name],
+                    &[
+                        "git",
+                        "cherry-pick",
+                        "--allow-empty",
+                        &commit_work.commit.id().to_string(),
+                    ],
                     RedirectOutput::DevNull,
                 )?;
-
-                // Open a pull request
-                // Only ask the user to edit the PR metadata when multiple commits
-                // create ambiguity about the contents of the PR title and body.
-                let needs_edit = work_order.commit_work.len() > 1;
-
-                let pr_metadata = match needs_edit {
-                    true => interactive_get_pr_metadata(
-                        &repository_metadata.root,
-                        work_order
-                            .commit_work
-                            .iter()
-                            .map(|commit_work| &commit_work.commit)
-                            .collect(),
-                    )?,
-                    false => {
-                        let commit = &work_order.commit_work.get(0).unwrap().commit;
-                        PullRequestMetadata {
-                            title: commit.summary().unwrap().to_owned(),
-                            body: commit.body().unwrap().to_owned(),
-                        }
-                    }
-                };
-
-                let response: CreatePullRequestResponse = http_client
-                    .post(format!(
-                        "https://api.github.com/repos/{}/{}/pulls",
-                        repository_metadata.owner, repository_metadata.name
-                    ))
-                    .header("User-Agent", "git-disjoint")
-                    .header("Accept", "application/vnd.github.v3+json")
-                    .header("Authorization", format!("token {}", github_token))
-                    .json(&CreatePullRequestRequest {
-                        title: pr_metadata.title.clone(),
-                        body: pr_metadata.body.clone(),
-                        head: format!("{}:{}", repository_metadata.forker, branch_name),
-                        base: base.0.clone(),
-                        draft: true,
-                    })
-                    .send()
-                    .map_err(|request_error| {
-                        anyhow!("Error contacting the GitHub API: {request_error}")
-                    })?
-                    .json()
-                    .map_err(|response_error| {
-                        anyhow!("Error parsing the GitHub API response: {response_error}")
-                    })?;
-
-                open::that(response.html_url)?;
-
-                // Finally, check out the original ref
-                execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
             }
 
-            work_order.progress_bar.set_prefix(PREFIX_DONE);
-            work_order.progress_bar.finish();
+            commit_work.progress_bar.set_prefix(PREFIX_DONE);
+            commit_work.progress_bar.finish()
+        }
 
-            Ok(())
-        })?;
+        if !dry_run {
+            // Push the branch
+            execute(
+                &["git", "push", &repository_metadata.remote, &branch_name],
+                RedirectOutput::DevNull,
+            )?;
+
+            // Open a pull request
+            // Only ask the user to edit the PR metadata when multiple commits
+            // create ambiguity about the contents of the PR title and body.
+            let needs_edit = work_order.commit_work.len() > 1;
+
+            let pr_metadata = match needs_edit {
+                true => interactive_get_pr_metadata(
+                    &repository_metadata.root,
+                    work_order
+                        .commit_work
+                        .iter()
+                        .map(|commit_work| &commit_work.commit)
+                        .collect(),
+                )?,
+                false => {
+                    let commit = &work_order.commit_work.get(0).unwrap().commit;
+                    PullRequestMetadata {
+                        title: commit.summary().unwrap().to_owned(),
+                        body: commit.body().unwrap().to_owned(),
+                    }
+                }
+            };
+
+            let response: CreatePullRequestResponse = http_client
+                .post(format!(
+                    "https://api.github.com/repos/{}/{}/pulls",
+                    repository_metadata.owner, repository_metadata.name
+                ))
+                .header("User-Agent", "git-disjoint")
+                .header("Accept", "application/vnd.github.v3+json")
+                .header("Authorization", format!("token {}", github_token))
+                .json(&CreatePullRequestRequest {
+                    title: pr_metadata.title.clone(),
+                    body: pr_metadata.body.clone(),
+                    head: format!("{}:{}", repository_metadata.forker, branch_name),
+                    base: base.0.clone(),
+                    draft: true,
+                })
+                .send()
+                .map_err(|request_error| {
+                    anyhow!("Error contacting the GitHub API: {request_error}")
+                })?
+                .json()
+                .map_err(|response_error| {
+                    anyhow!("Error parsing the GitHub API response: {response_error}")
+                })?;
+
+            open::that(response.html_url)?;
+
+            // Finally, check out the original ref
+            execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
+        }
+
+        work_order.progress_bar.set_prefix(PREFIX_DONE);
+        work_order.progress_bar.finish();
+    }
 
     Ok(())
 }
