@@ -611,7 +611,7 @@ async fn do_git_disjoint(
                     let commit = &work_order.commit_work.get(0).unwrap().commit;
                     PullRequestMetadata {
                         title: commit.summary().unwrap().to_owned(),
-                        body: commit.body().unwrap().to_owned(),
+                        body: commit.body().unwrap_or_default().to_owned(),
                     }
                 }
             };
