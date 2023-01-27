@@ -47,10 +47,12 @@ const PREFIX_DONE: &'static str = "✔";
 lazy_static! {
     static ref RE_MULTIPLE_HYPHENS: Regex =
         Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
-    static ref STYLE_ISSUE_GROUP: ProgressStyle =
-        ProgressStyle::with_template("{prefix} {msg}").unwrap();
+    static ref STYLE_ISSUE_GROUP_STABLE: ProgressStyle =
+        ProgressStyle::with_template("{prefix:.green} {msg}").unwrap();
+    static ref STYLE_ISSUE_GROUP_WORKING: ProgressStyle =
+        ProgressStyle::with_template("{prefix:.yellow} {msg}").unwrap();
     static ref STYLE_COMMIT_STABLE: ProgressStyle =
-        ProgressStyle::with_template("  {prefix} {msg}").unwrap();
+        ProgressStyle::with_template("  {prefix:.green} {msg}").unwrap();
     static ref STYLE_COMMIT_WORKING: ProgressStyle =
         ProgressStyle::with_template("  {spinner:.yellow} {msg}").unwrap();
 }
@@ -85,7 +87,7 @@ impl<'repo> From<(IssueGroup, Vec<Commit<'repo>>)> for WorkOrder<'repo> {
     fn from((issue_group, commits): (IssueGroup, Vec<Commit<'repo>>)) -> Self {
         let num_commits: u64 = commits.len().try_into().unwrap();
         let progress_bar = ProgressBar::new(num_commits)
-            .with_style(STYLE_ISSUE_GROUP.clone())
+            .with_style(STYLE_ISSUE_GROUP_STABLE.clone())
             .with_prefix(PREFIX_PENDING)
             .with_message(format!("{}", issue_group));
         WorkOrder {
@@ -455,6 +457,9 @@ async fn do_git_disjoint(
     }
 
     for work_order in work_orders {
+        work_order
+            .progress_bar
+            .set_style(STYLE_ISSUE_GROUP_WORKING.clone());
         work_order.progress_bar.set_prefix(PREFIX_WORKING);
         work_order.progress_bar.tick();
 
@@ -570,6 +575,9 @@ async fn do_git_disjoint(
             execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
         }
 
+        work_order
+            .progress_bar
+            .set_style(STYLE_ISSUE_GROUP_STABLE.clone());
         work_order.progress_bar.set_prefix(PREFIX_DONE);
         work_order.progress_bar.finish();
     }
