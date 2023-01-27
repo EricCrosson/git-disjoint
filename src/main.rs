@@ -10,7 +10,6 @@ use anyhow::{anyhow, ensure, Result};
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
 use default_branch::DefaultBranch;
-use futures::task::Spawn;
 use futures::TryStreamExt;
 use git2::{Commit, Repository, RepositoryState};
 use indexmap::IndexMap;
