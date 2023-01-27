@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
+use std::collections::HashSet;
 use std::env::temp_dir;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -58,6 +59,59 @@ lazy_static! {
 }
 
 #[derive(Debug)]
+struct CommitPlan<'repo> {
+    branch_name: String,
+    commits: Vec<Commit<'repo>>,
+}
+
+/// Plan out branch names to avoid collisions.
+///
+/// This function does not take into account existing branch names in the local
+/// or remote repository. It only looks at branch names that git-disjoint is
+/// going to generate to make sure one invocation of git-disjoint won't try to
+/// create a branch with the same name twice.
+fn plan_branch_names<'repo>(
+    commits_by_issue_group: IndexMap<IssueGroup, Vec<Commit<'repo>>>,
+) -> Result<IndexMap<IssueGroup, CommitPlan<'repo>>> {
+    let mut suffix: usize = 0;
+    let mut seen_branch_names = HashSet::new();
+    commits_by_issue_group
+        .into_iter()
+        .map(|(issue_group, commits)| {
+            // Grab the first summary to convert into a branch name.
+            // We only choose the first summary because we know each Vec is
+            // non-empty and the first element is convenient.
+            let summary = {
+                let commit = &commits[0];
+                commit.summary().ok_or_else(|| {
+                    anyhow!(
+                        "Summary for commit {:?} is not a valid UTF-8 string",
+                        commit.id()
+                    )
+                })?
+            };
+            let generated_branch_name = get_branch_name(&issue_group, summary);
+            let mut proposed_branch_name = generated_branch_name.clone();
+
+            while seen_branch_names.contains(&proposed_branch_name) {
+                suffix += 1;
+                proposed_branch_name = format!("{}_{}", generated_branch_name, suffix);
+            }
+
+            seen_branch_names.insert(proposed_branch_name.clone());
+
+            Ok((
+                issue_group,
+                CommitPlan {
+                    branch_name: proposed_branch_name,
+                    commits,
+                },
+            ))
+        })
+        .collect()
+}
+
+#[derive(Debug)]
 struct CommitWork<'repo> {
     commit: Commit<'repo>,
     progress_bar: ProgressBar,
@@ -78,21 +132,25 @@ impl<'repo> From<Commit<'repo>> for CommitWork<'repo> {
 
 #[derive(Debug)]
 struct WorkOrder<'repo> {
-    issue_group: IssueGroup,
+    branch_name: String,
     commit_work: Vec<CommitWork<'repo>>,
     progress_bar: ProgressBar,
 }
 
-impl<'repo> From<(IssueGroup, Vec<Commit<'repo>>)> for WorkOrder<'repo> {
-    fn from((issue_group, commits): (IssueGroup, Vec<Commit<'repo>>)) -> Self {
-        let num_commits: u64 = commits.len().try_into().unwrap();
+impl<'repo> From<(IssueGroup, CommitPlan<'repo>)> for WorkOrder<'repo> {
+    fn from((issue_group, commit_plan): (IssueGroup, CommitPlan<'repo>)) -> Self {
+        let num_commits: u64 = commit_plan.commits.len().try_into().unwrap();
         let progress_bar = ProgressBar::new(num_commits)
             .with_style(STYLE_ISSUE_GROUP_STABLE.clone())
             .with_prefix(PREFIX_PENDING)
             .with_message(format!("{}", issue_group));
         WorkOrder {
-            issue_group,
-            commit_work: commits.into_iter().map(CommitWork::from).collect(),
+            branch_name: commit_plan.branch_name,
+            commit_work: commit_plan
+                .commits
+                .into_iter()
+                .map(CommitWork::from)
+                .collect(),
             progress_bar,
         }
     }
@@ -422,6 +480,7 @@ async fn do_git_disjoint(
 
     let base_commit = get_base_commit(&repository, &base)?;
     let commits = get_commits_since_base(&repository, &base_commit)?;
+    // REFACTOR: can we use fewer iterators/collects here?
     // We have to make a first pass to determine the issue groups in play
     let commits_by_issue_group = group_commits_by_issue_group(commits, all, separate)?;
     let selected_issue_groups = select_issues(&commits_by_issue_group, choose, overlay)?;
@@ -429,8 +488,9 @@ async fn do_git_disjoint(
     let commits_by_issue_group =
         filter_issue_groups_by_whitelist(commits_by_issue_group, &selected_issue_groups);
     let commits_by_issue_group = apply_overlay(commits_by_issue_group, overlay);
+    let commit_plan_by_issue_group = plan_branch_names(commits_by_issue_group)?;
 
-    let work_orders: Vec<WorkOrder> = commits_by_issue_group
+    let work_orders: Vec<WorkOrder> = commit_plan_by_issue_group
         .into_iter()
         .map(WorkOrder::from)
         .collect();
@@ -463,34 +523,23 @@ async fn do_git_disjoint(
         work_order.progress_bar.set_prefix(PREFIX_WORKING);
         work_order.progress_bar.tick();
 
-        // Grab the first summary to convert into a branch name.
-        // We only choose the first summary because we know each Vec is
-        // non-empty and the first element is convenient.
-        let summary = {
-            let commit = &work_order.commit_work[0].commit;
-            commit.summary().ok_or_else(|| {
-                anyhow!(
-                    "Summary for commit {:?} is not a valid UTF-8 string",
-                    commit.id()
-                )
-            })?
-        };
-
-        let branch_name = get_branch_name(&work_order.issue_group, summary);
-        let branch_ref = format!("refs/heads/{}", branch_name);
+        let branch_ref = format!("refs/heads/{}", work_order.branch_name);
         let branch_obj = repository.revparse_single(&branch_ref);
 
         // If branch already exists, assume we've already handled this ticket
         // DISCUSS: in the future, we could compare this branch against the desired
         // commits, and add any missing commits to this branch and then update the remote
         if branch_obj.is_ok() {
-            eprintln!("Warning: a branch named {:?} already exists", branch_name);
+            eprintln!(
+                "Warning: a branch named {:?} already exists",
+                work_order.branch_name
+            );
             return Ok(());
         }
 
         if !dry_run {
             // Create a branch
-            repository.branch(&branch_name, &base_commit, true)?;
+            repository.branch(&work_order.branch_name, &base_commit, true)?;
 
             // Check out the new branch
             let branch_obj = repository.revparse_single(&branch_ref)?;
@@ -535,7 +584,12 @@ async fn do_git_disjoint(
         if !dry_run {
             // Push the branch
             execute(
-                &["git", "push", &repository_metadata.remote, &branch_name],
+                &[
+                    "git",
+                    "push",
+                    &repository_metadata.remote,
+                    &work_order.branch_name,
+                ],
                 RedirectOutput::DevNull,
             )?;
 
@@ -567,7 +621,7 @@ async fn do_git_disjoint(
                 repository_metadata.clone(),
                 pr_metadata,
                 github_token.clone(),
-                branch_name.clone(),
+                work_order.branch_name.clone(),
                 base.clone(),
             ))?;
 
