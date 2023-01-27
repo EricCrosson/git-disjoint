@@ -1,3 +1,12 @@
+## [0.10.16](https://github.com/EricCrosson/git-disjoint/compare/v0.10.15...v0.10.16) (2023-01-27)
+
+
+### Bug Fixes
+
+* avoid branch name collisions ([80c34c2](https://github.com/EricCrosson/git-disjoint/commit/80c34c263a5065f89474b2e5f736df38f6d4c576)), closes [#202](https://github.com/EricCrosson/git-disjoint/issues/202)
+* do not panic on empty commit body ([8c12886](https://github.com/EricCrosson/git-disjoint/commit/8c1288612223db8ec14d3825c799f39258b13b3f))
+* use color theme consistently ([b13043d](https://github.com/EricCrosson/git-disjoint/commit/b13043dee967c1879c09dd836a6406111ba84fef))
+
 ## [0.10.15](https://github.com/EricCrosson/git-disjoint/compare/v0.10.14...v0.10.15) (2023-01-27)
 
 
