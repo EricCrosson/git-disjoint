@@ -1,3 +1,10 @@
+## [0.10.15](https://github.com/EricCrosson/git-disjoint/compare/v0.10.14...v0.10.15) (2023-01-27)
+
+
+### Bug Fixes
+
+* **deps:** pin dependencies ([ebd7c40](https://github.com/EricCrosson/git-disjoint/commit/ebd7c408d2884aa9e4bdbdbd3f5e01fe29929e96))
+
 ## [0.10.14](https://github.com/EricCrosson/git-disjoint/compare/v0.10.13...v0.10.14) (2023-01-26)
 
 
