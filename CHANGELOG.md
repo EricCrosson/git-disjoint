@@ -1,3 +1,10 @@
+## [0.10.19](https://github.com/EricCrosson/git-disjoint/compare/v0.10.18...v0.10.19) (2023-01-29)
+
+
+### Bug Fixes
+
+* **docs:** document minimum required github token permisisons ([e563463](https://github.com/EricCrosson/git-disjoint/commit/e5634630404b6b09b1b754fb0b75b9bd5d0fef4c))
+
 ## [0.10.18](https://github.com/EricCrosson/git-disjoint/compare/v0.10.17...v0.10.18) (2023-01-27)
 
 
