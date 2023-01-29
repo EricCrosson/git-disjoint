@@ -46,8 +46,7 @@ pub(crate) struct Args {
     )]
     pub dry_run: bool,
 
-    /// GitHub API token.
-    // TODO: document minimum-required permisisons
+    /// GitHub API token with repo permissions.
     #[clap(long, env = "GITHUB_TOKEN", help = "GitHub API token")]
     pub github_token: String,
 
