@@ -1,3 +1,12 @@
+## [0.10.20](https://github.com/EricCrosson/git-disjoint/compare/v0.10.19...v0.10.20) (2023-01-30)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate indoc to v1.0.9 ([a3480f6](https://github.com/EricCrosson/git-disjoint/commit/a3480f6e7a39a7f388b8a4d5cc8ef8fbb889b3ed))
+* **deps:** update rust crate indoc to v2 ([ff8fb2e](https://github.com/EricCrosson/git-disjoint/commit/ff8fb2e67f2be0400ba4a82abb0358d21c8e4f1b))
+* **deps:** update rust crate tokio to v1.25.0 ([3862a1f](https://github.com/EricCrosson/git-disjoint/commit/3862a1f019303eecfcb3686878e756c84bc67804))
+
 ## [0.10.19](https://github.com/EricCrosson/git-disjoint/compare/v0.10.18...v0.10.19) (2023-01-29)
 
 
