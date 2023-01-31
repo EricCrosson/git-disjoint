@@ -1,3 +1,10 @@
+## [0.10.21](https://github.com/EricCrosson/git-disjoint/compare/v0.10.20...v0.10.21) (2023-01-31)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate futures to v0.3.26 ([553d2f1](https://github.com/EricCrosson/git-disjoint/commit/553d2f1ad881f16a3bf076cb683801705756a85a))
+
 ## [0.10.20](https://github.com/EricCrosson/git-disjoint/compare/v0.10.19...v0.10.20) (2023-01-30)
 
 
