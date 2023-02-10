@@ -534,7 +534,7 @@ async fn do_git_disjoint(
                 "Warning: a branch named {:?} already exists",
                 work_order.branch_name
             );
-            return Ok(());
+            continue;
         }
 
         if !dry_run {
