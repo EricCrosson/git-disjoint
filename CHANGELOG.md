@@ -1,3 +1,10 @@
+## [0.10.25](https://github.com/EricCrosson/git-disjoint/compare/v0.10.24...v0.10.25) (2023-02-10)
+
+
+### Bug Fixes
+
+* do not short circuit when branch already exists ([5e7bc80](https://github.com/EricCrosson/git-disjoint/commit/5e7bc8083c74ebb2465a3d32eb0177fc9748bd43)), closes [#219](https://github.com/EricCrosson/git-disjoint/issues/219)
+
 ## [0.10.24](https://github.com/EricCrosson/git-disjoint/compare/v0.10.23...v0.10.24) (2023-02-09)
 
 
