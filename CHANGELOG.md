@@ -1,3 +1,10 @@
+## [0.10.28](https://github.com/EricCrosson/git-disjoint/compare/v0.10.27...v0.10.28) (2023-02-14)
+
+
+### Bug Fixes
+
+* pipe stdout to /dev/null ([6673551](https://github.com/EricCrosson/git-disjoint/commit/6673551a42215274bbae6f6c79cb78bc84335ee7))
+
 ## [0.10.27](https://github.com/EricCrosson/git-disjoint/compare/v0.10.26...v0.10.27) (2023-02-14)
 
 
