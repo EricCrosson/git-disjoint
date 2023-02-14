@@ -3,8 +3,10 @@
 
 use std::collections::HashSet;
 use std::env::temp_dir;
-use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::fs::{self, OpenOptions};
+use std::io::prelude::*;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, ensure, Result};
@@ -203,11 +205,25 @@ fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
         .replace(['\'', '"'], "")
 }
 
-fn execute(command: &[&str]) -> Result<()> {
+fn execute(command: &[&str], log_file: &Path) -> Result<()> {
     let mut runner = Command::new(command[0]);
 
-    runner.stdout(Stdio::null());
-    runner.stderr(Stdio::null());
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(log_file)
+        .unwrap();
+
+    writeln!(file, "$ {:?}", command.join(" "))?;
+
+    // DISCUSS: how to pipe stdout to the same file?
+    // Do we need the duct crate?
+    // https://stackoverflow.com/a/41025699
+    // It's not immediately obvious to me how we pass `command`
+    // to a duct `cmd`, but I bet there's a way to separate
+    // the head and the tail from our slice.
+    // runner.stdout(file);
+    runner.stderr(file);
 
     for argument in command.iter().skip(1) {
         runner.arg(argument);
@@ -397,8 +413,14 @@ fn apply_overlay<'repo>(
     }
 }
 
-async fn cherry_pick(commit: String) -> Result<()> {
-    execute(&["git", "cherry-pick", "--allow-empty", &commit])
+async fn cherry_pick<P>(commit: String, log_file: P) -> Result<()>
+where
+    P: AsRef<Path> + 'static,
+{
+    execute(
+        &["git", "cherry-pick", "--allow-empty", &commit],
+        log_file.as_ref(),
+    )
 }
 
 async fn update_spinner(progress_bar: ProgressBar) -> Result<()> {
@@ -448,11 +470,10 @@ async fn create_pull_request(
     Ok(open::that(response.html_url)?)
 }
 
-async fn do_git_disjoint(
-    exec: TokioTp,
-    sanitized_args: SanitizedArgs,
-    log_file: PathBuf,
-) -> Result<()> {
+async fn do_git_disjoint<P>(exec: TokioTp, sanitized_args: SanitizedArgs, log_file: P) -> Result<()>
+where
+    P: AsRef<Path> + Clone + Send + 'static,
+{
     let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<()>>::new(exec.clone());
 
     let SanitizedArgs {
@@ -553,7 +574,7 @@ async fn do_git_disjoint(
                 nursery.nurse(sleep(Duration::from_millis(750)))?;
             } else {
                 let commit_hash = commit_work.commit.id().to_string();
-                nursery.nurse(cherry_pick(commit_hash))?;
+                nursery.nurse(cherry_pick(commit_hash, log_file.clone()))?;
             }
 
             // Prevent new tasks from spawning
@@ -572,12 +593,15 @@ async fn do_git_disjoint(
 
         if !dry_run {
             // Push the branch
-            execute(&[
-                "git",
-                "push",
-                &repository_metadata.remote,
-                &work_order.branch_name,
-            ])?;
+            execute(
+                &[
+                    "git",
+                    "push",
+                    &repository_metadata.remote,
+                    &work_order.branch_name,
+                ],
+                log_file.as_ref(),
+            )?;
 
             // Open a pull request
             // Only ask the user to edit the PR metadata when multiple commits
@@ -612,7 +636,7 @@ async fn do_git_disjoint(
             ))?;
 
             // Finally, check out the original ref
-            execute(&["git", "checkout", "-"])?;
+            execute(&["git", "checkout", "-"], log_file.as_ref())?;
         }
 
         work_order
@@ -639,7 +663,29 @@ fn main() -> Result<()> {
         assert_tree_matches_workdir_with_index(&sanitized_args.repository)?;
 
         // TODO: rename for clarity
-        do_git_disjoint(exec.clone(), sanitized_args, log_file).await
+        let result = do_git_disjoint(exec.clone(), sanitized_args, log_file.clone()).await;
+        match result {
+            // Execution succeeded, so clean up the log file
+            Ok(()) => Ok::<(), anyhow::Error>(fs::remove_file(log_file)?),
+            Err(err) => {
+                // Execution failed, so display the logs and the error to the user
+                let log_contents = fs::read_to_string(&log_file)?;
+                indoc::eprintdoc!(
+                    "
+                    Failed with error {:?}
+
+                    Full log output:
+                    {}
+
+                    The log file is {:?}
+                    ",
+                    err,
+                    log_contents,
+                    log_file,
+                );
+                Ok(())
+            }
+        }
     };
 
     Ok(exec.block_on(program)?)
