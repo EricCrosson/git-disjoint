@@ -203,19 +203,11 @@ fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
         .replace(['\'', '"'], "")
 }
 
-#[derive(Debug, Eq, PartialEq)]
-enum RedirectOutput {
-    DevNull,
-    None,
-}
-
-fn execute(command: &[&str], redirect_output: RedirectOutput) -> Result<()> {
+fn execute(command: &[&str]) -> Result<()> {
     let mut runner = Command::new(command[0]);
 
-    if redirect_output == RedirectOutput::DevNull {
-        runner.stdout(Stdio::null());
-        runner.stderr(Stdio::null());
-    }
+    runner.stdout(Stdio::null());
+    runner.stderr(Stdio::null());
 
     for argument in command.iter().skip(1) {
         runner.arg(argument);
@@ -406,10 +398,7 @@ fn apply_overlay<'repo>(
 }
 
 async fn cherry_pick(commit: String) -> Result<()> {
-    execute(
-        &["git", "cherry-pick", "--allow-empty", &commit],
-        RedirectOutput::DevNull,
-    )
+    execute(&["git", "cherry-pick", "--allow-empty", &commit])
 }
 
 async fn update_spinner(progress_bar: ProgressBar) -> Result<()> {
@@ -583,15 +572,12 @@ async fn do_git_disjoint(
 
         if !dry_run {
             // Push the branch
-            execute(
-                &[
-                    "git",
-                    "push",
-                    &repository_metadata.remote,
-                    &work_order.branch_name,
-                ],
-                RedirectOutput::DevNull,
-            )?;
+            execute(&[
+                "git",
+                "push",
+                &repository_metadata.remote,
+                &work_order.branch_name,
+            ])?;
 
             // Open a pull request
             // Only ask the user to edit the PR metadata when multiple commits
@@ -626,7 +612,7 @@ async fn do_git_disjoint(
             ))?;
 
             // Finally, check out the original ref
-            execute(&["git", "checkout", "-"], RedirectOutput::DevNull)?;
+            execute(&["git", "checkout", "-"])?;
         }
 
         work_order
