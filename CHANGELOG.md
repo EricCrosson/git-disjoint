@@ -1,3 +1,10 @@
+## [0.10.26](https://github.com/EricCrosson/git-disjoint/compare/v0.10.25...v0.10.26) (2023-02-14)
+
+
+### Bug Fixes
+
+* use a log file ([2316ce7](https://github.com/EricCrosson/git-disjoint/commit/2316ce798effb91168d3a6182dc19ac53bd73dfc)), closes [#190](https://github.com/EricCrosson/git-disjoint/issues/190)
+
 ## [0.10.25](https://github.com/EricCrosson/git-disjoint/compare/v0.10.24...v0.10.25) (2023-02-10)
 
 
