@@ -209,6 +209,7 @@ fn execute(command: &[&str], log_file: &Path) -> Result<()> {
     let mut runner = Command::new(command[0]);
 
     let mut file = OpenOptions::new()
+        .create(true)
         .write(true)
         .append(true)
         .open(log_file)
