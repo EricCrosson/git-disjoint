@@ -468,7 +468,7 @@ checksum = "221996f774192f0f718773def8201c4ae31f02616a54ccfc2d358bb0e5cefdec"
 
 [[package]]
 name = "git-disjoint"
-version = "0.10.26"
+version = "0.10.27"
 dependencies = [
  "anyhow",
  "async_executors",

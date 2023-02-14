@@ -1,3 +1,10 @@
+## [0.10.27](https://github.com/EricCrosson/git-disjoint/compare/v0.10.26...v0.10.27) (2023-02-14)
+
+
+### Bug Fixes
+
+* create file before writing to it ([44ea0e5](https://github.com/EricCrosson/git-disjoint/commit/44ea0e5eb13bb24a6fdd4a5c4781409d3121fe6a))
+
 ## [0.10.26](https://github.com/EricCrosson/git-disjoint/compare/v0.10.25...v0.10.26) (2023-02-14)
 
 
