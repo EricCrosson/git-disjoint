@@ -6,7 +6,7 @@ use std::env::temp_dir;
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, ensure, Result};
@@ -223,7 +223,7 @@ fn execute(command: &[&str], log_file: &Path) -> Result<()> {
     // It's not immediately obvious to me how we pass `command`
     // to a duct `cmd`, but I bet there's a way to separate
     // the head and the tail from our slice.
-    // runner.stdout(file);
+    runner.stdout(Stdio::null());
     runner.stderr(file);
 
     for argument in command.iter().skip(1) {
