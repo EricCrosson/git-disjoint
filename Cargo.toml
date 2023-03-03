@@ -32,7 +32,7 @@ git2 = { version = "=0.16.1", default-features = false, features = ["zlib-ng-com
 indexmap = "=1.9.2"
 indicatif = "=0.17.3"
 indoc = "=2.0.0"
-inquire = "=0.5.3"
+inquire = "=0.6.0"
 lazy_static = "=1.4.0"
 open = "=3.2.0"
 regex = "=1.7.1"
