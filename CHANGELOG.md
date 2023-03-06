@@ -1,3 +1,10 @@
+## [0.10.33](https://github.com/EricCrosson/git-disjoint/compare/v0.10.32...v0.10.33) (2023-03-06)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate indoc to v2.0.1 ([89e0c6e](https://github.com/EricCrosson/git-disjoint/commit/89e0c6eb4a3896af0580d9743182a53b8a144ea9))
+
 ## [0.10.32](https://github.com/EricCrosson/git-disjoint/compare/v0.10.31...v0.10.32) (2023-03-06)
 
 
