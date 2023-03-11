@@ -1,3 +1,10 @@
+## [0.10.37](https://github.com/EricCrosson/git-disjoint/compare/v0.10.36...v0.10.37) (2023-03-11)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate open to v4 ([aa43e2e](https://github.com/EricCrosson/git-disjoint/commit/aa43e2ef5e815214b836c551649b2f854764ae9e))
+
 ## [0.10.36](https://github.com/EricCrosson/git-disjoint/compare/v0.10.35...v0.10.36) (2023-03-09)
 
 
