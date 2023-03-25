@@ -1,3 +1,11 @@
+## [0.10.47](https://github.com/EricCrosson/git-disjoint/compare/v0.10.46...v0.10.47) (2023-03-25)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate indexmap to v1.9.3 ([a5177b2](https://github.com/EricCrosson/git-disjoint/commit/a5177b227a6a9e97d41abbbf92b8249f13c83c53))
+* **deps:** update rust crate regex to v1.7.3 ([25b9d91](https://github.com/EricCrosson/git-disjoint/commit/25b9d91363a7fbdfe43e056baf9c83538aa49f0b))
+
 ## [0.10.46](https://github.com/EricCrosson/git-disjoint/compare/v0.10.45...v0.10.46) (2023-03-22)
 
 
