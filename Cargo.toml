@@ -29,7 +29,7 @@ clap = { version = "=4.1.13", features = ["cargo", "derive", "env", "wrap_help"]
 futures = "=0.3.27"
 git-url-parse = "=0.4.4"
 git2 = { version = "=0.16.1", default-features = false, features = ["zlib-ng-compat"] }
-indexmap = "=1.9.2"
+indexmap = "=1.9.3"
 indicatif = "=0.17.3"
 indoc = "=2.0.1"
 inquire = "=0.6.0"
