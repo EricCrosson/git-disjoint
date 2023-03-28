@@ -1,3 +1,11 @@
+## [0.10.49](https://github.com/EricCrosson/git-disjoint/compare/v0.10.48...v0.10.49) (2023-03-28)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate serde to v1.0.159 ([8c5272c](https://github.com/EricCrosson/git-disjoint/commit/8c5272c257ced2a7aaf2eaaea8631bb95c6140ba))
+* **deps:** update rust crate serde_json to v1.0.95 ([2c27c25](https://github.com/EricCrosson/git-disjoint/commit/2c27c254c610f5124920f8efeff93d4bae3d84bd))
+
 ## [0.10.48](https://github.com/EricCrosson/git-disjoint/compare/v0.10.47...v0.10.48) (2023-03-28)
 
 
