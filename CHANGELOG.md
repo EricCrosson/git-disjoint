@@ -1,3 +1,10 @@
+## [0.10.55](https://github.com/EricCrosson/git-disjoint/compare/v0.10.54...v0.10.55) (2023-04-13)
+
+
+### Bug Fixes
+
+* use clearer placeholders in help text ([7783cbc](https://github.com/EricCrosson/git-disjoint/commit/7783cbc3eee66911fd1e4743556f15e961d8d527))
+
 ## [0.10.54](https://github.com/EricCrosson/git-disjoint/compare/v0.10.53...v0.10.54) (2023-04-11)
 
 
