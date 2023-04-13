@@ -22,7 +22,8 @@ pub(crate) struct Args {
     #[clap(
         short,
         long,
-        help = "The starting point (exclusive) of commits to act on"
+        help = "The starting point (exclusive) of commits to act on",
+        value_name = "REF"
     )]
     pub base: Option<String>,
 
@@ -47,7 +48,12 @@ pub(crate) struct Args {
     pub dry_run: bool,
 
     /// GitHub API token with repo permissions.
-    #[clap(long, env = "GITHUB_TOKEN", help = "GitHub API token")]
+    #[clap(
+        long,
+        env = "GITHUB_TOKEN",
+        help = "GitHub API token",
+        value_name = "TOKEN"
+    )]
     pub github_token: String,
 
     /// Combine multiple issue groups into one PR.
