@@ -36,7 +36,7 @@ mod sanitized_args;
 
 use crate::editor::{interactive_get_pr_metadata, PullRequestMetadata};
 use crate::issue::Issue;
-use crate::issue_group::IssueGroup;
+use crate::issue_group::{GitCommitSummary, IssueGroup};
 use crate::sanitized_args::SanitizedArgs;
 
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
@@ -75,7 +75,7 @@ struct CommitPlan<'repo> {
 fn plan_branch_names<'repo>(
     commits_by_issue_group: IndexMap<IssueGroup, Vec<Commit<'repo>>>,
 ) -> Result<IndexMap<IssueGroup, CommitPlan<'repo>>> {
-    let mut suffix: usize = 0;
+    let mut suffix: u32 = 0;
     let mut seen_branch_names = HashSet::new();
     commits_by_issue_group
         .into_iter()
@@ -328,6 +328,8 @@ fn group_commits_by_issue_group<'repo>(
     commits_to_consider: CommitsToConsider,
     commit_grouping: CommitGrouping,
 ) -> Result<IndexMap<IssueGroup, Vec<Commit>>> {
+    let mut suffix: u32 = 0;
+    let mut seen_issue_groups = HashSet::new();
     let commits_by_issue: IndexMap<IssueGroup, Vec<Commit>> = commits
         .into_iter()
         // Parse issue from commit message
@@ -350,10 +352,21 @@ fn group_commits_by_issue_group<'repo>(
             if commit_grouping == CommitGrouping::Individual
                 || commits_to_consider == CommitsToConsider::All
             {
-                return Ok(Some((IssueGroup::Commit((&commit).try_into()?), commit)));
+                let summary: GitCommitSummary = (&commit).try_into()?;
+                let mut proposed_issue_group = summary.clone();
+
+                while seen_issue_groups.contains(&proposed_issue_group) {
+                    suffix += 1;
+                    proposed_issue_group = GitCommitSummary(format!("{}_{}", summary, suffix));
+                }
+
+                seen_issue_groups.insert(proposed_issue_group.clone());
+
+                return Ok(Some((IssueGroup::Commit(proposed_issue_group), commit)));
             }
 
             // Otherwise, skip this commit.
+            // FIXME: use writeln! to stderr
             eprintln!(
                 "Warning: ignoring commit without issue trailer: {:?}",
                 commit.id()
