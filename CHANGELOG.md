@@ -1,3 +1,10 @@
+## [0.10.59](https://github.com/EricCrosson/git-disjoint/compare/v0.10.58...v0.10.59) (2023-04-18)
+
+
+### Bug Fixes
+
+* support separating a ticket with multiple commits with same summary ([15f73a4](https://github.com/EricCrosson/git-disjoint/commit/15f73a492b17f7febfdd273ec1f145b0c62c8206))
+
 ## [0.10.58](https://github.com/EricCrosson/git-disjoint/compare/v0.10.57...v0.10.58) (2023-04-16)
 
 
