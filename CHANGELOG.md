@@ -1,3 +1,10 @@
+## [0.10.60](https://github.com/EricCrosson/git-disjoint/compare/v0.10.59...v0.10.60) (2023-04-21)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate regex to v1.8.0 ([c265b1f](https://github.com/EricCrosson/git-disjoint/commit/c265b1f90eee968c9431432921b9de178ef75ec0))
+
 ## [0.10.59](https://github.com/EricCrosson/git-disjoint/compare/v0.10.58...v0.10.59) (2023-04-18)
 
 
