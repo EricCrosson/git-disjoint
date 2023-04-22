@@ -6,8 +6,8 @@ use indexmap::IndexMap;
 use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 
 use crate::{
+    cli::{OverlayCommitsIntoOnePullRequest, PromptUserToChooseCommits},
     issue_group::IssueGroup,
-    sanitized_args::{OverlayCommitsIntoOnePullRequest, PromptUserToChooseCommits},
 };
 
 #[derive(Debug)]

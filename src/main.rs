@@ -12,6 +12,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, ensure, Result};
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
+use clap::Parser;
 use default_branch::DefaultBranch;
 use futures::TryStreamExt;
 use git2::{Commit, Repository, RepositoryState};
@@ -21,24 +22,23 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-mod args;
 mod branch_name;
+mod cli;
 mod default_branch;
 mod editor;
+mod github_repository_metadata;
 mod interact;
 mod issue;
 mod issue_group;
-mod sanitized_args;
 
 use crate::branch_name::BranchName;
+use crate::cli::Cli;
+use crate::cli::{CommitGrouping, CommitsToConsider, OverlayCommitsIntoOnePullRequest};
 use crate::editor::{interactive_get_pr_metadata, PullRequestMetadata};
+use crate::github_repository_metadata::GithubRepositoryMetadata;
 use crate::interact::{select_issues, IssueGroupWhitelist};
 use crate::issue::Issue;
 use crate::issue_group::{GitCommitSummary, IssueGroup};
-use crate::sanitized_args::SanitizedArgs;
-use crate::sanitized_args::{
-    CommitGrouping, CommitsToConsider, GithubRepositoryMetadata, OverlayCommitsIntoOnePullRequest,
-};
 
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
@@ -431,7 +431,9 @@ async fn sleep(duration: Duration) -> Result<()> {
 
 async fn create_pull_request(
     http_client: reqwest::Client,
-    repository_metadata: GithubRepositoryMetadata,
+    owner: String,
+    name: String,
+    forker: String,
     pr_metadata: PullRequestMetadata,
     github_token: String,
     branch_name: BranchName,
@@ -440,7 +442,7 @@ async fn create_pull_request(
     let response: CreatePullRequestResponse = http_client
         .post(format!(
             "https://api.github.com/repos/{}/{}/pulls",
-            repository_metadata.owner, repository_metadata.name
+            owner, name
         ))
         .header("User-Agent", "git-disjoint")
         .header("Accept", "application/vnd.github.v3+json")
@@ -448,7 +450,7 @@ async fn create_pull_request(
         .json(&CreatePullRequestRequest {
             title: pr_metadata.title.clone(),
             body: pr_metadata.body.clone(),
-            head: format!("{}:{}", repository_metadata.forker, branch_name),
+            head: format!("{}:{}", forker, branch_name),
             base: base.0.clone(),
             draft: true,
         })
@@ -464,23 +466,36 @@ async fn create_pull_request(
     Ok(open::that(response.html_url)?)
 }
 
-async fn do_git_disjoint<P>(exec: TokioTp, sanitized_args: SanitizedArgs, log_file: P) -> Result<()>
+async fn do_git_disjoint<P>(
+    exec: TokioTp,
+    cli: Cli,
+    repository_metadata: GithubRepositoryMetadata,
+    base: DefaultBranch,
+    log_file: P,
+) -> Result<()>
 where
     P: AsRef<Path> + Clone + Send + 'static,
 {
     let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<()>>::new(exec.clone());
 
-    let SanitizedArgs {
+    let Cli {
         all,
-        base,
+        base: _,
         choose,
         dry_run,
         github_token,
         overlay,
         separate,
+    } = cli;
+
+    let GithubRepositoryMetadata {
+        owner,
+        forker,
+        remote,
+        name,
+        root,
         repository,
-        repository_metadata,
-    } = sanitized_args;
+    } = repository_metadata;
 
     let base_commit = get_base_commit(&repository, &base)?;
     let commits = get_commits_since_base(&repository, &base_commit)?;
@@ -588,12 +603,7 @@ where
         if !dry_run {
             // Push the branch
             execute(
-                &[
-                    "git",
-                    "push",
-                    &repository_metadata.remote,
-                    &work_order.branch_name.as_str(),
-                ],
+                &["git", "push", &remote, &work_order.branch_name.as_str()],
                 log_file.as_ref(),
             )?;
 
@@ -604,7 +614,7 @@ where
 
             let pr_metadata = match needs_edit {
                 true => interactive_get_pr_metadata(
-                    &repository_metadata.root,
+                    &root,
                     work_order
                         .commit_work
                         .iter()
@@ -622,7 +632,9 @@ where
 
             pr_nursery.nurse(create_pull_request(
                 http_client.clone(),
-                repository_metadata.clone(),
+                owner.clone(),
+                name.clone(),
+                forker.clone(),
                 pr_metadata,
                 github_token.clone(),
                 work_order.branch_name.clone(),
@@ -647,17 +659,34 @@ where
 }
 
 fn main() -> Result<()> {
+    let cli = Cli::parse();
+
     let exec: TokioTp = TokioTpBuilder::new().build()?;
 
     let program = async {
-        let sanitized_args = SanitizedArgs::parse().await?;
         let log_file = get_log_file();
+        let repository_metadata = GithubRepositoryMetadata::try_default()?;
+        let base_branch = cli.base.clone();
+        let base_branch = base_branch
+            .map(DefaultBranch)
+            .ok_or_else(|| anyhow!("user has not provided a default branch"));
+        let base_branch = match base_branch {
+            Ok(base) => Ok(base),
+            Err(_) => DefaultBranch::try_get_default(&repository_metadata, &cli.github_token).await,
+        }?;
 
-        assert_repository_state_is_clean(&sanitized_args.repository)?;
-        assert_tree_matches_workdir_with_index(&sanitized_args.repository)?;
+        assert_repository_state_is_clean(&repository_metadata.repository)?;
+        assert_tree_matches_workdir_with_index(&repository_metadata.repository)?;
 
         // TODO: rename for clarity
-        let result = do_git_disjoint(exec.clone(), sanitized_args, log_file.clone()).await;
+        let result = do_git_disjoint(
+            exec.clone(),
+            cli.clone(),
+            repository_metadata,
+            base_branch,
+            log_file.clone(),
+        )
+        .await;
         match result {
             // Execution succeeded, so clean up the log file
             Ok(()) => Ok::<(), anyhow::Error>(fs::remove_file(log_file)?),

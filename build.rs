@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use clap::{CommandFactory, ValueEnum};
 use clap_complete::{generate_to, Shell};
 
-#[path = "src/args.rs"]
-mod args;
+#[path = "src/cli.rs"]
+mod cli;
 
 fn generate_man_pages(out_dir: &Path, command: clap::Command) -> std::io::Result<()> {
     let man = clap_mangen::Man::new(command);
@@ -33,7 +33,7 @@ fn main() -> std::io::Result<()> {
 
     let out_dir =
         PathBuf::from(std::env::var_os("OUT_DIR").ok_or_else(|| std::io::ErrorKind::NotFound)?);
-    let command = args::Args::command();
+    let command = cli::Cli::command();
 
     generate_man_pages(&out_dir, command.clone())?;
     generate_shell_completions(&out_dir, command.clone())?;

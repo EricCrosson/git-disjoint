@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 
-use crate::sanitized_args::GithubRepositoryMetadata;
+use crate::github_repository_metadata::GithubRepositoryMetadata;
 
 #[derive(Clone, Debug)]
 pub(crate) struct DefaultBranch(pub String);
