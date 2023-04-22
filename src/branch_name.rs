@@ -1,10 +1,14 @@
 use std::fmt::Display;
 
-/// Characters that interfere with terminal tab-completion, that will be
-/// replaced with a hyphen.
+use sanitize_git_ref::sanitize_git_ref_onelevel;
+
+use crate::issue_group::IssueGroup;
+
+/// Characters to be replaced with a hyphen, since they interfere with terminal
+/// tab-completion.
 static CHARACTERS_TO_REPLACE_WITH_HYPHEN: &[char] = &['!', '`', '(', ')'];
 
-/// Characters to be deleted.
+/// Characters to be deleted, since they interfere with terminal tab-completion.
 static CHARACTERS_TO_REMOVE: &[char] = &['\'', '"'];
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -27,6 +31,18 @@ impl BranchName {
         &self.0
     }
 
+    pub fn from_issue_group(issue_group: &IssueGroup, summary: &str) -> Self {
+        let raw_branch_name = match issue_group {
+            IssueGroup::Issue(issue_group) => format!(
+                "{}-{}",
+                issue_group.issue_identifier(),
+                summary.to_lowercase()
+            ),
+            IssueGroup::Commit(summary) => summary.0.clone().to_lowercase(),
+        };
+        Self::new(sanitize_git_ref_onelevel(&raw_branch_name))
+    }
+
     pub fn new(value: String) -> Self {
         let s = value.replace(CHARACTERS_TO_REPLACE_WITH_HYPHEN, "-");
         let s = elide_consecutive_hyphens(s);
@@ -42,7 +58,7 @@ impl Display for BranchName {
 }
 
 impl From<String> for BranchName {
-    fn from(value: String) -> Self {
-        Self::new(value)
+    fn from(s: String) -> Self {
+        Self::new(s)
     }
 }

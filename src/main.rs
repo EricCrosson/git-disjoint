@@ -12,19 +12,13 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, ensure, Result};
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
-use branch_name::BranchName;
 use default_branch::DefaultBranch;
 use futures::TryStreamExt;
 use git2::{Commit, Repository, RepositoryState};
 use indexmap::IndexMap;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use interact::{select_issues, IssueGroupWhitelist};
 use lazy_static::lazy_static;
 use regex::Regex;
-use sanitize_git_ref::sanitize_git_ref_onelevel;
-use sanitized_args::{
-    CommitGrouping, CommitsToConsider, GithubRepositoryMetadata, OverlayCommitsIntoOnePullRequest,
-};
 use serde::{Deserialize, Serialize};
 
 mod args;
@@ -36,10 +30,15 @@ mod issue;
 mod issue_group;
 mod sanitized_args;
 
+use crate::branch_name::BranchName;
 use crate::editor::{interactive_get_pr_metadata, PullRequestMetadata};
+use crate::interact::{select_issues, IssueGroupWhitelist};
 use crate::issue::Issue;
 use crate::issue_group::{GitCommitSummary, IssueGroup};
 use crate::sanitized_args::SanitizedArgs;
+use crate::sanitized_args::{
+    CommitGrouping, CommitsToConsider, GithubRepositoryMetadata, OverlayCommitsIntoOnePullRequest,
+};
 
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
@@ -94,11 +93,12 @@ fn plan_branch_names<'repo>(
                     )
                 })?
             };
-            let generated_branch_name = get_branch_name(&issue_group, summary);
+            let generated_branch_name = BranchName::from_issue_group(&issue_group, summary);
             let mut proposed_branch_name = generated_branch_name.clone();
 
             while seen_branch_names.contains(&proposed_branch_name) {
                 suffix += 1;
+                // OPTIMIZE: no need to call sanitize_git_ref here again
                 proposed_branch_name = format!("{}_{}", generated_branch_name, suffix).into();
             }
 
@@ -183,26 +183,6 @@ macro_rules! filter_try {
             Err(_) => return None,
         }
     };
-}
-
-/// Create a valid git branch name, by:
-/// - concatenating the issue and summary, separated by a hyphen
-/// - replace parenthesis with hyphens
-///   since parenthesis interfere with terminal tab-completion,
-/// - delete single and double quotes
-///   since quotes interfere with terminal tab-completion,
-/// - lower-case all letters in the commit message summary (but not the ticket name)
-fn get_branch_name(issue: &IssueGroup, summary: &str) -> BranchName {
-    let raw_branch_name = match issue {
-        IssueGroup::Issue(issue_group) => format!(
-            "{}-{}",
-            issue_group.issue_identifier(),
-            summary.to_lowercase()
-        ),
-        IssueGroup::Commit(summary) => summary.0.clone().to_lowercase(),
-    };
-    // REFACTOR: move the sanitize_git_ref call into BranchName
-    BranchName::new(sanitize_git_ref_onelevel(&raw_branch_name))
 }
 
 fn execute(command: &[&str], log_file: &Path) -> Result<()> {
