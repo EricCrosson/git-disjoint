@@ -4,7 +4,6 @@
 use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
-use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
@@ -186,7 +185,7 @@ macro_rules! filter_try {
     };
 }
 
-fn execute(command: &[&str], log_file: &Path) -> Result<(), anyhow::Error> {
+fn execute(command: &[&str], log_file: &LogFile) -> Result<(), anyhow::Error> {
     let mut runner = Command::new(command[0]);
 
     let mut file = OpenOptions::new()
@@ -404,14 +403,8 @@ fn apply_overlay<'repo>(
     }
 }
 
-async fn cherry_pick<P>(commit: String, log_file: P) -> Result<(), anyhow::Error>
-where
-    P: AsRef<Path> + 'static,
-{
-    execute(
-        &["git", "cherry-pick", "--allow-empty", &commit],
-        log_file.as_ref(),
-    )
+async fn cherry_pick(commit: String, log_file: LogFile) -> Result<(), anyhow::Error> {
+    execute(&["git", "cherry-pick", "--allow-empty", &commit], &log_file)
 }
 
 async fn update_spinner(progress_bar: ProgressBar) -> Result<(), anyhow::Error> {
@@ -597,7 +590,7 @@ async fn do_git_disjoint(
             // Push the branch
             execute(
                 &["git", "push", &remote, (work_order.branch_name.as_str())],
-                log_file.as_ref(),
+                &log_file,
             )?;
 
             // Open a pull request
@@ -635,7 +628,7 @@ async fn do_git_disjoint(
             ))?;
 
             // Finally, check out the original ref
-            execute(&["git", "checkout", "-"], log_file.as_ref())?;
+            execute(&["git", "checkout", "-"], &log_file)?;
         }
 
         work_order
