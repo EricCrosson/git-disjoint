@@ -2,12 +2,11 @@
 #![feature(exit_status_error)]
 
 use std::collections::HashSet;
-use std::env::temp_dir;
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::{Command, Stdio};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 use anyhow::{anyhow, ensure, Result};
 use async_executors::{TokioTp, TokioTpBuilder};
@@ -19,6 +18,7 @@ use git2::{Commit, Repository, RepositoryState};
 use indexmap::IndexMap;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
+use log_file::LogFile;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -30,6 +30,7 @@ mod github_repository_metadata;
 mod interact;
 mod issue;
 mod issue_group;
+mod log_file;
 
 use crate::branch_name::BranchName;
 use crate::cli::Cli;
@@ -256,14 +257,6 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<()> {
     Ok(())
 }
 
-fn get_log_file() -> PathBuf {
-    let start = SystemTime::now();
-    temp_dir().join(format!(
-        "git-disjoint-{:?}",
-        start.duration_since(UNIX_EPOCH).unwrap()
-    ))
-}
-
 fn get_base_commit<'repo>(repo: &'repo Repository, base: &DefaultBranch) -> Result<Commit<'repo>> {
     // Assumption: `base` indicates a single commit
     // Assumption: `origin` is the upstream/main repositiory
@@ -463,16 +456,13 @@ async fn create_pull_request(
     Ok(open::that(response.html_url)?)
 }
 
-async fn do_git_disjoint<P>(
+async fn do_git_disjoint(
     exec: TokioTp,
     cli: Cli,
     repository_metadata: GithubRepositoryMetadata,
     base: DefaultBranch,
-    log_file: P,
-) -> Result<()>
-where
-    P: AsRef<Path> + Clone + Send + 'static,
-{
+    log_file: LogFile,
+) -> Result<()> {
     let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<()>>::new(exec.clone());
 
     let Cli {
@@ -661,7 +651,7 @@ fn main() -> Result<()> {
     let exec: TokioTp = TokioTpBuilder::new().build()?;
 
     let program = async {
-        let log_file = get_log_file();
+        let log_file = LogFile::default();
         let repository_metadata = GithubRepositoryMetadata::try_default()?;
         let base_branch = cli.base.clone();
         let base_branch = base_branch
@@ -686,7 +676,7 @@ fn main() -> Result<()> {
         .await;
         match result {
             // Execution succeeded, so clean up the log file
-            Ok(()) => Ok::<(), anyhow::Error>(fs::remove_file(log_file)?),
+            Ok(()) => Ok(log_file.delete()?),
             Err(err) => {
                 // Execution failed, so display the logs and the error to the user
                 let log_contents = fs::read_to_string(&log_file)?;
