@@ -75,7 +75,7 @@ pub(crate) struct Cli {
     /// There is no change to commits with an issue trailer.
     ///
     /// This flag can be combined with the --choose flag.
-    #[clap(
+    #[arg(
         short,
         long,
         help = "Consider every commit, even commits without an issue trailer",
@@ -86,7 +86,7 @@ pub(crate) struct Cli {
     /// The starting point (exclusive) of commits to act on.
     ///
     /// Defaults to the repository's default branch.
-    #[clap(
+    #[arg(
         short,
         long,
         help = "The starting point (exclusive) of commits to act on",
@@ -98,7 +98,7 @@ pub(crate) struct Cli {
     ///
     /// Select a whitelist of issues (or commits, if the --all flag is active)
     /// in a terminal UI.
-    #[clap(
+    #[arg(
         short,
         long,
         help = "Prompt the user to select which issues to create PRs for",
@@ -107,7 +107,7 @@ pub(crate) struct Cli {
     pub choose: PromptUserToChooseCommits,
 
     /// Show the work that would be performed without taking any action.
-    #[clap(
+    #[arg(
         short,
         long,
         env = "GIT_DISJOINT_DRY_RUN",
@@ -116,7 +116,7 @@ pub(crate) struct Cli {
     pub dry_run: bool,
 
     /// GitHub API token with repo permissions.
-    #[clap(
+    #[arg(
         long,
         env = "GITHUB_TOKEN",
         help = "GitHub API token",
@@ -130,7 +130,7 @@ pub(crate) struct Cli {
     ///
     /// This can be useful when you have multiple commits with no trailer that
     /// would be better reviewed or merged together.
-    #[clap(
+    #[arg(
         short,
         long,
         help = "Combine multiple issue groups into one PR",
@@ -148,7 +148,7 @@ pub(crate) struct Cli {
     ///
     /// This can be useful when you have numerous changes that belong under
     /// one issue, but would be better reviewed independently.
-    #[clap(
+    #[arg(
         short,
         long,
         help = "Treat every commit separately; do not group by issue",
