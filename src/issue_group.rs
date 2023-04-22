@@ -1,6 +1,5 @@
-use std::fmt::Display;
+use std::{error::Error, fmt::Display};
 
-use anyhow::anyhow;
 use git2::Commit;
 
 use crate::issue::Issue;
@@ -14,18 +13,47 @@ impl Display for GitCommitSummary {
     }
 }
 
+#[derive(Debug)]
+#[non_exhaustive]
+pub(crate) struct FromCommitError {
+    commit: git2::Oid,
+    kind: FromCommitErrorKind,
+}
+
+impl Display for FromCommitError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.kind {
+            FromCommitErrorKind::InvalidUtf8 => {
+                write!(f, "summary for commit {:?} is not valid UTF-8", self.commit)
+            }
+        }
+    }
+}
+
+impl Error for FromCommitError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match &self.kind {
+            FromCommitErrorKind::InvalidUtf8 => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum FromCommitErrorKind {
+    #[non_exhaustive]
+    InvalidUtf8,
+}
+
 impl<'a> TryFrom<&Commit<'a>> for GitCommitSummary {
-    type Error = anyhow::Error;
+    type Error = FromCommitError;
 
     fn try_from(commit: &Commit) -> Result<Self, Self::Error> {
         Ok(Self(
             commit
                 .summary()
-                .ok_or_else(|| {
-                    anyhow!(
-                        "Summary for commit {:?} is not a valid UTF-8 string",
-                        commit.id()
-                    )
+                .ok_or(FromCommitError {
+                    commit: commit.id(),
+                    kind: FromCommitErrorKind::InvalidUtf8,
                 })?
                 .to_owned(),
         ))

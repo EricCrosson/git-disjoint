@@ -1,10 +1,13 @@
 use std::{
     collections::HashSet,
+    error::Error,
+    fmt::Display,
+    io,
     path::{Path, PathBuf},
     process::Command,
+    string::FromUtf8Error,
 };
 
-use anyhow::anyhow;
 use git2::Repository;
 use git_url_parse::GitUrl;
 
@@ -19,8 +22,62 @@ pub(crate) struct GithubRepositoryMetadata {
     pub repository: Repository,
 }
 
+#[derive(Debug)]
+#[non_exhaustive]
+pub(crate) struct TryDefaultError {
+    kind: TryDefaultErrorKind,
+}
+
+impl Display for TryDefaultError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.kind {
+            TryDefaultErrorKind::RunCommand(_) => write!(f, "error running command"),
+            TryDefaultErrorKind::ParseCommandOutput(_) => write!(f, "command output contains invalid UTF-8"),
+            TryDefaultErrorKind::OpenRepository(_) => write!(f, "unable to open git repository"),
+            TryDefaultErrorKind::ParseGitUrl => write!(f, "unable to parse git remote"),
+            TryDefaultErrorKind::ListRemotes(_) => write!(f, "unable to list git remotes"),
+            TryDefaultErrorKind::AmbiguousGitRemote => write!(f, "unable to choose a git remote to push to, expected to find a remote named 'fork' or 'origin'"),
+        }
+    }
+}
+
+impl Error for TryDefaultError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match &self.kind {
+            TryDefaultErrorKind::RunCommand(err) => Some(err),
+            TryDefaultErrorKind::ParseCommandOutput(err) => Some(err),
+            TryDefaultErrorKind::OpenRepository(err) => Some(err),
+            TryDefaultErrorKind::ParseGitUrl => None,
+            TryDefaultErrorKind::ListRemotes(err) => Some(err),
+            TryDefaultErrorKind::AmbiguousGitRemote => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum TryDefaultErrorKind {
+    #[non_exhaustive]
+    RunCommand(io::Error),
+    #[non_exhaustive]
+    ParseCommandOutput(FromUtf8Error),
+    #[non_exhaustive]
+    OpenRepository(git2::Error),
+    #[non_exhaustive]
+    ParseGitUrl,
+    #[non_exhaustive]
+    ListRemotes(git2::Error),
+    #[non_exhaustive]
+    AmbiguousGitRemote,
+}
+
+impl From<TryDefaultErrorKind> for TryDefaultError {
+    fn from(kind: TryDefaultErrorKind) -> Self {
+        Self { kind }
+    }
+}
+
 impl GithubRepositoryMetadata {
-    pub fn try_default() -> Result<Self, anyhow::Error> {
+    pub fn try_default() -> Result<Self, TryDefaultError> {
         let repo_root = get_repository_root()?;
         let repository = get_repository(&repo_root)?;
         let origin = get_remote_url("origin")?;
@@ -37,39 +94,46 @@ impl GithubRepositoryMetadata {
     }
 }
 
-fn get_user_remote(repo: &Repository) -> Result<String, anyhow::Error> {
-    let repo_remotes = repo.remotes()?;
+fn get_user_remote(repo: &Repository) -> Result<String, TryDefaultErrorKind> {
+    let repo_remotes = repo.remotes().map_err(TryDefaultErrorKind::ListRemotes)?;
     let mut remotes: HashSet<&str> = repo_remotes.iter().flatten().collect();
 
     remotes
         .take("fork")
         .or_else(|| remotes.take("origin"))
         .map(|str| str.to_owned())
-        .ok_or_else(|| anyhow!("Unable to choose a git remote to push to, expected to find a remote named 'fork' or 'origin'"))
+        .ok_or(TryDefaultErrorKind::AmbiguousGitRemote)
 }
 
-fn get_repository_root() -> Result<PathBuf, anyhow::Error> {
+fn get_repository_root() -> Result<PathBuf, TryDefaultErrorKind> {
     let output_buffer = Command::new("git")
         .arg("rev-parse")
         .arg("--show-toplevel")
-        .output()?
+        .output()
+        .map_err(TryDefaultErrorKind::RunCommand)?
         .stdout;
-    let output = String::from_utf8(output_buffer)?.trim().to_owned();
+    let output = String::from_utf8(output_buffer)
+        .map_err(TryDefaultErrorKind::ParseCommandOutput)?
+        .trim()
+        .to_owned();
     Ok(PathBuf::from(output))
 }
 
-fn get_repository(root: &Path) -> Result<Repository, anyhow::Error> {
-    Ok(Repository::open(root)?)
+fn get_repository(root: &Path) -> Result<Repository, TryDefaultErrorKind> {
+    Repository::open(root).map_err(TryDefaultErrorKind::OpenRepository)
 }
 
-fn get_remote_url(remote: &str) -> Result<GitUrl, anyhow::Error> {
+fn get_remote_url(remote: &str) -> Result<GitUrl, TryDefaultErrorKind> {
     let output_buffer = Command::new("git")
         .arg("config")
         .arg("--get")
         .arg(format!("remote.{remote}.url"))
-        .output()?
+        .output()
+        .map_err(TryDefaultErrorKind::RunCommand)?
         .stdout;
-    let output = String::from_utf8(output_buffer)?.trim().to_owned();
-    GitUrl::parse(&output)
-        .map_err(|parse_error| anyhow!("Unable to parse origin remote url: {parse_error}"))
+    let output = String::from_utf8(output_buffer)
+        .map_err(TryDefaultErrorKind::ParseCommandOutput)?
+        .trim()
+        .to_owned();
+    GitUrl::parse(&output).map_err(|_| TryDefaultErrorKind::ParseGitUrl)
 }
