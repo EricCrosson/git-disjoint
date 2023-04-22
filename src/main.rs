@@ -653,13 +653,10 @@ fn main() -> Result<(), anyhow::Error> {
         let log_file = LogFile::default();
         let repository_metadata = GithubRepositoryMetadata::try_default()?;
         let base_branch = cli.base.clone();
-        let base_branch = base_branch
-            .map(DefaultBranch)
-            .ok_or_else(|| anyhow!("user has not provided a default branch"));
         let base_branch = match base_branch {
-            Ok(base) => Ok(base),
-            Err(_) => DefaultBranch::try_get_default(&repository_metadata, &cli.github_token).await,
-        }?;
+            Some(base) => DefaultBranch(base),
+            None => DefaultBranch::try_get_default(&repository_metadata, &cli.github_token).await?,
+        };
 
         assert_repository_state_is_clean(&repository_metadata.repository)?;
         assert_tree_matches_workdir_with_index(&repository_metadata.repository)?;
