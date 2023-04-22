@@ -1457,13 +1457,9 @@ checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 
 [[package]]
 name = "sanitize-git-ref"
-version = "1.0.11"
+version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af52cd3ed54790acf320e784eca08f83c7301dfecd145c9cdef8c7cacc494a62"
-dependencies = [
- "lazy_static",
- "regex",
-]
+checksum = "dad160fe43549bdb9a04ab2e269bf50d415d86467463bc766c30d67dea822bd1"
 
 [[package]]
 name = "scopeguard"
