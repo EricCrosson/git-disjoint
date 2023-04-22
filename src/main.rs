@@ -191,7 +191,6 @@ fn execute(command: &[&str], log_file: &Path) -> Result<(), anyhow::Error> {
 
     let mut file = OpenOptions::new()
         .create(true)
-        .write(true)
         .append(true)
         .open(log_file)
         .unwrap();
