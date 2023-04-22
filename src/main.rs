@@ -12,6 +12,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use anyhow::{anyhow, ensure, Result};
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
+use branch_name::BranchName;
 use default_branch::DefaultBranch;
 use futures::TryStreamExt;
 use git2::{Commit, Repository, RepositoryState};
@@ -27,6 +28,7 @@ use sanitized_args::{
 use serde::{Deserialize, Serialize};
 
 mod args;
+mod branch_name;
 mod default_branch;
 mod editor;
 mod interact;
@@ -62,7 +64,7 @@ lazy_static! {
 
 #[derive(Debug)]
 struct CommitPlan<'repo> {
-    branch_name: String,
+    branch_name: BranchName,
     commits: Vec<Commit<'repo>>,
 }
 
@@ -97,7 +99,7 @@ fn plan_branch_names<'repo>(
 
             while seen_branch_names.contains(&proposed_branch_name) {
                 suffix += 1;
-                proposed_branch_name = format!("{}_{}", generated_branch_name, suffix);
+                proposed_branch_name = format!("{}_{}", generated_branch_name, suffix).into();
             }
 
             seen_branch_names.insert(proposed_branch_name.clone());
@@ -134,7 +136,7 @@ impl<'repo> From<Commit<'repo>> for CommitWork<'repo> {
 
 #[derive(Debug)]
 struct WorkOrder<'repo> {
-    branch_name: String,
+    branch_name: BranchName,
     commit_work: Vec<CommitWork<'repo>>,
     progress_bar: ProgressBar,
 }
@@ -190,7 +192,7 @@ macro_rules! filter_try {
 /// - delete single and double quotes
 ///   since quotes interfere with terminal tab-completion,
 /// - lower-case all letters in the commit message summary (but not the ticket name)
-fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
+fn get_branch_name(issue: &IssueGroup, summary: &str) -> BranchName {
     let raw_branch_name = match issue {
         IssueGroup::Issue(issue_group) => format!(
             "{}-{}",
@@ -199,10 +201,8 @@ fn get_branch_name(issue: &IssueGroup, summary: &str) -> String {
         ),
         IssueGroup::Commit(summary) => summary.0.clone().to_lowercase(),
     };
-    let branch_name = sanitize_git_ref_onelevel(&raw_branch_name).replace(['(', ')'], "-");
-    RE_MULTIPLE_HYPHENS
-        .replace_all(&branch_name, "-")
-        .replace(['\'', '"'], "")
+    // REFACTOR: move the sanitize_git_ref call into BranchName
+    BranchName::new(sanitize_git_ref_onelevel(&raw_branch_name))
 }
 
 fn execute(command: &[&str], log_file: &Path) -> Result<()> {
@@ -454,7 +454,7 @@ async fn create_pull_request(
     repository_metadata: GithubRepositoryMetadata,
     pr_metadata: PullRequestMetadata,
     github_token: String,
-    branch_name: String,
+    branch_name: BranchName,
     base: DefaultBranch,
 ) -> Result<()> {
     let response: CreatePullRequestResponse = http_client
@@ -563,7 +563,7 @@ where
 
         if !dry_run {
             // Create a branch
-            repository.branch(&work_order.branch_name, &base_commit, true)?;
+            repository.branch(&work_order.branch_name.as_str(), &base_commit, true)?;
 
             // Check out the new branch
             let branch_obj = repository.revparse_single(&branch_ref)?;
@@ -612,7 +612,7 @@ where
                     "git",
                     "push",
                     &repository_metadata.remote,
-                    &work_order.branch_name,
+                    &work_order.branch_name.as_str(),
                 ],
                 log_file.as_ref(),
             )?;
