@@ -4,7 +4,7 @@ use std::{
     process::Command,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use git2::Repository;
 use git_url_parse::GitUrl;
 
@@ -37,7 +37,7 @@ impl GithubRepositoryMetadata {
     }
 }
 
-fn get_user_remote(repo: &Repository) -> Result<String> {
+fn get_user_remote(repo: &Repository) -> Result<String, anyhow::Error> {
     let repo_remotes = repo.remotes()?;
     let mut remotes: HashSet<&str> = repo_remotes.iter().flatten().collect();
 
@@ -48,7 +48,7 @@ fn get_user_remote(repo: &Repository) -> Result<String> {
         .ok_or_else(|| anyhow!("Unable to choose a git remote to push to, expected to find a remote named 'fork' or 'origin'"))
 }
 
-fn get_repository_root() -> Result<PathBuf> {
+fn get_repository_root() -> Result<PathBuf, anyhow::Error> {
     let output_buffer = Command::new("git")
         .arg("rev-parse")
         .arg("--show-toplevel")
@@ -58,11 +58,11 @@ fn get_repository_root() -> Result<PathBuf> {
     Ok(PathBuf::from(output))
 }
 
-fn get_repository(root: &Path) -> Result<Repository> {
+fn get_repository(root: &Path) -> Result<Repository, anyhow::Error> {
     Ok(Repository::open(root)?)
 }
 
-fn get_remote_url(remote: &str) -> Result<GitUrl> {
+fn get_remote_url(remote: &str) -> Result<GitUrl, anyhow::Error> {
     let output_buffer = Command::new("git")
         .arg("config")
         .arg("--get")

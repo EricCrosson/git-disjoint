@@ -8,7 +8,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
-use anyhow::{anyhow, ensure, Result};
+use anyhow::{anyhow, ensure};
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
 use clap::Parser;
@@ -76,7 +76,7 @@ struct CommitPlan<'repo> {
 /// create a branch with the same name twice.
 fn plan_branch_names<'repo>(
     commits_by_issue_group: IndexMap<IssueGroup, Vec<Commit<'repo>>>,
-) -> Result<IndexMap<IssueGroup, CommitPlan<'repo>>> {
+) -> Result<IndexMap<IssueGroup, CommitPlan<'repo>>, anyhow::Error> {
     let mut suffix: u32 = 0;
     let mut seen_branch_names = HashSet::new();
     commits_by_issue_group
@@ -186,7 +186,7 @@ macro_rules! filter_try {
     };
 }
 
-fn execute(command: &[&str], log_file: &Path) -> Result<()> {
+fn execute(command: &[&str], log_file: &Path) -> Result<(), anyhow::Error> {
     let mut runner = Command::new(command[0]);
 
     let mut file = OpenOptions::new()
@@ -225,7 +225,7 @@ fn execute(command: &[&str], log_file: &Path) -> Result<()> {
 ///
 /// This prevents invoking `git disjoint` on a repository in the middle
 /// of some other operation, like a `git rebase`.
-fn assert_repository_state_is_clean(repo: &Repository) -> Result<()> {
+fn assert_repository_state_is_clean(repo: &Repository) -> Result<(), anyhow::Error> {
     let state = repo.state();
     ensure!(
         RepositoryState::Clean == state,
@@ -242,7 +242,7 @@ fn assert_repository_state_is_clean(repo: &Repository) -> Result<()> {
 /// staged, deletec, etc.
 ///
 /// This check currently excludes untracked files, but I'm not tied to this behavior.
-fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<()> {
+fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<(), anyhow::Error> {
     let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
     let originally_checked_out_tree = originally_checked_out_commit.tree()?;
 
@@ -257,7 +257,10 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<()> {
     Ok(())
 }
 
-fn get_base_commit<'repo>(repo: &'repo Repository, base: &DefaultBranch) -> Result<Commit<'repo>> {
+fn get_base_commit<'repo>(
+    repo: &'repo Repository,
+    base: &DefaultBranch,
+) -> Result<Commit<'repo>, anyhow::Error> {
     // Assumption: `base` indicates a single commit
     // Assumption: `origin` is the upstream/main repositiory
     let start_point = repo.revparse_single(&format!("origin/{}", &base.0))?;
@@ -272,7 +275,7 @@ fn get_base_commit<'repo>(repo: &'repo Repository, base: &DefaultBranch) -> Resu
 fn get_commits_since_base<'repo>(
     repo: &'repo Repository,
     base: &git2::Commit,
-) -> Result<Vec<Commit<'repo>>> {
+) -> Result<Vec<Commit<'repo>>, anyhow::Error> {
     // Identifies output commits by traversing commits starting from HEAD and
     // working towards base, then reversing the list.
     let mut revwalk = repo.revwalk()?;
@@ -300,54 +303,56 @@ fn group_commits_by_issue_group<'repo>(
     commits: Vec<Commit<'repo>>,
     commits_to_consider: CommitsToConsider,
     commit_grouping: CommitGrouping,
-) -> Result<IndexMap<IssueGroup, Vec<Commit>>> {
+) -> Result<IndexMap<IssueGroup, Vec<Commit>>, anyhow::Error> {
     let mut suffix: u32 = 0;
     let mut seen_issue_groups = HashSet::new();
     let commits_by_issue: IndexMap<IssueGroup, Vec<Commit>> = commits
         .into_iter()
         // Parse issue from commit message
-        .map(|commit| -> Result<Option<(IssueGroup, Commit)>> {
-            let issue = commit.message().and_then(Issue::parse_from_commit_message);
-            // If:
-            // - we're grouping commits by issue, and
-            // - this commit includes an issue,
-            // then add this commit to that issue's group.
-            if commit_grouping == CommitGrouping::ByIssue {
-                if let Some(issue) = issue {
-                    return Ok(Some((IssueGroup::Issue(issue), commit)));
-                }
-            }
-
-            // If:
-            // - we're treating every commit separately, or
-            // - we're considering all commits (even commits without an issue),
-            // add this commit to a unique issue-group.
-            if commit_grouping == CommitGrouping::Individual
-                || commits_to_consider == CommitsToConsider::All
-            {
-                let summary: GitCommitSummary = (&commit).try_into()?;
-                let mut proposed_issue_group = summary.clone();
-
-                while seen_issue_groups.contains(&proposed_issue_group) {
-                    suffix += 1;
-                    proposed_issue_group = GitCommitSummary(format!("{summary}_{suffix}"));
+        .map(
+            |commit| -> Result<Option<(IssueGroup, Commit)>, anyhow::Error> {
+                let issue = commit.message().and_then(Issue::parse_from_commit_message);
+                // If:
+                // - we're grouping commits by issue, and
+                // - this commit includes an issue,
+                // then add this commit to that issue's group.
+                if commit_grouping == CommitGrouping::ByIssue {
+                    if let Some(issue) = issue {
+                        return Ok(Some((IssueGroup::Issue(issue), commit)));
+                    }
                 }
 
-                seen_issue_groups.insert(proposed_issue_group.clone());
+                // If:
+                // - we're treating every commit separately, or
+                // - we're considering all commits (even commits without an issue),
+                // add this commit to a unique issue-group.
+                if commit_grouping == CommitGrouping::Individual
+                    || commits_to_consider == CommitsToConsider::All
+                {
+                    let summary: GitCommitSummary = (&commit).try_into()?;
+                    let mut proposed_issue_group = summary.clone();
 
-                return Ok(Some((IssueGroup::Commit(proposed_issue_group), commit)));
-            }
+                    while seen_issue_groups.contains(&proposed_issue_group) {
+                        suffix += 1;
+                        proposed_issue_group = GitCommitSummary(format!("{summary}_{suffix}"));
+                    }
 
-            // Otherwise, skip this commit.
-            // FIXME: use writeln! to stderr
-            eprintln!(
-                "Warning: ignoring commit without issue trailer: {:?}",
-                commit.id()
-            );
-            Ok(None)
-        })
+                    seen_issue_groups.insert(proposed_issue_group.clone());
+
+                    return Ok(Some((IssueGroup::Commit(proposed_issue_group), commit)));
+                }
+
+                // Otherwise, skip this commit.
+                // FIXME: use writeln! to stderr
+                eprintln!(
+                    "Warning: ignoring commit without issue trailer: {:?}",
+                    commit.id()
+                );
+                Ok(None)
+            },
+        )
         // unwrap the Result
-        .collect::<Result<Vec<_>>>()?
+        .collect::<Result<Vec<_>, anyhow::Error>>()?
         .into_iter()
         // drop the None values
         .flatten()
@@ -400,7 +405,7 @@ fn apply_overlay<'repo>(
     }
 }
 
-async fn cherry_pick<P>(commit: String, log_file: P) -> Result<()>
+async fn cherry_pick<P>(commit: String, log_file: P) -> Result<(), anyhow::Error>
 where
     P: AsRef<Path> + 'static,
 {
@@ -410,14 +415,14 @@ where
     )
 }
 
-async fn update_spinner(progress_bar: ProgressBar) -> Result<()> {
+async fn update_spinner(progress_bar: ProgressBar) -> Result<(), anyhow::Error> {
     loop {
         progress_bar.tick();
         tokio::time::sleep(Duration::from_millis(15)).await;
     }
 }
 
-async fn sleep(duration: Duration) -> Result<()> {
+async fn sleep(duration: Duration) -> Result<(), anyhow::Error> {
     tokio::time::sleep(duration).await;
     Ok(())
 }
@@ -431,7 +436,7 @@ async fn create_pull_request(
     github_token: String,
     branch_name: BranchName,
     base: DefaultBranch,
-) -> Result<()> {
+) -> Result<(), anyhow::Error> {
     let response: CreatePullRequestResponse = http_client
         .post(format!("https://api.github.com/repos/{owner}/{name}/pulls"))
         .header("User-Agent", "git-disjoint")
@@ -462,8 +467,9 @@ async fn do_git_disjoint(
     repository_metadata: GithubRepositoryMetadata,
     base: DefaultBranch,
     log_file: LogFile,
-) -> Result<()> {
-    let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<()>>::new(exec.clone());
+) -> Result<(), anyhow::Error> {
+    let (pr_nursery, mut pr_stream) =
+        Nursery::<TokioTp, Result<(), anyhow::Error>>::new(exec.clone());
 
     let Cli {
         all,
@@ -563,7 +569,8 @@ async fn do_git_disjoint(
             // a worker thread. If there's no work to do, we can keep the UI
             // activity on the main thread. But we don't, so the dry_run flag
             // exercises more of the same code paths as a live run does.
-            let (nursery, mut output) = Nursery::<TokioTp, Result<()>>::new(exec.clone());
+            let (nursery, mut output) =
+                Nursery::<TokioTp, Result<(), anyhow::Error>>::new(exec.clone());
             nursery.nurse(update_spinner(commit_work.progress_bar.clone()))?;
 
             if dry_run {
@@ -645,7 +652,7 @@ async fn do_git_disjoint(
     Ok(())
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), anyhow::Error> {
     let cli = Cli::parse();
 
     let exec: TokioTp = TokioTpBuilder::new().build()?;

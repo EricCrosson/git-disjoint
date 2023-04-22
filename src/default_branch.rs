@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use serde::Deserialize;
 
 use crate::github_repository_metadata::GithubRepositoryMetadata;
@@ -15,7 +15,7 @@ impl DefaultBranch {
     pub(crate) async fn try_get_default(
         repository_metadata: &GithubRepositoryMetadata,
         github_token: &str,
-    ) -> Result<DefaultBranch> {
+    ) -> Result<DefaultBranch, anyhow::Error> {
         let http_client = reqwest::Client::new();
         let response: GetRepositoryResponse = http_client
             .get(format!(

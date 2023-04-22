@@ -1,6 +1,6 @@
 use std::{fs::File, io::Write, path::Path, process::Command, str::FromStr};
 
-use anyhow::{anyhow, ensure, Result};
+use anyhow::{anyhow, ensure};
 use git2::Commit;
 
 const PULL_REQUEST_HEADER: &str = r#"
@@ -53,7 +53,7 @@ fn truncate(s: &str, max_chars: usize) -> &str {
 pub(crate) fn interactive_get_pr_metadata<'repo>(
     root: &Path,
     commits: Vec<&Commit<'repo>>,
-) -> Result<PullRequestMetadata> {
+) -> Result<PullRequestMetadata, anyhow::Error> {
     let editor = get_editor()
         .ok_or_else(|| anyhow!("User should set VISUAL or EDITOR environment variable"))?;
 

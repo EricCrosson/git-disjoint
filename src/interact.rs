@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use git2::Commit;
 use indexmap::IndexMap;
 use inquire::{formatter::MultiOptionFormatter, MultiSelect};
@@ -16,7 +16,7 @@ pub(crate) enum IssueGroupWhitelist {
     WhitelistDNE,
 }
 
-fn prompt_user(choices: Vec<&IssueGroup>) -> Result<HashSet<IssueGroup>> {
+fn prompt_user(choices: Vec<&IssueGroup>) -> Result<HashSet<IssueGroup>, anyhow::Error> {
     let formatter: MultiOptionFormatter<&IssueGroup> =
         &|selected| format!("Selected: {selected:?}");
 
@@ -34,7 +34,7 @@ pub(crate) fn select_issues(
     commits_by_issue_group: &IndexMap<IssueGroup, Vec<Commit>>,
     choose: PromptUserToChooseCommits,
     overlay: OverlayCommitsIntoOnePullRequest,
-) -> Result<IssueGroupWhitelist> {
+) -> Result<IssueGroupWhitelist, anyhow::Error> {
     if choose == PromptUserToChooseCommits::No && overlay == OverlayCommitsIntoOnePullRequest::No {
         return Ok(IssueGroupWhitelist::WhitelistDNE);
     }
