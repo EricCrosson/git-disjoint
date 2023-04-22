@@ -9,8 +9,6 @@ use proptest_derive::Arbitrary;
 lazy_static! {
     static ref RE_JIRA_ISSUE: Regex = Regex::new(r"(?m)^(?:Closes )?Ticket:\s+(\S+)")
         .expect("Expected regular expression to compile");
-}
-lazy_static! {
     static ref RE_GITHUB_ISSUE: Regex =
         Regex::new(r"(?im)^(closes|close|closed|fixes|fixed)\s+#(\d+)")
             .expect("Expected regular expression to compile");
