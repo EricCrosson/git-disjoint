@@ -41,8 +41,8 @@ pub(crate) enum IssueGroup {
 impl Display for IssueGroup {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            IssueGroup::Issue(issue) => write!(f, "{}", issue),
-            IssueGroup::Commit(commit) => write!(f, "{}", commit),
+            IssueGroup::Issue(issue) => write!(f, "{issue}"),
+            IssueGroup::Commit(commit) => write!(f, "{commit}"),
         }
     }
 }
@@ -55,13 +55,13 @@ mod tests {
     fn display_human_readable_issue() {
         let issue = Issue::Jira("COOL-123".to_string());
         let issue_group = IssueGroup::Issue(issue);
-        assert_eq!("Jira COOL-123", format!("{}", issue_group));
+        assert_eq!("Jira COOL-123", format!("{issue_group}"));
     }
 
     #[test]
     fn display_human_readable_commit() {
         let summary = GitCommitSummary(String::from("this is a cool summary"));
         let issue_group = IssueGroup::Commit(summary);
-        assert_eq!("this is a cool summary", format!("{}", issue_group));
+        assert_eq!("this is a cool summary", format!("{issue_group}"));
     }
 }

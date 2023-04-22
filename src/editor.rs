@@ -3,7 +3,7 @@ use std::{fs::File, io::Write, path::Path, process::Command, str::FromStr};
 use anyhow::{anyhow, ensure, Result};
 use git2::Commit;
 
-const PULL_REQUEST_HEADER: &'static str = r#"
+const PULL_REQUEST_HEADER: &str = r#"
 # ------------------------ >8 ------------------------
 # Do not modify or remove the line above.
 # Everything below it will be ignored.
@@ -14,7 +14,7 @@ of text is the title and the rest is the description.
 Changes:
 "#;
 
-const IGNORE_MARKER: &'static str = "# ------------------------ >8 ------------------------";
+const IGNORE_MARKER: &str = "# ------------------------ >8 ------------------------";
 
 #[derive(Debug)]
 pub(crate) struct PullRequestMetadata {
@@ -63,7 +63,7 @@ pub(crate) fn interactive_get_pr_metadata<'repo>(
         let mut buffer = File::create(&file_path)?;
 
         // Write template to file
-        writeln!(buffer, "{}", PULL_REQUEST_HEADER)?;
+        writeln!(buffer, "{PULL_REQUEST_HEADER}")?;
         for commit in commits {
             writeln!(
                 buffer,
@@ -72,9 +72,9 @@ pub(crate) fn interactive_get_pr_metadata<'repo>(
                 commit.author().name().unwrap_or_default(),
             )?;
             for line in commit.message().unwrap_or_default().lines() {
-                writeln!(buffer, "    {}", line)?;
+                writeln!(buffer, "    {line}")?;
             }
-            writeln!(buffer, "")?;
+            writeln!(buffer)?;
         }
         buffer.flush()?;
     }

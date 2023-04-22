@@ -18,7 +18,7 @@ pub(crate) enum IssueGroupWhitelist {
 
 fn prompt_user(choices: Vec<&IssueGroup>) -> Result<HashSet<IssueGroup>> {
     let formatter: MultiOptionFormatter<&IssueGroup> =
-        &|selected| format!("Selected: {:?}", selected);
+        &|selected| format!("Selected: {selected:?}");
 
     Ok(
         MultiSelect::new("Select the issues to create PRs for:", choices)

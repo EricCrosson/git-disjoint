@@ -24,7 +24,7 @@ impl DefaultBranch {
             ))
             .header("User-Agent", "git-disjoint")
             .header("Accept", "application/vnd.github+json")
-            .header("Authorization", format!("token {}", github_token))
+            .header("Authorization", format!("token {github_token}"))
             .send()
             .await
             .map_err(|request_error| anyhow!("Error contacting the GitHub API: {request_error}"))?

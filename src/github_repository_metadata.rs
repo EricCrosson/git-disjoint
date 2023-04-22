@@ -59,14 +59,14 @@ fn get_repository_root() -> Result<PathBuf> {
 }
 
 fn get_repository(root: &Path) -> Result<Repository> {
-    Ok(Repository::open(&root)?)
+    Ok(Repository::open(root)?)
 }
 
 fn get_remote_url(remote: &str) -> Result<GitUrl> {
     let output_buffer = Command::new("git")
         .arg("config")
         .arg("--get")
-        .arg(format!("remote.{}.url", remote))
+        .arg(format!("remote.{remote}.url"))
         .output()?
         .stdout;
     let output = String::from_utf8(output_buffer)?.trim().to_owned();

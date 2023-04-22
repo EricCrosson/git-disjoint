@@ -68,13 +68,13 @@ mod test {
     #[test]
     fn display_jira_issue() {
         let issue = Issue::Jira("GD-0".to_string());
-        assert_eq!(format!("{}", issue), "Jira GD-0");
+        assert_eq!(format!("{issue}"), "Jira GD-0");
     }
 
     #[test]
     fn display_github_issue() {
         let issue = Issue::GitHub("123".to_string());
-        assert_eq!(format!("{}", issue), "GitHub #123");
+        assert_eq!(format!("{issue}"), "GitHub #123");
     }
 
     macro_rules! test_parses {

@@ -44,9 +44,9 @@ use crate::issue_group::{GitCommitSummary, IssueGroup};
 // What if we stored a log of what we were going to do before we took any action?
 // Or kept it as a list of things to do, removing successful items.
 
-const PREFIX_PENDING: &'static str = " ";
-const PREFIX_WORKING: &'static str = ">";
-const PREFIX_DONE: &'static str = "✔";
+const PREFIX_PENDING: &str = " ";
+const PREFIX_WORKING: &str = ">";
+const PREFIX_DONE: &str = "✔";
 
 lazy_static! {
     static ref RE_MULTIPLE_HYPHENS: Regex =
@@ -99,7 +99,7 @@ fn plan_branch_names<'repo>(
             while seen_branch_names.contains(&proposed_branch_name) {
                 suffix += 1;
                 // OPTIMIZE: no need to call sanitize_git_ref here again
-                proposed_branch_name = format!("{}_{}", generated_branch_name, suffix).into();
+                proposed_branch_name = format!("{generated_branch_name}_{suffix}").into();
             }
 
             seen_branch_names.insert(proposed_branch_name.clone());
@@ -126,7 +126,7 @@ impl<'repo> From<Commit<'repo>> for CommitWork<'repo> {
         let progress_bar = ProgressBar::new(1)
             .with_style(STYLE_COMMIT_STABLE.clone())
             .with_prefix(PREFIX_PENDING)
-            .with_message(format!("{}", commit.summary().unwrap()));
+            .with_message(commit.summary().unwrap().to_string());
         Self {
             commit,
             progress_bar,
@@ -147,7 +147,7 @@ impl<'repo> From<(IssueGroup, CommitPlan<'repo>)> for WorkOrder<'repo> {
         let progress_bar = ProgressBar::new(num_commits)
             .with_style(STYLE_ISSUE_GROUP_STABLE.clone())
             .with_prefix(PREFIX_PENDING)
-            .with_message(format!("{}", issue_group));
+            .with_message(format!("{issue_group}"));
         WorkOrder {
             branch_name: commit_plan.branch_name,
             commit_work: commit_plan
@@ -337,7 +337,7 @@ fn group_commits_by_issue_group<'repo>(
 
                 while seen_issue_groups.contains(&proposed_issue_group) {
                     suffix += 1;
-                    proposed_issue_group = GitCommitSummary(format!("{}_{}", summary, suffix));
+                    proposed_issue_group = GitCommitSummary(format!("{summary}_{suffix}"));
                 }
 
                 seen_issue_groups.insert(proposed_issue_group.clone());
@@ -375,7 +375,7 @@ fn filter_issue_groups_by_whitelist<'repo>(
         // If there is a whitelist, only operate on issue_groups in the whitelist
         IssueGroupWhitelist::Whitelist(whitelist) => commits_by_issue_group
             .into_iter()
-            .filter(|(issue_group, _commits)| whitelist.contains(&issue_group))
+            .filter(|(issue_group, _commits)| whitelist.contains(issue_group))
             .collect(),
         // If there is no whitelist, then operate on every issue
         IssueGroupWhitelist::WhitelistDNE => commits_by_issue_group,
@@ -440,17 +440,14 @@ async fn create_pull_request(
     base: DefaultBranch,
 ) -> Result<()> {
     let response: CreatePullRequestResponse = http_client
-        .post(format!(
-            "https://api.github.com/repos/{}/{}/pulls",
-            owner, name
-        ))
+        .post(format!("https://api.github.com/repos/{owner}/{name}/pulls"))
         .header("User-Agent", "git-disjoint")
         .header("Accept", "application/vnd.github.v3+json")
-        .header("Authorization", format!("token {}", github_token))
+        .header("Authorization", format!("token {github_token}"))
         .json(&CreatePullRequestRequest {
             title: pr_metadata.title.clone(),
             body: pr_metadata.body.clone(),
-            head: format!("{}:{}", forker, branch_name),
+            head: format!("{forker}:{branch_name}"),
             base: base.0.clone(),
             draft: true,
         })
@@ -558,7 +555,7 @@ where
 
         if !dry_run {
             // Create a branch
-            repository.branch(&work_order.branch_name.as_str(), &base_commit, true)?;
+            repository.branch(work_order.branch_name.as_str(), &base_commit, true)?;
 
             // Check out the new branch
             let branch_obj = repository.revparse_single(&branch_ref)?;
@@ -603,7 +600,7 @@ where
         if !dry_run {
             // Push the branch
             execute(
-                &["git", "push", &remote, &work_order.branch_name.as_str()],
+                &["git", "push", &remote, (work_order.branch_name.as_str())],
                 log_file.as_ref(),
             )?;
 
@@ -711,5 +708,5 @@ fn main() -> Result<()> {
         }
     };
 
-    Ok(exec.block_on(program)?)
+    exec.block_on(program)
 }
