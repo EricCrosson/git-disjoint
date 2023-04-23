@@ -63,7 +63,7 @@ impl Display for Issue {
 mod test {
     use indoc::formatdoc;
 
-    use crate::issue::Issue;
+    use super::Issue;
 
     #[test]
     fn display_jira_issue() {
