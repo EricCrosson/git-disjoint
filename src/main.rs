@@ -7,13 +7,13 @@ use std::io::prelude::*;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
-use anyhow::{anyhow, ensure};
+use anyhow::anyhow;
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
 use clap::Parser;
 use default_branch::DefaultBranch;
 use futures::TryStreamExt;
-use git2::{Commit, Repository, RepositoryState};
+use git2::Commit;
 use indexmap::IndexMap;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use issue_group_map::IssueGroupMap;
@@ -207,42 +207,6 @@ fn execute(command: &[&str], log_file: &LogFile) -> Result<(), anyhow::Error> {
     if let Err(error) = status.exit_ok() {
         return Err(error)?;
     }
-    Ok(())
-}
-
-/// Return an error if the repository state is not clean.
-///
-/// This prevents invoking `git disjoint` on a repository in the middle
-/// of some other operation, like a `git rebase`.
-fn assert_repository_state_is_clean(repo: &Repository) -> Result<(), anyhow::Error> {
-    let state = repo.state();
-    ensure!(
-        RepositoryState::Clean == state,
-        "Repository should be in a clean state, not {:?}",
-        state
-    );
-    Ok(())
-}
-
-/// Return an error if there are any diffs to tracked files, staged or unstaged.
-///
-/// This emulates `git diff` by diffing the tree to the index and the index to
-/// the working directory and blending the results into a single diff that includes
-/// staged, deletec, etc.
-///
-/// This check currently excludes untracked files, but I'm not tied to this behavior.
-fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<(), anyhow::Error> {
-    let originally_checked_out_commit = repo.head()?.resolve()?.peel_to_commit()?;
-    let originally_checked_out_tree = originally_checked_out_commit.tree()?;
-
-    let files_changed = repo
-        .diff_tree_to_workdir_with_index(Some(&originally_checked_out_tree), None)?
-        .stats()?
-        .files_changed();
-    ensure!(
-        files_changed == 0,
-        "Repository should not contain staged or unstaged changes to tracked files"
-    );
     Ok(())
 }
 
@@ -499,9 +463,6 @@ fn main() -> Result<(), anyhow::Error> {
             Some(base) => DefaultBranch(base),
             None => DefaultBranch::try_get_default(&repository_metadata, &cli.github_token).await?,
         };
-
-        assert_repository_state_is_clean(&repository_metadata.repository)?;
-        assert_tree_matches_workdir_with_index(&repository_metadata.repository)?;
 
         // TODO: rename for clarity
         let result = do_git_disjoint(

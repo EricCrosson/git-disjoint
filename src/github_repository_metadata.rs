@@ -1,16 +1,11 @@
 use std::{
-    collections::HashSet,
-    error::Error,
-    fmt::Display,
-    io,
-    path::{Path, PathBuf},
-    process::Command,
+    collections::HashSet, error::Error, fmt::Display, io, path::PathBuf, process::Command,
     string::FromUtf8Error,
 };
 
 use git_url_parse::GitUrl;
 
-use crate::git2_repository::Repository;
+use crate::git2_repository::{self, Repository};
 
 pub(crate) struct GithubRepositoryMetadata {
     pub owner: String,
@@ -62,7 +57,7 @@ pub(crate) enum TryDefaultErrorKind {
     #[non_exhaustive]
     ParseCommandOutput(FromUtf8Error),
     #[non_exhaustive]
-    OpenRepository(git2::Error),
+    OpenRepository(git2_repository::TryFromPathError),
     #[non_exhaustive]
     ParseGitUrl,
     #[non_exhaustive]
@@ -77,10 +72,18 @@ impl From<TryDefaultErrorKind> for TryDefaultError {
     }
 }
 
+impl From<git2_repository::TryFromPathError> for TryDefaultError {
+    fn from(err: git2_repository::TryFromPathError) -> Self {
+        Self {
+            kind: TryDefaultErrorKind::OpenRepository(err),
+        }
+    }
+}
+
 impl GithubRepositoryMetadata {
     pub fn try_default() -> Result<Self, TryDefaultError> {
         let repo_root = get_repository_root()?;
-        let repository = get_repository(&repo_root)?;
+        let repository = repo_root.as_path().try_into()?;
         let origin = get_remote_url("origin")?;
         let remote = get_user_remote(&repository)?;
 
@@ -118,12 +121,6 @@ fn get_repository_root() -> Result<PathBuf, TryDefaultErrorKind> {
         .trim()
         .to_owned();
     Ok(PathBuf::from(output))
-}
-
-fn get_repository(root: &Path) -> Result<Repository, TryDefaultErrorKind> {
-    git2::Repository::open(root)
-        .map(Into::into)
-        .map_err(TryDefaultErrorKind::OpenRepository)
 }
 
 fn get_remote_url(remote: &str) -> Result<GitUrl, TryDefaultErrorKind> {
