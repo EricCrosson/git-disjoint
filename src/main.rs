@@ -19,8 +19,7 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use issue_group_map::IssueGroupMap;
 use lazy_static::lazy_static;
 use log_file::LogFile;
-use regex::Regex;
-use serde::{Deserialize, Serialize};
+use pull_request::PullRequest;
 
 mod branch_name;
 mod cli;
@@ -33,6 +32,7 @@ mod issue;
 mod issue_group;
 mod issue_group_map;
 mod log_file;
+mod pull_request;
 
 use crate::branch_name::BranchName;
 use crate::cli::Cli;
@@ -49,8 +49,6 @@ const PREFIX_WORKING: &str = ">";
 const PREFIX_DONE: &str = "✔";
 
 lazy_static! {
-    static ref RE_MULTIPLE_HYPHENS: Regex =
-        Regex::new("-{2,}").expect("Expected multiple-hyphens regular expression to compile");
     static ref STYLE_ISSUE_GROUP_STABLE: ProgressStyle =
         ProgressStyle::with_template("{prefix:.green} {msg}").unwrap();
     static ref STYLE_ISSUE_GROUP_WORKING: ProgressStyle =
@@ -160,22 +158,6 @@ impl<'repo> From<(IssueGroup, CommitPlan<'repo>)> for WorkOrder<'repo> {
     }
 }
 
-// https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
-#[derive(Debug, Serialize)]
-struct CreatePullRequestRequest {
-    title: String,
-    body: String,
-    head: String,
-    base: String,
-    draft: bool,
-}
-
-// https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
-#[derive(Debug, Deserialize)]
-struct CreatePullRequestResponse {
-    html_url: String,
-}
-
 fn execute(command: &[&str], log_file: &LogFile) -> Result<(), anyhow::Error> {
     let mut runner = Command::new(command[0]);
 
@@ -224,40 +206,6 @@ async fn update_spinner(progress_bar: ProgressBar) -> Result<(), anyhow::Error> 
 async fn sleep(duration: Duration) -> Result<(), anyhow::Error> {
     tokio::time::sleep(duration).await;
     Ok(())
-}
-
-async fn create_pull_request(
-    http_client: reqwest::Client,
-    owner: String,
-    name: String,
-    forker: String,
-    pr_metadata: PullRequestMetadata,
-    github_token: String,
-    branch_name: BranchName,
-    base: DefaultBranch,
-) -> Result<(), anyhow::Error> {
-    let response: CreatePullRequestResponse = http_client
-        .post(format!("https://api.github.com/repos/{owner}/{name}/pulls"))
-        .header("User-Agent", "git-disjoint")
-        .header("Accept", "application/vnd.github.v3+json")
-        .header("Authorization", format!("token {github_token}"))
-        .json(&CreatePullRequestRequest {
-            title: pr_metadata.title.clone(),
-            body: pr_metadata.body.clone(),
-            head: format!("{forker}:{branch_name}"),
-            base: base.0.clone(),
-            draft: true,
-        })
-        .send()
-        .await
-        .map_err(|request_error| anyhow!("Error contacting the GitHub API: {request_error}"))?
-        .json()
-        .await
-        .map_err(|response_error| {
-            anyhow!("Error parsing the GitHub API response: {response_error}")
-        })?;
-
-    Ok(open::that(response.html_url)?)
 }
 
 async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(), anyhow::Error> {
@@ -423,16 +371,18 @@ async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(
                 }
             };
 
-            pr_nursery.nurse(create_pull_request(
-                http_client.clone(),
-                owner.clone(),
-                name.clone(),
-                forker.clone(),
-                pr_metadata,
-                github_token.clone(),
-                work_order.branch_name.clone(),
-                base_branch.clone(),
-            ))?;
+            let pull_request = PullRequest {
+                owner: owner.clone(),
+                name: name.clone(),
+                forker: forker.clone(),
+                title: pr_metadata.title,
+                body: pr_metadata.body,
+                github_token: github_token.clone(),
+                branch_name: work_order.branch_name.clone(),
+                base: base_branch.clone(),
+            };
+
+            pr_nursery.nurse(pull_request.create(http_client.clone()))?;
 
             // Finally, check out the original ref
             execute(&["git", "checkout", "-"], &log_file)?;
