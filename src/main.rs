@@ -317,7 +317,7 @@ fn group_commits_by_issue_group<'repo>(
         .into_iter()
         // drop the None values
         .flatten()
-        .fold(IndexMap::new(), |mut map, (issue, commit)| {
+        .fold(Default::default(), |mut map, (issue, commit)| {
             let commits = map.entry(issue).or_default();
             commits.push(commit);
             map
