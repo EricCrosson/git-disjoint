@@ -3,7 +3,7 @@
 
 use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
-use std::io::prelude::*;
+use std::io::{self, prelude::*};
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
@@ -341,11 +341,11 @@ fn group_commits_by_issue_group<'repo>(
                 }
 
                 // Otherwise, skip this commit.
-                // FIXME: use writeln! to stderr
-                eprintln!(
+                writeln!(
+                    io::stderr(),
                     "Warning: ignoring commit without issue trailer: {:?}",
                     commit.id()
-                );
+                )?;
                 Ok(None)
             },
         )
