@@ -75,21 +75,36 @@ impl Display for IssueGroup {
     }
 }
 
+impl From<GitCommitSummary> for IssueGroup {
+    fn from(value: GitCommitSummary) -> Self {
+        Self::Commit(value)
+    }
+}
+
+impl From<Issue> for IssueGroup {
+    fn from(value: Issue) -> Self {
+        Self::Issue(value)
+    }
+}
+
 #[cfg(test)]
-mod tests {
+mod test_display {
     use crate::{issue_group::GitCommitSummary, Issue, IssueGroup};
+
+    fn check<I: Into<IssueGroup>>(issue_group: I, displays_as: &str) {
+        assert_eq!(displays_as, format!("{}", issue_group.into()));
+    }
 
     #[test]
     fn display_human_readable_issue() {
-        let issue = Issue::Jira("COOL-123".to_string());
-        let issue_group = IssueGroup::Issue(issue);
-        assert_eq!("Jira COOL-123", format!("{issue_group}"));
+        check(Issue::Jira("COOL-123".to_string()), "Jira COOL-123");
     }
 
     #[test]
     fn display_human_readable_commit() {
-        let summary = GitCommitSummary(String::from("this is a cool summary"));
-        let issue_group = IssueGroup::Commit(summary);
-        assert_eq!("this is a cool summary", format!("{issue_group}"));
+        check(
+            GitCommitSummary(String::from("this is a cool summary")),
+            "this is a cool summary",
+        );
     }
 }

@@ -316,7 +316,7 @@ fn group_commits_by_issue_group<'repo>(
                 // then add this commit to that issue's group.
                 if commit_grouping == CommitGrouping::ByIssue {
                     if let Some(issue) = issue {
-                        return Ok(Some((IssueGroup::Issue(issue), commit)));
+                        return Ok(Some((issue.into(), commit)));
                     }
                 }
 
