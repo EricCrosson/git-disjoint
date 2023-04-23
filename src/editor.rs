@@ -9,18 +9,7 @@ use std::{
 
 use git2::Commit;
 
-const PULL_REQUEST_HEADER: &str = r#"
-# ------------------------ >8 ------------------------
-# Do not modify or remove the line above.
-# Everything below it will be ignored.
-
-Write a message for this pull request. The first block
-of text is the title and the rest is the description.
-
-Changes:
-"#;
-
-const IGNORE_MARKER: &str = "# ------------------------ >8 ------------------------";
+use crate::pull_request_message::{PullRequestMessageTemplate, IGNORE_MARKER};
 
 #[derive(Debug)]
 pub(crate) struct PullRequestMetadata {
@@ -105,7 +94,7 @@ impl From<GetPullRequestMetadataErrorKind> for GetPullRequestMetadataError {
 
 pub(crate) fn interactive_get_pr_metadata<'repo>(
     root: &Path,
-    commits: Vec<&Commit<'repo>>,
+    commits: impl IntoIterator<Item = impl Into<&'repo Commit<'repo>>>,
 ) -> Result<PullRequestMetadata, GetPullRequestMetadataError> {
     let editor = get_editor().ok_or(GetPullRequestMetadataErrorKind::AmbiguousEditor)?;
 
@@ -113,24 +102,14 @@ pub(crate) fn interactive_get_pr_metadata<'repo>(
     let mut buffer =
         File::create(&file_path).map_err(GetPullRequestMetadataErrorKind::CreateFile)?;
 
-    (|| {
-        // Write template to file
-        writeln!(buffer, "{PULL_REQUEST_HEADER}")?;
-        for commit in commits {
-            writeln!(
-                buffer,
-                "{} ({:?})",
-                truncate(&commit.id().to_string(), 7),
-                commit.author().name().unwrap_or_default(),
-            )?;
-            for line in commit.message().unwrap_or_default().lines() {
-                writeln!(buffer, "    {line}")?;
-            }
-            writeln!(buffer)?;
-        }
-        buffer.flush()?;
-        Ok(())
-    })()
+    writeln!(
+        buffer,
+        "{}",
+        commits
+            .into_iter()
+            .map(Into::into)
+            .collect::<PullRequestMessageTemplate>()
+    )
     .map_err(GetPullRequestMetadataErrorKind::BufferWrite)?;
 
     Command::new(editor)
@@ -158,11 +137,4 @@ pub(crate) fn interactive_get_pr_metadata<'repo>(
 fn get_editor() -> Option<String> {
     use std::env::var;
     var("VISUAL").or_else(|_| var("EDITOR")).ok()
-}
-
-fn truncate(s: &str, max_chars: usize) -> &str {
-    match s.char_indices().nth(max_chars) {
-        None => s,
-        Some((idx, _)) => &s[..idx],
-    }
 }

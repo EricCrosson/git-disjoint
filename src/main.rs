@@ -33,6 +33,7 @@ mod issue_group;
 mod issue_group_map;
 mod log_file;
 mod pull_request;
+mod pull_request_message;
 
 use crate::branch_name::BranchName;
 use crate::cli::Cli;
@@ -117,6 +118,12 @@ fn plan_branch_names<'repo>(
 struct CommitWork<'repo> {
     commit: Commit<'repo>,
     progress_bar: ProgressBar,
+}
+
+impl<'repo> Into<&Commit<'repo>> for &'repo CommitWork<'repo> {
+    fn into(self) -> &'repo Commit<'repo> {
+        &self.commit
+    }
 }
 
 impl<'repo> From<Commit<'repo>> for CommitWork<'repo> {
@@ -354,14 +361,7 @@ async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(
             let needs_edit = work_order.commit_work.len() > 1;
 
             let pr_metadata = match needs_edit {
-                true => interactive_get_pr_metadata(
-                    &root,
-                    work_order
-                        .commit_work
-                        .iter()
-                        .map(|commit_work| &commit_work.commit)
-                        .collect(),
-                )?,
+                true => interactive_get_pr_metadata(&root, &work_order.commit_work)?,
                 false => {
                     // REFACTOR: clean this up
                     let commit = &work_order.commit_work.get(0).unwrap().commit;
