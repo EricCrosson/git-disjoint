@@ -34,10 +34,10 @@ impl Issue {
         None
     }
 
-    pub fn issue_identifier(&self) -> String {
+    pub fn issue_identifier(&self) -> &str {
         match self {
-            Issue::Jira(ticket) => ticket.clone(),
-            Issue::GitHub(issue) => issue.clone(),
+            Issue::Jira(ticket) => ticket,
+            Issue::GitHub(issue) => issue,
         }
     }
 }
