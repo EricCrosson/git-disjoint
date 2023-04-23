@@ -34,10 +34,11 @@ mod issue_group_map;
 mod log_file;
 mod pull_request;
 mod pull_request_message;
+mod pull_request_metadata;
 
 use crate::branch_name::BranchName;
 use crate::cli::Cli;
-use crate::editor::{interactive_get_pr_metadata, PullRequestMetadata};
+use crate::editor::interactive_get_pr_metadata;
 use crate::github_repository_metadata::GithubRepositoryMetadata;
 use crate::issue_group::IssueGroup;
 
@@ -365,10 +366,7 @@ async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(
                 false => {
                     // REFACTOR: clean this up
                     let commit = &work_order.commit_work.get(0).unwrap().commit;
-                    PullRequestMetadata {
-                        title: commit.summary().unwrap().to_owned(),
-                        body: commit.body().unwrap_or_default().to_owned(),
-                    }
+                    commit.message().unwrap().parse()?
                 }
             };
 

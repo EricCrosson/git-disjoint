@@ -9,23 +9,10 @@ use std::{
 
 use git2::Commit;
 
-use crate::pull_request_message::{PullRequestMessageTemplate, IGNORE_MARKER};
-
-#[derive(Debug)]
-pub(crate) struct PullRequestMetadata {
-    pub title: String,
-    pub body: String,
-}
-
-impl From<String> for PullRequestMetadata {
-    fn from(s: String) -> Self {
-        let mut iterator = s.lines();
-        let title = iterator.next().unwrap_or_default().trim().to_owned();
-        let body = iterator.collect::<Vec<_>>().join("\n").trim().to_owned();
-
-        Self { title, body }
-    }
-}
+use crate::{
+    pull_request_message::PullRequestMessageTemplate,
+    pull_request_metadata::{self, PullRequestMetadata},
+};
 
 #[derive(Debug)]
 #[non_exhaustive]
@@ -46,8 +33,8 @@ impl Display for GetPullRequestMetadataError {
             GetPullRequestMetadataErrorKind::BufferWrite(_) => {
                 write!(f, "error writing to .git/PULLREQ_MSG file")
             }
-            GetPullRequestMetadataErrorKind::EmptyPullRequestBody => {
-                write!(f, "pull request metadata is empty -- aborting")
+            GetPullRequestMetadataErrorKind::EmptyPullRequest(_) => {
+                write!(f, "user gave abort signal")
             }
             GetPullRequestMetadataErrorKind::Editor(_) => write!(f, "error invoking editor"),
             GetPullRequestMetadataErrorKind::ReadFile(_) => {
@@ -63,7 +50,7 @@ impl Error for GetPullRequestMetadataError {
             GetPullRequestMetadataErrorKind::AmbiguousEditor => None,
             GetPullRequestMetadataErrorKind::CreateFile(err) => Some(err),
             GetPullRequestMetadataErrorKind::BufferWrite(err) => Some(err),
-            GetPullRequestMetadataErrorKind::EmptyPullRequestBody => None,
+            GetPullRequestMetadataErrorKind::EmptyPullRequest(err) => Some(err),
             GetPullRequestMetadataErrorKind::Editor(err) => Some(err),
             GetPullRequestMetadataErrorKind::ReadFile(err) => Some(err),
         }
@@ -83,7 +70,7 @@ pub(crate) enum GetPullRequestMetadataErrorKind {
     #[non_exhaustive]
     ReadFile(io::Error),
     #[non_exhaustive]
-    EmptyPullRequestBody,
+    EmptyPullRequest(pull_request_metadata::FromStrError),
 }
 
 impl From<GetPullRequestMetadataErrorKind> for GetPullRequestMetadataError {
@@ -120,18 +107,9 @@ pub(crate) fn interactive_get_pr_metadata<'repo>(
     let file_content =
         fs::read_to_string(file_path).map_err(GetPullRequestMetadataErrorKind::ReadFile)?;
 
-    let file_content = file_content
-        .lines()
-        .take_while(|line| line != &IGNORE_MARKER)
-        .collect::<Vec<_>>()
-        .join("\n");
-
-    // If the file is empty, assume the user wants to abort
-    if file_content.is_empty() {
-        return Err(GetPullRequestMetadataErrorKind::EmptyPullRequestBody)?;
-    }
-
-    Ok(file_content.into())
+    Ok(file_content
+        .parse()
+        .map_err(GetPullRequestMetadataErrorKind::EmptyPullRequest)?)
 }
 
 fn get_editor() -> Option<String> {
