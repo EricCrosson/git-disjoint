@@ -363,6 +363,7 @@ async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(
                         .collect(),
                 )?,
                 false => {
+                    // REFACTOR: clean this up
                     let commit = &work_order.commit_work.get(0).unwrap().commit;
                     PullRequestMetadata {
                         title: commit.summary().unwrap().to_owned(),
