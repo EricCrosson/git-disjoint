@@ -3,7 +3,7 @@
 
 use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
-use std::io::{self, prelude::*};
+use std::io::prelude::*;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
@@ -16,6 +16,7 @@ use futures::TryStreamExt;
 use git2::{Commit, Repository, RepositoryState};
 use indexmap::IndexMap;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use issue_group_map::IssueGroupMap;
 use lazy_static::lazy_static;
 use log_file::LogFile;
 use regex::Regex;
@@ -30,16 +31,14 @@ mod github_repository_metadata;
 mod interact;
 mod issue;
 mod issue_group;
+mod issue_group_map;
 mod log_file;
 
 use crate::branch_name::BranchName;
 use crate::cli::Cli;
-use crate::cli::{CommitGrouping, CommitsToConsider, OverlayCommitsIntoOnePullRequest};
 use crate::editor::{interactive_get_pr_metadata, PullRequestMetadata};
 use crate::github_repository_metadata::GithubRepositoryMetadata;
-use crate::interact::{select_issues, IssueGroupWhitelist};
-use crate::issue::Issue;
-use crate::issue_group::{GitCommitSummary, IssueGroup};
+use crate::issue_group::IssueGroup;
 
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
@@ -75,7 +74,7 @@ struct CommitPlan<'repo> {
 /// going to generate to make sure one invocation of git-disjoint won't try to
 /// create a branch with the same name twice.
 fn plan_branch_names<'repo>(
-    commits_by_issue_group: IndexMap<IssueGroup, Vec<Commit<'repo>>>,
+    commits_by_issue_group: IssueGroupMap<'repo>,
 ) -> Result<IndexMap<IssueGroup, CommitPlan<'repo>>, anyhow::Error> {
     let mut suffix: u32 = 0;
     let mut seen_branch_names = HashSet::new();
@@ -260,112 +259,6 @@ fn get_base_commit<'repo>(
         .cloned()
 }
 
-fn group_commits_by_issue_group<'repo>(
-    commits: Vec<Commit<'repo>>,
-    commits_to_consider: CommitsToConsider,
-    commit_grouping: CommitGrouping,
-) -> Result<IndexMap<IssueGroup, Vec<Commit>>, anyhow::Error> {
-    let mut suffix: u32 = 0;
-    let mut seen_issue_groups = HashSet::new();
-    let commits_by_issue: IndexMap<IssueGroup, Vec<Commit>> = commits
-        .into_iter()
-        // Parse issue from commit message
-        .map(
-            |commit| -> Result<Option<(IssueGroup, Commit)>, anyhow::Error> {
-                let issue = commit.message().and_then(Issue::parse_from_commit_message);
-                // If:
-                // - we're grouping commits by issue, and
-                // - this commit includes an issue,
-                // then add this commit to that issue's group.
-                if commit_grouping == CommitGrouping::ByIssue {
-                    if let Some(issue) = issue {
-                        return Ok(Some((issue.into(), commit)));
-                    }
-                }
-
-                // If:
-                // - we're treating every commit separately, or
-                // - we're considering all commits (even commits without an issue),
-                // add this commit to a unique issue-group.
-                if commit_grouping == CommitGrouping::Individual
-                    || commits_to_consider == CommitsToConsider::All
-                {
-                    let summary: GitCommitSummary = (&commit).try_into()?;
-                    let mut proposed_issue_group = summary.clone();
-
-                    while seen_issue_groups.contains(&proposed_issue_group) {
-                        suffix += 1;
-                        proposed_issue_group = GitCommitSummary(format!("{summary}_{suffix}"));
-                    }
-
-                    seen_issue_groups.insert(proposed_issue_group.clone());
-
-                    return Ok(Some((IssueGroup::Commit(proposed_issue_group), commit)));
-                }
-
-                // Otherwise, skip this commit.
-                writeln!(
-                    io::stderr(),
-                    "Warning: ignoring commit without issue trailer: {:?}",
-                    commit.id()
-                )?;
-                Ok(None)
-            },
-        )
-        // unwrap the Result
-        .collect::<Result<Vec<_>, anyhow::Error>>()?
-        .into_iter()
-        // drop the None values
-        .flatten()
-        .fold(Default::default(), |mut map, (issue, commit)| {
-            let commits = map.entry(issue).or_default();
-            commits.push(commit);
-            map
-        });
-
-    Ok(commits_by_issue)
-}
-
-fn filter_issue_groups_by_whitelist<'repo>(
-    commits_by_issue_group: IndexMap<IssueGroup, Vec<Commit<'repo>>>,
-    selected_issue_groups: &IssueGroupWhitelist,
-) -> IndexMap<IssueGroup, Vec<Commit<'repo>>> {
-    match &selected_issue_groups {
-        // If there is a whitelist, only operate on issue_groups in the whitelist
-        IssueGroupWhitelist::Whitelist(whitelist) => commits_by_issue_group
-            .into_iter()
-            .filter(|(issue_group, _commits)| whitelist.contains(issue_group))
-            .collect(),
-        // If there is no whitelist, then operate on every issue
-        IssueGroupWhitelist::WhitelistDNE => commits_by_issue_group,
-    }
-}
-
-fn apply_overlay<'repo>(
-    commits_by_issue_group: IndexMap<IssueGroup, Vec<Commit<'repo>>>,
-    overlay: OverlayCommitsIntoOnePullRequest,
-) -> IndexMap<IssueGroup, Vec<Commit<'repo>>> {
-    match overlay {
-        // If we are overlaying all active issue groups into one PR,
-        // combine all active commits under the first issue group
-        OverlayCommitsIntoOnePullRequest::Yes => commits_by_issue_group
-            .into_iter()
-            .reduce(|mut accumulator, mut item| {
-                accumulator.1.append(&mut item.1);
-                accumulator
-            })
-            // Map the option back into an IndexMap
-            .map(|(issue_group, commits)| {
-                let mut map = IndexMap::with_capacity(1);
-                map.insert(issue_group, commits);
-                map
-            })
-            .unwrap_or_default(),
-        // If we are not overlaying issue groups, keep them separate
-        OverlayCommitsIntoOnePullRequest::No => commits_by_issue_group,
-    }
-}
-
 async fn cherry_pick(commit: String, log_file: LogFile) -> Result<(), anyhow::Error> {
     execute(&["git", "cherry-pick", "--allow-empty", &commit], &log_file)
 }
@@ -448,13 +341,13 @@ async fn do_git_disjoint(
     let base_commit = get_base_commit(&repository, &base)?;
     let commits = repository.commits_since_base(&base_commit)?;
     // We have to make a first pass to determine the issue groups in play
-    let commits_by_issue_group = group_commits_by_issue_group(commits, all, separate)?;
-    let selected_issue_groups = select_issues(&commits_by_issue_group, choose, overlay)?;
-    // Now filter the set of all issue groups to just the whitelisted issue groups
-    let commits_by_issue_group =
-        filter_issue_groups_by_whitelist(commits_by_issue_group, &selected_issue_groups);
-    let commits_by_issue_group = apply_overlay(commits_by_issue_group, overlay);
+    let commits_by_issue_group = IssueGroupMap::try_from_commits(commits, all, separate)?
+        // Now filter the set of all issue groups to just the whitelisted issue groups
+        .select_issues(choose, overlay)?
+        .apply_overlay(overlay);
+    // TODO: FINISH: moving to IssueGroupMap
     let commit_plan_by_issue_group = plan_branch_names(commits_by_issue_group)?;
+    // DONE: : : : : : TODO: FINISH: moving to IssueGroupMap
 
     let work_orders: Vec<WorkOrder> = commit_plan_by_issue_group
         .into_iter()

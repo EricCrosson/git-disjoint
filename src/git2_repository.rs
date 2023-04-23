@@ -21,7 +21,10 @@ impl From<git2::Repository> for Repository {
 impl Repository {
     /// Return the list of commits from `base` to `HEAD`, sorted parent-first,
     /// children-last.
-    pub fn commits_since_base(&self, base: &Commit) -> Result<Vec<Commit>, anyhow::Error> {
+    pub fn commits_since_base<'repo>(
+        &'repo self,
+        base: &Commit<'repo>,
+    ) -> Result<Vec<Commit<'repo>>, anyhow::Error> {
         macro_rules! filter_try {
             ($e:expr) => {
                 match $e {

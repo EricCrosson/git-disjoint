@@ -89,7 +89,9 @@ impl From<Issue> for IssueGroup {
 
 #[cfg(test)]
 mod test_display {
-    use crate::{issue_group::GitCommitSummary, Issue, IssueGroup};
+    use crate::{issue::Issue, issue_group::GitCommitSummary};
+
+    use super::IssueGroup;
 
     fn check<I: Into<IssueGroup>>(issue_group: I, displays_as: &str) {
         assert_eq!(displays_as, format!("{}", issue_group.into()));
