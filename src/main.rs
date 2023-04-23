@@ -260,13 +260,7 @@ async fn create_pull_request(
     Ok(open::that(response.html_url)?)
 }
 
-async fn do_git_disjoint(
-    exec: TokioTp,
-    cli: Cli,
-    repository_metadata: GithubRepositoryMetadata,
-    base: DefaultBranch,
-    log_file: LogFile,
-) -> Result<(), anyhow::Error> {
+async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(), anyhow::Error> {
     let (pr_nursery, mut pr_stream) =
         Nursery::<TokioTp, Result<(), anyhow::Error>>::new(exec.clone());
 
@@ -280,6 +274,13 @@ async fn do_git_disjoint(
         separate,
     } = cli;
 
+    let repository_metadata = GithubRepositoryMetadata::try_default()?;
+    let base_branch = cli.base.clone();
+    let base_branch = match base_branch {
+        Some(base) => DefaultBranch(base),
+        None => DefaultBranch::try_get_default(&repository_metadata, &github_token).await?,
+    };
+
     let GithubRepositoryMetadata {
         owner,
         forker,
@@ -289,7 +290,7 @@ async fn do_git_disjoint(
         repository,
     } = repository_metadata;
 
-    let base_commit = repository.base_commit(&base)?;
+    let base_commit = repository.base_commit(&base_branch)?;
     let commits = repository.commits_since_base(&base_commit)?;
     // We have to make a first pass to determine the issue groups in play
     let commits_by_issue_group = IssueGroupMap::try_from_commits(commits, all, separate)?
@@ -430,7 +431,7 @@ async fn do_git_disjoint(
                 pr_metadata,
                 github_token.clone(),
                 work_order.branch_name.clone(),
-                base.clone(),
+                base_branch.clone(),
             ))?;
 
             // Finally, check out the original ref
@@ -457,22 +458,9 @@ fn main() -> Result<(), anyhow::Error> {
 
     let program = async {
         let log_file = LogFile::default();
-        let repository_metadata = GithubRepositoryMetadata::try_default()?;
-        let base_branch = cli.base.clone();
-        let base_branch = match base_branch {
-            Some(base) => DefaultBranch(base),
-            None => DefaultBranch::try_get_default(&repository_metadata, &cli.github_token).await?,
-        };
 
         // TODO: rename for clarity
-        let result = do_git_disjoint(
-            exec.clone(),
-            cli.clone(),
-            repository_metadata,
-            base_branch,
-            log_file.clone(),
-        )
-        .await;
+        let result = do_git_disjoint(exec.clone(), cli.clone(), log_file.clone()).await;
         match result {
             // Execution succeeded, so clean up the log file
             Ok(()) => Ok(log_file.delete()?),
