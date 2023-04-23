@@ -157,11 +157,7 @@ pub(crate) fn interactive_get_pr_metadata<'repo>(
 
 fn get_editor() -> Option<String> {
     use std::env::var;
-
-    if let Ok(editor) = var("VISUAL").or_else(|_| var("EDITOR")) {
-        return Some(editor);
-    }
-    None
+    var("VISUAL").or_else(|_| var("EDITOR")).ok()
 }
 
 fn truncate(s: &str, max_chars: usize) -> &str {
