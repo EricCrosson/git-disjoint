@@ -3,9 +3,6 @@ use std::fmt::Display;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-#[cfg(test)]
-use proptest_derive::Arbitrary;
-
 lazy_static! {
     static ref RE_JIRA_ISSUE: Regex = Regex::new(r"(?m)^(?:Closes )?Ticket:\s+(\S+)")
         .expect("Expected regular expression to compile");
@@ -16,7 +13,7 @@ lazy_static! {
 
 /// Jira or GitHub issue identifier.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(test, derive(Arbitrary))]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub(crate) enum Issue {
     Jira(String),
     GitHub(String),
