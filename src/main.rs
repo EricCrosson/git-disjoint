@@ -246,19 +246,6 @@ fn assert_tree_matches_workdir_with_index(repo: &Repository) -> Result<(), anyho
     Ok(())
 }
 
-fn get_base_commit<'repo>(
-    repo: &'repo Repository,
-    base: &DefaultBranch,
-) -> Result<Commit<'repo>, anyhow::Error> {
-    // Assumption: `base` indicates a single commit
-    // Assumption: `origin` is the upstream/main repositiory
-    let start_point = repo.revparse_single(&format!("origin/{}", &base.0))?;
-    start_point
-        .as_commit()
-        .ok_or_else(|| anyhow!("Expected `--base` to identify a commit"))
-        .cloned()
-}
-
 async fn cherry_pick(commit: String, log_file: LogFile) -> Result<(), anyhow::Error> {
     execute(&["git", "cherry-pick", "--allow-empty", &commit], &log_file)
 }
@@ -338,7 +325,7 @@ async fn do_git_disjoint(
         repository,
     } = repository_metadata;
 
-    let base_commit = get_base_commit(&repository, &base)?;
+    let base_commit = repository.base_commit(&base)?;
     let commits = repository.commits_since_base(&base_commit)?;
     // We have to make a first pass to determine the issue groups in play
     let commits_by_issue_group = IssueGroupMap::try_from_commits(commits, all, separate)?

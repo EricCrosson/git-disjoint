@@ -4,8 +4,15 @@ use serde::Deserialize;
 
 use crate::github_repository_metadata::GithubRepositoryMetadata;
 
+// REFACTOR: remove pub of inner type
 #[derive(Clone, Debug)]
 pub(crate) struct DefaultBranch(pub String);
+
+impl Display for DefaultBranch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug, Deserialize)]
 struct GetRepositoryResponse {
