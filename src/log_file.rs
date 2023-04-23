@@ -61,10 +61,10 @@ pub(crate) enum DeleteErrorKind {
 impl LogFile {
     pub fn delete(self) -> Result<(), DeleteError> {
         if self.0.exists() {
-            return Ok(fs::remove_file(&self.0).map_err(|err| DeleteError {
+            return fs::remove_file(&self.0).map_err(|err| DeleteError {
                 path: self.0,
                 kind: DeleteErrorKind::Delete(err),
-            })?);
+            });
         }
         Ok(())
     }

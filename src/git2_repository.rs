@@ -40,8 +40,7 @@ impl Display for TryFromPathError {
             }
             TryFromPathErrorKind::OperationInProgress(state) => write!(
                 f,
-                "expected repository to be in a clean state, got {:?}",
-                state
+                "expected repository to be in a clean state, got {state:?}"
             ),
             TryFromPathErrorKind::UncommittedFiles => write!(
                 f,
@@ -172,7 +171,7 @@ impl Repository {
     /// Assumption: `base` indicates a single commit
     /// Assumption: `origin` is the upstream/main repositiory
     pub fn base_commit(&self, base: &DefaultBranch) -> Result<Commit, BaseCommitError> {
-        Ok((|| {
+        (|| {
             let start_point = self
                 .revparse_single(&format!("origin/{}", &base.0))
                 .map_err(BaseCommitErrorKind::Revparse)?;
@@ -184,7 +183,7 @@ impl Repository {
         .map_err(|kind| BaseCommitError {
             base: base.to_owned(),
             kind,
-        })?)
+        })
     }
 
     /// Return the list of commits from `base` to `HEAD`, sorted parent-first,

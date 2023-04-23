@@ -16,14 +16,10 @@ fn generate_man_pages(out_dir: &Path, command: clap::Command) -> std::io::Result
 }
 
 fn generate_shell_completions(out_dir: &Path, mut command: clap::Command) -> std::io::Result<()> {
-    Shell::value_variants()
-        .into_iter()
-        .map(|shell| {
-            generate_to(*shell, &mut command, "git-disjoint", out_dir)?;
-            Ok(())
-        })
-        .collect::<std::io::Result<_>>()?;
-    Ok(())
+    Shell::value_variants().iter().try_for_each(|shell| {
+        generate_to(*shell, &mut command, "git-disjoint", out_dir)?;
+        Ok(())
+    })
 }
 
 fn main() -> std::io::Result<()> {
@@ -31,12 +27,11 @@ fn main() -> std::io::Result<()> {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src/args.rs");
 
-    let out_dir =
-        PathBuf::from(std::env::var_os("OUT_DIR").ok_or_else(|| std::io::ErrorKind::NotFound)?);
+    let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").ok_or(std::io::ErrorKind::NotFound)?);
     let command = cli::Cli::command();
 
     generate_man_pages(&out_dir, command.clone())?;
-    generate_shell_completions(&out_dir, command.clone())?;
+    generate_shell_completions(&out_dir, command)?;
 
     Ok(())
 }
