@@ -8,8 +8,9 @@ use std::{
     string::FromUtf8Error,
 };
 
-use git2::Repository;
 use git_url_parse::GitUrl;
+
+use crate::git2_repository::Repository;
 
 pub(crate) struct GithubRepositoryMetadata {
     pub owner: String,
@@ -120,7 +121,9 @@ fn get_repository_root() -> Result<PathBuf, TryDefaultErrorKind> {
 }
 
 fn get_repository(root: &Path) -> Result<Repository, TryDefaultErrorKind> {
-    Repository::open(root).map_err(TryDefaultErrorKind::OpenRepository)
+    git2::Repository::open(root)
+        .map(Into::into)
+        .map_err(TryDefaultErrorKind::OpenRepository)
 }
 
 fn get_remote_url(remote: &str) -> Result<GitUrl, TryDefaultErrorKind> {

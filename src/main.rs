@@ -25,6 +25,7 @@ mod branch_name;
 mod cli;
 mod default_branch;
 mod editor;
+mod git2_repository;
 mod github_repository_metadata;
 mod interact;
 mod issue;
@@ -176,15 +177,6 @@ struct CreatePullRequestResponse {
     html_url: String,
 }
 
-macro_rules! filter_try {
-    ($e:expr) => {
-        match $e {
-            Ok(t) => t,
-            Err(_) => return None,
-        }
-    };
-}
-
 fn execute(command: &[&str], log_file: &LogFile) -> Result<(), anyhow::Error> {
     let mut runner = Command::new(command[0]);
 
@@ -266,35 +258,6 @@ fn get_base_commit<'repo>(
         .as_commit()
         .ok_or_else(|| anyhow!("Expected `--base` to identify a commit"))
         .cloned()
-}
-
-/// Return the list of commits from `base` to `HEAD`, sorted parent-first,
-/// children-last.
-fn get_commits_since_base<'repo>(
-    repo: &'repo Repository,
-    base: &git2::Commit,
-) -> Result<Vec<Commit<'repo>>, anyhow::Error> {
-    // Identifies output commits by traversing commits starting from HEAD and
-    // working towards base, then reversing the list.
-    let mut revwalk = repo.revwalk()?;
-    revwalk.push_head()?;
-
-    revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
-
-    let mut commits: Vec<Commit> = revwalk
-        .filter_map(|id| {
-            let id = filter_try!(id);
-            let commit = filter_try!(repo.find_commit(id));
-            Some(commit)
-        })
-        // Only include commits after the `start_point`
-        .take_while(|commit| !base.id().eq(&commit.id()))
-        .collect();
-
-    // Order commits parent-first, children-last
-    commits.reverse();
-
-    Ok(commits)
 }
 
 fn group_commits_by_issue_group<'repo>(
@@ -483,8 +446,7 @@ async fn do_git_disjoint(
     } = repository_metadata;
 
     let base_commit = get_base_commit(&repository, &base)?;
-    let commits = get_commits_since_base(&repository, &base_commit)?;
-    // REFACTOR: can we use fewer iterators/collects here?
+    let commits = repository.commits_since_base(&base_commit)?;
     // We have to make a first pass to determine the issue groups in play
     let commits_by_issue_group = group_commits_by_issue_group(commits, all, separate)?;
     let selected_issue_groups = select_issues(&commits_by_issue_group, choose, overlay)?;
