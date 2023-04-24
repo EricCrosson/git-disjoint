@@ -1,3 +1,11 @@
+## [0.10.62](https://github.com/EricCrosson/git-disjoint/compare/v0.10.61...v0.10.62) (2023-04-24)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate sanitize-git-ref to v1.0.12 ([a4ca0e8](https://github.com/EricCrosson/git-disjoint/commit/a4ca0e82a4e2be2834dba61ada233986e5fbe641))
+* do not remote nonexistent log file in dry-run mode ([47f5893](https://github.com/EricCrosson/git-disjoint/commit/47f58936dfe0be1fb1b94a4a2b6c3676b3da7990)), closes [#257](https://github.com/EricCrosson/git-disjoint/issues/257)
+
 ## [0.10.61](https://github.com/EricCrosson/git-disjoint/compare/v0.10.60...v0.10.61) (2023-04-22)
 
 
