@@ -26,6 +26,7 @@ mod disjoint_branch;
 mod editor;
 mod git2_repository;
 mod github_repository_metadata;
+mod increment;
 mod interact;
 mod issue;
 mod issue_group;

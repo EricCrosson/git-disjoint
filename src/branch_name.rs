@@ -1,8 +1,8 @@
-use std::fmt::Display;
+use std::{error::Error, fmt::Display};
 
 use sanitize_git_ref::sanitize_git_ref_onelevel;
 
-use crate::issue_group::IssueGroup;
+use crate::{increment::Increment, issue_group::IssueGroup};
 
 /// Characters to be replaced with a hyphen, since they interfere with terminal
 /// tab-completion.
@@ -60,5 +60,33 @@ impl Display for BranchName {
 impl From<String> for BranchName {
     fn from(s: String) -> Self {
         Self::new(s)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum IncrementError {
+    #[non_exhaustive]
+    Overflow,
+}
+
+impl Display for IncrementError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "counter addition overflowed")
+    }
+}
+
+impl Error for IncrementError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+}
+
+impl Increment for BranchName {
+    type Error = IncrementError;
+
+    fn increment(self, count: u32) -> Result<(Self, u32), Self::Error> {
+        let next = count.checked_add(1).ok_or(IncrementError::Overflow)?;
+        let incremented = Self(format!("{}_{}", self.0, next));
+        Ok((incremented, next))
     }
 }
