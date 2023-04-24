@@ -11,7 +11,7 @@ use crate::{
         CommitGrouping, CommitsToConsider, OverlayCommitsIntoOnePullRequest,
         PromptUserToChooseCommits,
     },
-    interact::{prompt_user, IssueGroupWhitelist},
+    interact::{prompt_user, IssueGroupWhitelist, SelectIssuesError},
     issue::Issue,
     issue_group::{GitCommitSummary, IssueGroup},
 };
@@ -114,17 +114,17 @@ impl<'repo> IssueGroupMap<'repo> {
         self,
         choose: PromptUserToChooseCommits,
         overlay: OverlayCommitsIntoOnePullRequest,
-    ) -> Result<Self, anyhow::Error> {
+    ) -> Result<Self, SelectIssuesError> {
         let selected_issue_groups: IssueGroupWhitelist = {
             if choose == PromptUserToChooseCommits::No
                 && overlay == OverlayCommitsIntoOnePullRequest::No
             {
-                Ok::<IssueGroupWhitelist, anyhow::Error>(IssueGroupWhitelist::WhitelistDNE)
+                IssueGroupWhitelist::WhitelistDNE
             } else {
                 let keys = self.0.keys();
-                Ok(IssueGroupWhitelist::Whitelist(prompt_user(keys)?))
+                IssueGroupWhitelist::Whitelist(prompt_user(keys)?)
             }
-        }?;
+        };
 
         Ok(match &selected_issue_groups {
             // If there is a whitelist, only operate on issue_groups in the whitelist
