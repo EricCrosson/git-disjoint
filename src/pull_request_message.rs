@@ -29,7 +29,7 @@ impl<'repo> FromIterator<&'repo Commit<'repo>> for PullRequestMessageTemplate<'r
 
 impl<'repo> Display for PullRequestMessageTemplate<'repo> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}\n{}", IGNORE_MARKER, PULL_REQUEST_INSTRUCTIONS)?;
+        write!(f, "\n{}\n{}", IGNORE_MARKER, PULL_REQUEST_INSTRUCTIONS)?;
         for commit in &self.commits {
             writeln!(
                 f,
