@@ -1,5 +1,7 @@
 use std::{error::Error, fmt::Display, str::FromStr};
 
+use crate::pull_request_message::IGNORE_MARKER;
+
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub(crate) struct PullRequestMetadata {
     pub title: String,
@@ -52,7 +54,12 @@ impl FromStr for PullRequestMetadata {
 
         let mut iterator = s.lines();
         let title = iterator.next().unwrap_or_default().trim().to_owned();
-        let body = iterator.collect::<Vec<_>>().join("\n").trim().to_owned();
+        let body = iterator
+            .take_while(|line| line != &IGNORE_MARKER)
+            .collect::<Vec<_>>()
+            .join("\n")
+            .trim()
+            .to_owned();
 
         Ok(Self { title, body })
     }
