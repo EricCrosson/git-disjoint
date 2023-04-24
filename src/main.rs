@@ -1,20 +1,18 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
-use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
 use std::io::prelude::*;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
-use anyhow::anyhow;
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
 use clap::Parser;
 use default_branch::DefaultBranch;
+use disjoint_branch::{DisjointBranch, DisjointBranchMap};
 use futures::TryStreamExt;
 use git2::Commit;
-use indexmap::IndexMap;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use issue_group_map::IssueGroupMap;
 use lazy_static::lazy_static;
@@ -24,6 +22,7 @@ use pull_request::PullRequest;
 mod branch_name;
 mod cli;
 mod default_branch;
+mod disjoint_branch;
 mod editor;
 mod git2_repository;
 mod github_repository_metadata;
@@ -62,60 +61,6 @@ lazy_static! {
 }
 
 #[derive(Debug)]
-struct CommitPlan<'repo> {
-    branch_name: BranchName,
-    commits: Vec<Commit<'repo>>,
-}
-
-/// Plan out branch names to avoid collisions.
-///
-/// This function does not take into account existing branch names in the local
-/// or remote repository. It only looks at branch names that git-disjoint is
-/// going to generate to make sure one invocation of git-disjoint won't try to
-/// create a branch with the same name twice.
-fn plan_branch_names<'repo>(
-    commits_by_issue_group: IssueGroupMap<'repo>,
-) -> Result<IndexMap<IssueGroup, CommitPlan<'repo>>, anyhow::Error> {
-    let mut suffix: u32 = 0;
-    let mut seen_branch_names = HashSet::new();
-    commits_by_issue_group
-        .into_iter()
-        .map(|(issue_group, commits)| {
-            // Grab the first summary to convert into a branch name.
-            // We only choose the first summary because we know each Vec is
-            // non-empty and the first element is convenient.
-            let summary = {
-                let commit = &commits[0];
-                commit.summary().ok_or_else(|| {
-                    anyhow!(
-                        "Summary for commit {:?} is not a valid UTF-8 string",
-                        commit.id()
-                    )
-                })?
-            };
-            let generated_branch_name = BranchName::from_issue_group(&issue_group, summary);
-            let mut proposed_branch_name = generated_branch_name.clone();
-
-            while seen_branch_names.contains(&proposed_branch_name) {
-                suffix += 1;
-                // OPTIMIZE: no need to call sanitize_git_ref here again
-                proposed_branch_name = format!("{generated_branch_name}_{suffix}").into();
-            }
-
-            seen_branch_names.insert(proposed_branch_name.clone());
-
-            Ok((
-                issue_group,
-                CommitPlan {
-                    branch_name: proposed_branch_name,
-                    commits,
-                },
-            ))
-        })
-        .collect()
-}
-
-#[derive(Debug)]
 struct CommitWork<'repo> {
     commit: Commit<'repo>,
     progress_bar: ProgressBar,
@@ -147,8 +92,8 @@ struct WorkOrder<'repo> {
     progress_bar: ProgressBar,
 }
 
-impl<'repo> From<(IssueGroup, CommitPlan<'repo>)> for WorkOrder<'repo> {
-    fn from((issue_group, commit_plan): (IssueGroup, CommitPlan<'repo>)) -> Self {
+impl<'repo> From<(IssueGroup, DisjointBranch<'repo>)> for WorkOrder<'repo> {
+    fn from((issue_group, commit_plan): (IssueGroup, DisjointBranch<'repo>)) -> Self {
         let num_commits: u64 = commit_plan.commits.len().try_into().unwrap();
         let progress_bar = ProgressBar::new(num_commits)
             .with_style(STYLE_ISSUE_GROUP_STABLE.clone())
@@ -253,9 +198,8 @@ async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(
         // Now filter the set of all issue groups to just the whitelisted issue groups
         .select_issues(choose, overlay)?
         .apply_overlay(overlay);
-    // TODO: FINISH: moving to IssueGroupMap
-    let commit_plan_by_issue_group = plan_branch_names(commits_by_issue_group)?;
-    // DONE: : : : : : TODO: FINISH: moving to IssueGroupMap
+
+    let commit_plan_by_issue_group: DisjointBranchMap = commits_by_issue_group.try_into()?;
 
     let work_orders: Vec<WorkOrder> = commit_plan_by_issue_group
         .into_iter()
