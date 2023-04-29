@@ -1,3 +1,10 @@
+## [0.10.67](https://github.com/EricCrosson/git-disjoint/compare/v0.10.66...v0.10.67) (2023-04-29)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate anyhow to v1.0.71 ([e335cb6](https://github.com/EricCrosson/git-disjoint/commit/e335cb6416e8cc9d63ad718541d5a0d78fec0cc0))
+
 ## [0.10.66](https://github.com/EricCrosson/git-disjoint/compare/v0.10.65...v0.10.66) (2023-04-29)
 
 
