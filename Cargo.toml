@@ -22,7 +22,7 @@ exclude = [
 ]
 
 [dependencies]
-anyhow = "=1.0.70"
+anyhow = "=1.0.71"
 async_executors = { version = "=0.6.0", features = ["tokio_io", "tokio_timer", "tokio_tp"] }
 async_nursery = "=0.5.0"
 clap = { version = "=4.2.5", features = ["cargo", "derive", "env", "wrap_help"] }
