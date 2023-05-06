@@ -1,3 +1,10 @@
+## [0.10.69](https://github.com/EricCrosson/git-disjoint/compare/v0.10.68...v0.10.69) (2023-05-06)
+
+
+### Bug Fixes
+
+* **nix:** use darwin-compatible paths in manpage installation ([74f136e](https://github.com/EricCrosson/git-disjoint/commit/74f136e2ff67ef6cab0a6dd2a42b8570d0475ed8))
+
 ## [0.10.68](https://github.com/EricCrosson/git-disjoint/compare/v0.10.67...v0.10.68) (2023-05-05)
 
 
