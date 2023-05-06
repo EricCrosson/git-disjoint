@@ -3,12 +3,7 @@ use std::{collections::HashSet, error::Error, fmt::Display};
 use git2::Commit;
 use indexmap::IndexMap;
 
-use crate::{
-    branch_name::{self, BranchName},
-    increment::Increment,
-    issue_group::IssueGroup,
-    issue_group_map::IssueGroupMap,
-};
+use crate::{branch_name::BranchName, issue_group::IssueGroup, issue_group_map::IssueGroupMap};
 
 #[derive(Debug)]
 pub(crate) struct DisjointBranch<'repo> {
@@ -33,9 +28,6 @@ impl Display for FromIssueGroupMapError {
             FromIssueGroupMapErrorKind::InvalidUtf8(commit) => {
                 write!(f, "commit summary contains invalid UTF-8: {}", commit)
             }
-            FromIssueGroupMapErrorKind::UniqueBranchName(_) => {
-                write!(f, "unable to create unique branch name")
-            }
         }
     }
 }
@@ -44,7 +36,6 @@ impl Error for FromIssueGroupMapError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match &self.kind {
             FromIssueGroupMapErrorKind::InvalidUtf8(_) => None,
-            FromIssueGroupMapErrorKind::UniqueBranchName(err) => Some(err),
         }
     }
 }
@@ -53,8 +44,6 @@ impl Error for FromIssueGroupMapError {
 pub(crate) enum FromIssueGroupMapErrorKind {
     #[non_exhaustive]
     InvalidUtf8(String),
-    #[non_exhaustive]
-    UniqueBranchName(branch_name::IncrementError),
 }
 
 impl From<FromIssueGroupMapErrorKind> for FromIssueGroupMapError {
@@ -89,7 +78,7 @@ impl<'repo> TryFrom<IssueGroupMap<'repo>> for DisjointBranchMap<'repo> {
     /// going to generate to make sure one invocation of git-disjoint won't try to
     /// create a branch with the same name twice.
     fn try_from(commits_by_issue_group: IssueGroupMap<'repo>) -> Result<Self, Self::Error> {
-        // REFACTPR: use a reference here
+        let mut suffix: u32 = 0;
         let mut seen_branch_names = HashSet::new();
         commits_by_issue_group
             .into_iter()
@@ -103,21 +92,21 @@ impl<'repo> TryFrom<IssueGroupMap<'repo>> for DisjointBranchMap<'repo> {
                         FromIssueGroupMapErrorKind::InvalidUtf8(commit.id().to_string())
                     })?
                 };
+                let generated_branch_name = BranchName::from_issue_group(&issue_group, summary);
+                let mut proposed_branch_name = generated_branch_name.clone();
 
-                let mut branch_name = BranchName::from_issue_group(&issue_group, summary);
-                let mut counter = 0;
-                // FIXME: this formatting is a bug, don't push that commit
-                while seen_branch_names.contains(&branch_name) {
-                    (branch_name, counter) = branch_name
-                        .increment(counter)
-                        .map_err(FromIssueGroupMapErrorKind::UniqueBranchName)?;
+                while seen_branch_names.contains(&proposed_branch_name) {
+                    suffix += 1;
+                    // OPTIMIZE: no need to call sanitize_git_ref here again
+                    proposed_branch_name = format!("{generated_branch_name}_{suffix}").into();
                 }
-                seen_branch_names.insert(branch_name.clone());
+
+                seen_branch_names.insert(proposed_branch_name.clone());
 
                 Ok((
                     issue_group,
                     DisjointBranch {
-                        branch_name,
+                        branch_name: proposed_branch_name,
                         commits,
                     },
                 ))
