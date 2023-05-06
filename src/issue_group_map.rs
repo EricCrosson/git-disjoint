@@ -44,6 +44,7 @@ impl<'repo> IssueGroupMap<'repo> {
         self.0.insert(key, value);
     }
 
+    // REFACTOR: avoid anyhow
     pub fn try_from_commits(
         commits: Vec<Commit<'repo>>,
         commits_to_consider: CommitsToConsider,
@@ -77,6 +78,11 @@ impl<'repo> IssueGroupMap<'repo> {
                         let summary: GitCommitSummary = (&commit).try_into()?;
                         let mut proposed_issue_group = summary.clone();
 
+                        // Use unique issue group names so each commit is
+                        // addressable in the selection menu.
+                        // DISCUSS: would it be better to use an array?
+                        // No, because there's so much ambiguity. Should we expose the
+                        // commit hash? Probably
                         while seen_issue_groups.contains(&proposed_issue_group) {
                             suffix += 1;
                             proposed_issue_group = GitCommitSummary(format!("{summary}_{suffix}"));

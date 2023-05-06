@@ -106,6 +106,7 @@ impl<'repo> TryFrom<IssueGroupMap<'repo>> for DisjointBranchMap<'repo> {
 
                 let mut branch_name = BranchName::from_issue_group(&issue_group, summary);
                 let mut counter = 0;
+                // FIXME: this formatting is a bug, don't push that commit
                 while seen_branch_names.contains(&branch_name) {
                     (branch_name, counter) = branch_name
                         .increment(counter)

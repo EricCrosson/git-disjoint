@@ -100,8 +100,10 @@ impl<'repo> From<(IssueGroup, DisjointBranch<'repo>)> for WorkOrder<'repo> {
             .with_style(STYLE_ISSUE_GROUP_STABLE.clone())
             .with_prefix(PREFIX_PENDING)
             .with_message(format!("{issue_group}"));
+        // REFACTOR: using into
         WorkOrder {
             branch_name: commit_plan.branch_name,
+            // REFACTOR:
             commit_work: commit_plan
                 .commits
                 .into_iter()
