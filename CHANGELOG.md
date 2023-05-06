@@ -1,3 +1,10 @@
+## [0.10.70](https://github.com/EricCrosson/git-disjoint/compare/v0.10.69...v0.10.70) (2023-05-06)
+
+
+### Reverts
+
+* Revert "refactor: separate out incrementing logic" ([c710e44](https://github.com/EricCrosson/git-disjoint/commit/c710e44ee53adba663ef7f45f22ad3760154f6da))
+
 ## [0.10.69](https://github.com/EricCrosson/git-disjoint/compare/v0.10.68...v0.10.69) (2023-05-06)
 
 
