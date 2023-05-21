@@ -1,5 +1,7 @@
 use std::{
     collections::HashSet,
+    error::Error,
+    fmt::Display,
     io::{self, Write},
 };
 
@@ -13,7 +15,7 @@ use crate::{
     },
     interact::{prompt_user, IssueGroupWhitelist, SelectIssuesError},
     issue::Issue,
-    issue_group::{GitCommitSummary, IssueGroup},
+    issue_group::{self, GitCommitSummary, IssueGroup},
 };
 
 #[derive(Debug, Default)]
@@ -35,6 +37,54 @@ impl<'repo> FromIterator<(IssueGroup, Vec<Commit<'repo>>)> for IssueGroupMap<'re
     }
 }
 
+#[derive(Debug)]
+#[non_exhaustive]
+pub(crate) struct FromCommitsError {
+    kind: FromCommitsErrorKind,
+}
+
+impl Display for FromCommitsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.kind {
+            FromCommitsErrorKind::FromCommit(_) => write!(f, "unable to get commit summary"),
+            FromCommitsErrorKind::IO(_) => write!(f, "unable to write to output stream"),
+        }
+    }
+}
+
+impl Error for FromCommitsError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match &self.kind {
+            FromCommitsErrorKind::FromCommit(err) => Some(err),
+            FromCommitsErrorKind::IO(err) => Some(err),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum FromCommitsErrorKind {
+    #[non_exhaustive]
+    FromCommit(issue_group::FromCommitError),
+    #[non_exhaustive]
+    IO(io::Error),
+}
+
+impl From<issue_group::FromCommitError> for FromCommitsError {
+    fn from(err: issue_group::FromCommitError) -> Self {
+        Self {
+            kind: FromCommitsErrorKind::FromCommit(err),
+        }
+    }
+}
+
+impl From<io::Error> for FromCommitsError {
+    fn from(err: io::Error) -> Self {
+        Self {
+            kind: FromCommitsErrorKind::IO(err),
+        }
+    }
+}
+
 impl<'repo> IssueGroupMap<'repo> {
     fn with_capacity(n: usize) -> Self {
         Self(IndexMap::with_capacity(n))
@@ -44,19 +94,18 @@ impl<'repo> IssueGroupMap<'repo> {
         self.0.insert(key, value);
     }
 
-    // REFACTOR: avoid anyhow
     pub fn try_from_commits(
         commits: Vec<Commit<'repo>>,
         commits_to_consider: CommitsToConsider,
         commit_grouping: CommitGrouping,
-    ) -> Result<Self, anyhow::Error> {
+    ) -> Result<Self, FromCommitsError> {
         let mut suffix: u32 = 0;
         let mut seen_issue_groups = HashSet::new();
         let commits_by_issue: IndexMap<IssueGroup, Vec<Commit>> = commits
             .into_iter()
             // Parse issue from commit message
             .map(
-                |commit| -> Result<Option<(IssueGroup, Commit)>, anyhow::Error> {
+                |commit| -> Result<Option<(IssueGroup, Commit)>, FromCommitsError> {
                     let issue = commit.message().and_then(Issue::parse_from_commit_message);
                     // If:
                     // - we're grouping commits by issue, and
@@ -103,7 +152,7 @@ impl<'repo> IssueGroupMap<'repo> {
                 },
             )
             // unwrap the Result
-            .collect::<Result<Vec<_>, anyhow::Error>>()?
+            .collect::<Result<Vec<_>, FromCommitsError>>()?
             .into_iter()
             // drop the None values
             .flatten()
