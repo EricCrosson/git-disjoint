@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, io};
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -37,7 +37,7 @@ struct CreatePullRequestResponse {
 #[non_exhaustive]
 pub(crate) struct CreatePullRequestError {
     url: String,
-    kind: CreatePullRequestErrorKind,
+    pub kind: CreatePullRequestErrorKind,
 }
 
 impl Display for CreatePullRequestError {
@@ -46,6 +46,9 @@ impl Display for CreatePullRequestError {
             CreatePullRequestErrorKind::Http(_) => write!(f, "http error: POST {}", self.url),
             CreatePullRequestErrorKind::Parse(_) => {
                 write!(f, "unable to parse response from POST {}", self.url)
+            }
+            CreatePullRequestErrorKind::OpenBrowser(_) => {
+                write!(f, "unable to open web browser to page {}", self.url)
             }
         }
     }
@@ -56,6 +59,7 @@ impl Error for CreatePullRequestError {
         match &self.kind {
             CreatePullRequestErrorKind::Http(err) => Some(err),
             CreatePullRequestErrorKind::Parse(err) => Some(err),
+            CreatePullRequestErrorKind::OpenBrowser(err) => Some(err),
         }
     }
 }
@@ -66,10 +70,12 @@ pub(crate) enum CreatePullRequestErrorKind {
     Http(reqwest::Error),
     #[non_exhaustive]
     Parse(reqwest::Error),
+    #[non_exhaustive]
+    OpenBrowser(io::Error),
 }
 
 impl PullRequest {
-    pub async fn create(self, http_client: Client) -> Result<(), anyhow::Error> {
+    pub async fn create(self, http_client: Client) -> Result<(), CreatePullRequestError> {
         let url = format!(
             "https://api.github.com/repos/{}/{}/pulls",
             self.owner, self.name
@@ -99,6 +105,12 @@ impl PullRequest {
                 kind: CreatePullRequestErrorKind::Parse(err),
             })?;
 
-        Ok(open::that(response.html_url)?)
+        let url = response.html_url;
+        open::that(&url).map_err(|err| CreatePullRequestError {
+            url,
+            kind: CreatePullRequestErrorKind::OpenBrowser(err),
+        })?;
+
+        Ok(())
     }
 }

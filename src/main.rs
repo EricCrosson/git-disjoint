@@ -11,7 +11,7 @@ use async_nursery::{NurseExt, Nursery};
 use clap::Parser;
 use default_branch::DefaultBranch;
 use disjoint_branch::{DisjointBranch, DisjointBranchMap};
-use futures::TryStreamExt;
+use futures::{TryFutureExt, TryStreamExt};
 use git2::Commit;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use issue_group_map::IssueGroupMap;
@@ -24,6 +24,7 @@ mod cli;
 mod default_branch;
 mod disjoint_branch;
 mod editor;
+mod error;
 mod git2_repository;
 mod github_repository_metadata;
 mod interact;
@@ -38,6 +39,7 @@ mod pull_request_metadata;
 use crate::branch_name::BranchName;
 use crate::cli::Cli;
 use crate::editor::interactive_get_pr_metadata;
+use crate::error::Error;
 use crate::github_repository_metadata::GithubRepositoryMetadata;
 use crate::issue_group::IssueGroup;
 
@@ -164,8 +166,7 @@ async fn sleep(duration: Duration) -> Result<(), anyhow::Error> {
 }
 
 async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(), anyhow::Error> {
-    let (pr_nursery, mut pr_stream) =
-        Nursery::<TokioTp, Result<(), anyhow::Error>>::new(exec.clone());
+    let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<(), Error>>::new(exec.clone());
 
     let Cli {
         all,
@@ -327,7 +328,7 @@ async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(
                 base: base_branch.clone(),
             };
 
-            pr_nursery.nurse(pull_request.create(http_client.clone()))?;
+            pr_nursery.nurse(pull_request.create(http_client.clone()).map_err(Into::into))?;
 
             // Finally, check out the original ref
             execute(&["git", "checkout", "-"], &log_file)?;
