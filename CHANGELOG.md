@@ -1,3 +1,10 @@
+## [0.10.75](https://github.com/EricCrosson/git-disjoint/compare/v0.10.74...v0.10.75) (2023-05-21)
+
+
+### Performance Improvements
+
+* avoid allocation ([ea22bb9](https://github.com/EricCrosson/git-disjoint/commit/ea22bb9ccba3d667efb2a3846b5ba60ffa0ff36b))
+
 ## [0.10.74](https://github.com/EricCrosson/git-disjoint/compare/v0.10.73...v0.10.74) (2023-05-20)
 
 
