@@ -338,6 +338,7 @@ fn main() -> Result<(), little_anyhow::Error> {
             Err(err) => {
                 // Execution failed, so display the logs and the error to the user
                 let log_contents = fs::read_to_string(&log_file)?;
+                // REFACTOR: move this formatting into little_anyhow's Display
                 let error_message = format!(
                     r#"
 Failed with error {:?}
