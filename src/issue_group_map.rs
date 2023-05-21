@@ -151,16 +151,18 @@ impl<'repo> IssueGroupMap<'repo> {
                     Ok(None)
                 },
             )
-            // unwrap the Result
-            .collect::<Result<Vec<_>, FromCommitsError>>()?
-            .into_iter()
-            // drop the None values
-            .flatten()
-            .fold(Default::default(), |mut map, (issue, commit)| {
-                let commits = map.entry(issue).or_default();
-                commits.push(commit);
-                map
-            });
+            .filter_map(Result::transpose)
+            .try_fold(
+                Default::default(),
+                |mut map,
+                 maybe_tuple|
+                 -> Result<IndexMap<IssueGroup, Vec<Commit>>, FromCommitsError> {
+                    let (issue, commit) = maybe_tuple?;
+                    let commits = map.entry(issue).or_default();
+                    commits.push(commit);
+                    Ok(map)
+                },
+            )?;
 
         Ok(Self(commits_by_issue))
     }
