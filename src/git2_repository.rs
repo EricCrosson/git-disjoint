@@ -224,7 +224,10 @@ impl Repository {
 
     /// Return the list of commits from `base` to `HEAD`, sorted parent-first,
     /// children-last.
-    pub fn commits_since_base(&self, base: &Commit) -> Result<Vec<Commit>, WalkCommitsError> {
+    pub fn commits_since_base<'repo>(
+        &'repo self,
+        base: &'repo Commit,
+    ) -> Result<impl Iterator<Item = Commit<'repo>>, WalkCommitsError> {
         macro_rules! filter_try {
             ($e:expr) => {
                 match $e {
@@ -251,7 +254,7 @@ impl Repository {
         })()
         .map_err(|kind| WalkCommitsError { kind })?;
 
-        let mut commits: Vec<Commit> = revwalk
+        let commits: Vec<Commit> = revwalk
             .filter_map(|id| {
                 let id = filter_try!(id);
                 let commit = filter_try!(self.find_commit(id));
@@ -264,8 +267,6 @@ impl Repository {
         // commits are now ordered child-first, parent-last
 
         // Order commits parent-first, children-last
-        commits.reverse();
-
-        Ok(commits)
+        Ok(commits.into_iter().rev())
     }
 }
