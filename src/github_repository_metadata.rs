@@ -57,7 +57,7 @@ pub(crate) enum TryDefaultErrorKind {
     #[non_exhaustive]
     ParseCommandOutput(FromUtf8Error),
     #[non_exhaustive]
-    OpenRepository(git2_repository::TryFromPathError),
+    OpenRepository(git2_repository::FromPathError),
     #[non_exhaustive]
     ParseGitUrl,
     #[non_exhaustive]
@@ -72,8 +72,8 @@ impl From<TryDefaultErrorKind> for TryDefaultError {
     }
 }
 
-impl From<git2_repository::TryFromPathError> for TryDefaultError {
-    fn from(err: git2_repository::TryFromPathError) -> Self {
+impl From<git2_repository::FromPathError> for TryDefaultError {
+    fn from(err: git2_repository::FromPathError) -> Self {
         Self {
             kind: TryDefaultErrorKind::OpenRepository(err),
         }

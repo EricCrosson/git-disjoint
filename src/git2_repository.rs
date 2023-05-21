@@ -27,43 +27,43 @@ impl From<git2::Repository> for Repository {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct TryFromPathError {
+pub(crate) struct FromPathError {
     path: PathBuf,
-    kind: TryFromPathErrorKind,
+    kind: FromPathErrorKind,
 }
 
-impl Display for TryFromPathError {
+impl Display for FromPathError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
-            TryFromPathErrorKind::OpenRepository(_) => {
+            FromPathErrorKind::OpenRepository(_) => {
                 write!(f, "unable to open git repository in {:?}", self.path)
             }
-            TryFromPathErrorKind::OperationInProgress(state) => write!(
+            FromPathErrorKind::OperationInProgress(state) => write!(
                 f,
                 "expected repository to be in a clean state, got {state:?}"
             ),
-            TryFromPathErrorKind::UncommittedFiles => write!(
+            FromPathErrorKind::UncommittedFiles => write!(
                 f,
                 "repository contains staged or unstaged changes to tracked files"
             ),
-            TryFromPathErrorKind::Git(_) => write!(f, "git error"),
+            FromPathErrorKind::Git(_) => write!(f, "git error"),
         }
     }
 }
 
-impl Error for TryFromPathError {
+impl Error for FromPathError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match &self.kind {
-            TryFromPathErrorKind::OpenRepository(err) => Some(err),
-            TryFromPathErrorKind::OperationInProgress(_) => None,
-            TryFromPathErrorKind::UncommittedFiles => None,
-            TryFromPathErrorKind::Git(err) => Some(err),
+            FromPathErrorKind::OpenRepository(err) => Some(err),
+            FromPathErrorKind::OperationInProgress(_) => None,
+            FromPathErrorKind::UncommittedFiles => None,
+            FromPathErrorKind::Git(err) => Some(err),
         }
     }
 }
 
 #[derive(Debug)]
-pub(crate) enum TryFromPathErrorKind {
+pub(crate) enum FromPathErrorKind {
     #[non_exhaustive]
     OpenRepository(git2::Error),
     #[non_exhaustive]
@@ -75,19 +75,19 @@ pub(crate) enum TryFromPathErrorKind {
 }
 
 impl TryFrom<&Path> for Repository {
-    type Error = TryFromPathError;
+    type Error = FromPathError;
 
     fn try_from(root: &Path) -> Result<Self, Self::Error> {
         (|| {
             let repo: Repository = git2::Repository::open(root)
                 .map(Into::into)
-                .map_err(TryFromPathErrorKind::OpenRepository)?;
+                .map_err(FromPathErrorKind::OpenRepository)?;
 
             repo.assert_repository_state_is_clean()?;
             repo.assert_tree_matches_workdir_with_index()?;
             Ok(repo)
         })()
-        .map_err(|kind| TryFromPathError {
+        .map_err(|kind| FromPathError {
             path: root.to_owned(),
             kind,
         })
@@ -134,11 +134,11 @@ impl Repository {
     ///
     /// This prevents invoking `git disjoint` on a repository in the middle
     /// of some other operation, like a `git rebase`.
-    fn assert_repository_state_is_clean(&self) -> Result<(), TryFromPathErrorKind> {
+    fn assert_repository_state_is_clean(&self) -> Result<(), FromPathErrorKind> {
         let state = self.state();
         match state {
             RepositoryState::Clean => Ok(()),
-            _ => Err(TryFromPathErrorKind::OperationInProgress(state)),
+            _ => Err(FromPathErrorKind::OperationInProgress(state)),
         }
     }
 
@@ -149,7 +149,7 @@ impl Repository {
     /// staged, deletec, etc.
     ///
     /// This check currently excludes untracked files, but I'm not tied to this behavior.
-    fn assert_tree_matches_workdir_with_index(&self) -> Result<(), TryFromPathErrorKind> {
+    fn assert_tree_matches_workdir_with_index(&self) -> Result<(), FromPathErrorKind> {
         let files_changed = (|| {
             let originally_checked_out_commit = self.head()?.resolve()?.peel_to_commit()?;
             let originally_checked_out_tree = originally_checked_out_commit.tree()?;
@@ -160,11 +160,11 @@ impl Repository {
                 .files_changed();
             Ok(files_changed)
         })()
-        .map_err(TryFromPathErrorKind::Git)?;
+        .map_err(FromPathErrorKind::Git)?;
 
         match files_changed {
             0 => Ok(()),
-            _ => Err(TryFromPathErrorKind::UncommittedFiles),
+            _ => Err(FromPathErrorKind::UncommittedFiles),
         }
     }
 
