@@ -129,6 +129,42 @@ pub(crate) enum BaseCommitErrorKind {
     AmbigiousBase,
 }
 
+#[derive(Debug)]
+#[non_exhaustive]
+pub(crate) struct WalkCommitsError {
+    kind: WalkCommitsErrorKind,
+}
+
+impl Display for WalkCommitsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.kind {
+            WalkCommitsErrorKind::Revwalk(_) => write!(f, "git2::revwalk error"),
+            WalkCommitsErrorKind::PushHead(_) => write!(f, "git2::push_head error"),
+            WalkCommitsErrorKind::SetSorting(_) => write!(f, "git2::set_sorting error"),
+        }
+    }
+}
+
+impl Error for WalkCommitsError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match &self.kind {
+            WalkCommitsErrorKind::Revwalk(err) => Some(err),
+            WalkCommitsErrorKind::PushHead(err) => Some(err),
+            WalkCommitsErrorKind::SetSorting(err) => Some(err),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum WalkCommitsErrorKind {
+    #[non_exhaustive]
+    Revwalk(git2::Error),
+    #[non_exhaustive]
+    PushHead(git2::Error),
+    #[non_exhaustive]
+    SetSorting(git2::Error),
+}
+
 impl Repository {
     /// Return an error if the repository state is not clean.
     ///
@@ -188,7 +224,7 @@ impl Repository {
 
     /// Return the list of commits from `base` to `HEAD`, sorted parent-first,
     /// children-last.
-    pub fn commits_since_base(&self, base: &Commit) -> Result<Vec<Commit>, anyhow::Error> {
+    pub fn commits_since_base(&self, base: &Commit) -> Result<Vec<Commit>, WalkCommitsError> {
         macro_rules! filter_try {
             ($e:expr) => {
                 match $e {
@@ -198,12 +234,22 @@ impl Repository {
             };
         }
 
-        // Identifies output commits by traversing commits starting from HEAD and
-        // working towards base, then reversing the list.
-        let mut revwalk = self.revwalk()?;
-        revwalk.push_head()?;
+        let revwalk = (|| {
+            // Identifies output commits by traversing commits starting from HEAD and
+            // working towards base, then reversing the list.
+            let mut revwalk = self.revwalk().map_err(WalkCommitsErrorKind::Revwalk)?;
+            revwalk
+                .push_head()
+                .map_err(WalkCommitsErrorKind::PushHead)?;
 
-        revwalk.set_sorting(git2::Sort::TOPOLOGICAL)?;
+            // DISCUSS: can we combine with reverse to avoid the vec-reverse below?
+            revwalk
+                .set_sorting(git2::Sort::TOPOLOGICAL)
+                .map_err(WalkCommitsErrorKind::SetSorting)?;
+
+            Ok(revwalk)
+        })()
+        .map_err(|kind| WalkCommitsError { kind })?;
 
         let mut commits: Vec<Commit> = revwalk
             .filter_map(|id| {
