@@ -14,7 +14,6 @@ pub(crate) struct ExecuteError {
 
 impl Display for ExecuteError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // RESUME:
         match &self.kind {
             ExecuteErrorKind::Write(_) => write!(f, "unable to write to stream"),
             ExecuteErrorKind::Exec(_, command) => {
