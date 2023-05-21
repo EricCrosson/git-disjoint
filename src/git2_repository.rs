@@ -139,7 +139,8 @@ impl Display for WalkCommitsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
             WalkCommitsErrorKind::Revwalk(_) => write!(f, "git2::revwalk error"),
-            WalkCommitsErrorKind::PushHead(_) => write!(f, "git2::push_head error"),
+            WalkCommitsErrorKind::Push(_) => write!(f, "git2::push_head error"),
+            WalkCommitsErrorKind::Hide(_) => write!(f, "git2::hide error"),
             WalkCommitsErrorKind::SetSorting(_) => write!(f, "git2::set_sorting error"),
         }
     }
@@ -149,7 +150,8 @@ impl Error for WalkCommitsError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match &self.kind {
             WalkCommitsErrorKind::Revwalk(err) => Some(err),
-            WalkCommitsErrorKind::PushHead(err) => Some(err),
+            WalkCommitsErrorKind::Push(err) => Some(err),
+            WalkCommitsErrorKind::Hide(err) => Some(err),
             WalkCommitsErrorKind::SetSorting(err) => Some(err),
         }
     }
@@ -160,7 +162,9 @@ pub(crate) enum WalkCommitsErrorKind {
     #[non_exhaustive]
     Revwalk(git2::Error),
     #[non_exhaustive]
-    PushHead(git2::Error),
+    Push(git2::Error),
+    #[non_exhaustive]
+    Hide(git2::Error),
     #[non_exhaustive]
     SetSorting(git2::Error),
 }
@@ -222,8 +226,8 @@ impl Repository {
         })
     }
 
-    /// Return the list of commits from `base` to `HEAD`, sorted parent-first,
-    /// children-last.
+    /// Identify commits by topologically traversing commits starting from HEAD
+    /// and working towards base (no parents before all its children are shown).
     pub fn commits_since_base<'repo>(
         &'repo self,
         base: &'repo Commit,
@@ -238,35 +242,32 @@ impl Repository {
         }
 
         let revwalk = (|| {
-            // Identifies output commits by traversing commits starting from HEAD and
-            // working towards base, then reversing the list.
             let mut revwalk = self.revwalk().map_err(WalkCommitsErrorKind::Revwalk)?;
-            revwalk
-                .push_head()
-                .map_err(WalkCommitsErrorKind::PushHead)?;
 
-            // DISCUSS: can we combine with reverse to avoid the vec-reverse below?
+            // Starting from HEAD
+            revwalk.push_head().map_err(WalkCommitsErrorKind::Push)?;
+
+            // ignore the base branch and all of its ancestors
             revwalk
-                .set_sorting(git2::Sort::TOPOLOGICAL)
+                .hide(base.id())
+                .map_err(WalkCommitsErrorKind::Hide)?;
+
+            // then reverse the ordering
+            revwalk
+                .set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::REVERSE)
                 .map_err(WalkCommitsErrorKind::SetSorting)?;
 
             Ok(revwalk)
         })()
         .map_err(|kind| WalkCommitsError { kind })?;
 
-        let commits: Vec<Commit> = revwalk
-            .filter_map(|id| {
-                let id = filter_try!(id);
-                let commit = filter_try!(self.find_commit(id));
-                Some(commit)
-            })
-            // Only include commits after the `start_point`
-            .take_while(|commit| !base.id().eq(&commit.id()))
-            .collect();
+        let iter = revwalk.filter_map(|id| {
+            // FIXME: do not silently drop errors
+            let id = filter_try!(id);
+            let commit = filter_try!(self.find_commit(id));
+            Some(commit)
+        });
 
-        // commits are now ordered child-first, parent-last
-
-        // Order commits parent-first, children-last
-        Ok(commits.into_iter().rev())
+        Ok(iter)
     }
 }
