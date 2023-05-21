@@ -1,8 +1,11 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
-use std::fs;
-use std::time::Duration;
+use std::{
+    fs,
+    io::{self, Write},
+    time::Duration,
+};
 
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
@@ -335,19 +338,18 @@ fn main() -> Result<(), little_anyhow::Error> {
             Err(err) => {
                 // Execution failed, so display the logs and the error to the user
                 let log_contents = fs::read_to_string(&log_file)?;
-                indoc::eprintdoc!(
-                    "
-                    Failed with error {:?}
+                let error_message = format!(
+                    r#"
+Failed with error {:?}
 
-                    Full log output:
-                    {}
+Full log output:
+{}
 
-                    The log file is {:?}
-                    ",
-                    err,
-                    log_contents,
-                    log_file,
+The log file is {:?}
+"#,
+                    err, log_contents, log_file,
                 );
+                writeln!(io::stderr(), "{}", error_message.trim_start())?;
                 Ok(())
             }
         }

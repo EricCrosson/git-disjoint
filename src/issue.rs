@@ -58,8 +58,6 @@ impl Display for Issue {
 
 #[cfg(test)]
 mod test {
-    use indoc::formatdoc;
-
     use super::Issue;
 
     #[test]
@@ -92,152 +90,128 @@ mod test {
 
     test_parses!(
         successfully_parse_jira_ticket_from_commit_message_without_newline,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Ticket: AB-123     
-            "
-        ),
+Ticket: AB-123     
+"#,
         Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
         successfully_parse_jira_ticket_from_commit_message_with_newline,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
+
+Ticket: AB-123
         
-            Ticket: AB-123
-        
-            ",
-        ),
+"#,
         Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
         successfully_parse_jira_ticket_from_commit_message_with_trailer,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
-        
-            Ticket: AB-123
-            Footer: http://example.com
-            ",
-        ),
+        r#"
+feat(foo): add hyperdrive
+
+Ticket: AB-123
+Footer: http://example.com
+"#,
         Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
         successfully_parse_jira_ticket_closes_ticket_from_commit_message_without_newline,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes Ticket: AB-123
-            ",
-        ),
+Closes Ticket: AB-123
+"#,
         Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
         successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_newline,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes Ticket: AB-123
+Closes Ticket: AB-123
 
-            ",
-        ),
+"#,
         Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
         successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_trailer,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes Ticket: AB-123
-            Footer: http://example.com
-            ",
-        ),
+Closes Ticket: AB-123
+Footer: http://example.com
+"#,
         Issue::Jira("AB-123".to_string())
     );
 
     test_parses!(
         successfully_parse_github_issue_from_commit_message_without_newline,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes #123
-            ",
-        ),
+Closes #123
+"#,
         Issue::GitHub("123".to_string())
     );
 
     test_parses!(
         successfully_parse_github_issue_from_commit_message_with_newline,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes #123
-            "
-        ),
+Closes #123
+"#,
         Issue::GitHub("123".to_string())
     );
 
     test_parses!(
         successfully_parse_github_issue_from_commit_message_with_trailer,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes #123
+Closes #123
             Footer: http://example.com
-            ",
-        ),
+"#,
         Issue::GitHub("123".to_string())
     );
 
     test_parses!(
         successfully_parse_github_issue_closes_ticket_from_commit_message_without_newline,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes #123
-            ",
-        ),
+Closes #123
+"#,
         Issue::GitHub("123".to_string())
     );
 
     test_parses!(
         successfully_parse_github_issue_closes_ticket_from_commit_message_with_newline,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes #123
+Closes #123
 
-            ",
-        ),
+"#,
         Issue::GitHub("123".to_string())
     );
 
     test_parses!(
         successfully_parse_github_issue_closes_ticket_from_commit_message_with_trailer,
-        formatdoc!(
-            "
-            feat(foo): add hyperdrive
+        r#"
+feat(foo): add hyperdrive
 
-            Closes #123
+Closes #123
             Footer: http://example.com
-            ",
-        ),
+"#,
         Issue::GitHub("123".to_string())
     );
 
