@@ -2,12 +2,12 @@
 
 use std::fmt::Display;
 
-use crate::pull_request;
+use crate::{execute::ExecuteError, pull_request};
 
 #[derive(Debug)]
 #[non_exhaustive]
 pub(crate) struct Error {
-    kind: ErrorKind,
+    pub kind: ErrorKind,
 }
 
 impl Display for Error {
@@ -15,6 +15,9 @@ impl Display for Error {
         match &self.kind {
             ErrorKind::PullRequest(_) => write!(f, "unable to create pull request"),
             ErrorKind::WebBrowser(_) => write!(f, "unable to open pull request in browser"),
+            ErrorKind::CherryPick(_, commit) => {
+                write!(f, "unable to cherry-pick commit {:?}", commit)
+            }
         }
     }
 }
@@ -23,7 +26,8 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
             ErrorKind::PullRequest(err) => Some(err),
-            ErrorKind::WebBrowser(_) => todo!(),
+            ErrorKind::WebBrowser(err) => Some(err),
+            ErrorKind::CherryPick(err, _) => Some(err),
         }
     }
 }
@@ -34,6 +38,8 @@ pub(crate) enum ErrorKind {
     PullRequest(pull_request::CreatePullRequestError),
     #[non_exhaustive]
     WebBrowser(pull_request::CreatePullRequestError),
+    #[non_exhaustive]
+    CherryPick(ExecuteError, String),
 }
 
 impl From<pull_request::CreatePullRequestError> for Error {

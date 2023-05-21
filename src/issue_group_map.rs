@@ -47,7 +47,7 @@ impl Display for FromCommitsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
             FromCommitsErrorKind::FromCommit(_) => write!(f, "unable to get commit summary"),
-            FromCommitsErrorKind::IO(_) => write!(f, "unable to write to output stream"),
+            FromCommitsErrorKind::IO(_) => write!(f, "unable to write to stream"),
         }
     }
 }

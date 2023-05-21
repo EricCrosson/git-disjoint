@@ -1,9 +1,7 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
-use std::fs::{self, OpenOptions};
-use std::io::prelude::*;
-use std::process::{Command, Stdio};
+use std::fs;
 use std::time::Duration;
 
 use async_executors::{TokioTp, TokioTpBuilder};
@@ -25,12 +23,14 @@ mod default_branch;
 mod disjoint_branch;
 mod editor;
 mod error;
+mod execute;
 mod git2_repository;
 mod github_repository_metadata;
 mod interact;
 mod issue;
 mod issue_group;
 mod issue_group_map;
+mod little_anyhow;
 mod log_file;
 mod pull_request;
 mod pull_request_message;
@@ -40,6 +40,7 @@ use crate::branch_name::BranchName;
 use crate::cli::Cli;
 use crate::editor::interactive_get_pr_metadata;
 use crate::error::Error;
+use crate::execute::execute;
 use crate::github_repository_metadata::GithubRepositoryMetadata;
 use crate::issue_group::IssueGroup;
 
@@ -115,57 +116,29 @@ impl<'repo> From<(IssueGroup, DisjointBranch<'repo>)> for WorkOrder<'repo> {
     }
 }
 
-fn execute(command: &[&str], log_file: &LogFile) -> Result<(), anyhow::Error> {
-    let mut runner = Command::new(command[0]);
-
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_file)
-        .unwrap();
-
-    writeln!(file, "$ {:?}", command.join(" "))?;
-
-    // DISCUSS: how to pipe stdout to the same file?
-    // Do we need the duct crate?
-    // https://stackoverflow.com/a/41025699
-    // It's not immediately obvious to me how we pass `command`
-    // to a duct `cmd`, but I bet there's a way to separate
-    // the head and the tail from our slice.
-    runner.stdout(Stdio::null());
-    runner.stderr(file);
-
-    for argument in command.iter().skip(1) {
-        runner.arg(argument);
-    }
-
-    // Try to run the command
-    let status = runner.status()?;
-
-    // Return an Err if the exit status is non-zero
-    if let Err(error) = status.exit_ok() {
-        return Err(error)?;
-    }
-    Ok(())
+async fn cherry_pick(commit: String, log_file: LogFile) -> Result<(), Error> {
+    execute(&["git", "cherry-pick", "--allow-empty", &commit], &log_file).map_err(|err| Error {
+        kind: error::ErrorKind::CherryPick(err, commit),
+    })
 }
 
-async fn cherry_pick(commit: String, log_file: LogFile) -> Result<(), anyhow::Error> {
-    execute(&["git", "cherry-pick", "--allow-empty", &commit], &log_file)
-}
-
-async fn update_spinner(progress_bar: ProgressBar) -> Result<(), anyhow::Error> {
+async fn update_spinner(progress_bar: ProgressBar) -> Result<(), Error> {
     loop {
         progress_bar.tick();
         tokio::time::sleep(Duration::from_millis(15)).await;
     }
 }
 
-async fn sleep(duration: Duration) -> Result<(), anyhow::Error> {
+async fn sleep(duration: Duration) -> Result<(), Error> {
     tokio::time::sleep(duration).await;
     Ok(())
 }
 
-async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(), anyhow::Error> {
+async fn do_git_disjoint(
+    exec: TokioTp,
+    cli: Cli,
+    log_file: LogFile,
+) -> Result<(), little_anyhow::Error> {
     let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<(), Error>>::new(exec.clone());
 
     let Cli {
@@ -271,8 +244,7 @@ async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(
             // a worker thread. If there's no work to do, we can keep the UI
             // activity on the main thread. But we don't, so the dry_run flag
             // exercises more of the same code paths as a live run does.
-            let (nursery, mut output) =
-                Nursery::<TokioTp, Result<(), anyhow::Error>>::new(exec.clone());
+            let (nursery, mut output) = Nursery::<TokioTp, Result<(), Error>>::new(exec.clone());
             nursery.nurse(update_spinner(commit_work.progress_bar.clone()))?;
 
             if dry_run {
@@ -347,7 +319,7 @@ async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(
     Ok(())
 }
 
-fn main() -> Result<(), anyhow::Error> {
+fn main() -> Result<(), little_anyhow::Error> {
     let cli = Cli::parse();
 
     let exec: TokioTp = TokioTpBuilder::new().build()?;

@@ -76,12 +76,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.71"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c7d0618f0e0b7e8ff11427422b64564d5fb0be1940354bfe2e0529b18a9d9b8"
-
-[[package]]
 name = "async_executors"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -542,7 +536,6 @@ checksum = "221996f774192f0f718773def8201c4ae31f02616a54ccfc2d358bb0e5cefdec"
 name = "git-disjoint"
 version = "0.10.74"
 dependencies = [
- "anyhow",
  "async_executors",
  "async_nursery",
  "clap",
