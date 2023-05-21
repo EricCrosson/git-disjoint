@@ -94,11 +94,14 @@ impl<'repo> IssueGroupMap<'repo> {
         self.0.insert(key, value);
     }
 
-    pub fn try_from_commits(
-        commits: Vec<Commit<'repo>>,
+    pub fn try_from_commits<I>(
+        commits: I,
         commits_to_consider: CommitsToConsider,
         commit_grouping: CommitGrouping,
-    ) -> Result<Self, FromCommitsError> {
+    ) -> Result<Self, FromCommitsError>
+    where
+        I: IntoIterator<Item = Commit<'repo>>,
+    {
         let mut suffix: u32 = 0;
         let mut seen_issue_groups = HashSet::new();
         let commits_by_issue: IndexMap<IssueGroup, Vec<Commit>> = commits
