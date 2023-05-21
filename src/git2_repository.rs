@@ -271,3 +271,6 @@ impl Repository {
         Ok(iter)
     }
 }
+
+// TEST: can possibly find inspiration from
+// https://github.com/libgit2/libgit2/blob/ccb1b990b0d105a7a9d7cb4d870d8033c47a69f2/tests/revwalk/basic.c
