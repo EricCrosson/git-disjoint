@@ -68,20 +68,22 @@ impl std::fmt::Debug for Error {
             let mut n: u32 = 0;
             let mut error = Some(source);
             while let Some(current_error) = error {
-                write!(f, "\n    {n}: {current_error}")?;
+                write!(f, "\n    {}: {}", n, current_error)?;
                 n += 1;
                 error = current_error.source();
             }
         }
 
         if let Some(log_file) = &self.log_file {
-            writeln!(f, "\n\nLog contents:")?;
-            let log_contents = fs::read_to_string(&log_file).expect(&format!(
-                "should be able to read the log file: {:?}",
-                log_file
-            ));
-            writeln!(f, "{}", log_contents)?;
+            if let Ok(log_contents) = fs::read_to_string(&log_file.0) {
+                writeln!(f, "\n\nLog contents:")?;
+                writeln!(f, "{}", log_contents)?;
+            } else {
+                writeln!(f, "\nFailed to read log file: {:?}", log_file)?;
+            }
             writeln!(f, "\nLog file: {:?}", log_file)?;
+        } else {
+            writeln!(f, "\nNo log file available.")?;
         }
 
         Ok(())
