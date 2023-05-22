@@ -1,11 +1,7 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
-use std::{
-    fs,
-    io::{self, Write},
-    time::Duration,
-};
+use std::time::Duration;
 
 use async_executors::{TokioTp, TokioTpBuilder};
 use async_nursery::{NurseExt, Nursery};
@@ -137,11 +133,7 @@ async fn sleep(duration: Duration) -> Result<(), Error> {
     Ok(())
 }
 
-async fn do_git_disjoint(
-    exec: TokioTp,
-    cli: Cli,
-    log_file: LogFile,
-) -> Result<(), little_anyhow::Error> {
+async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(), Error> {
     let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<(), Error>>::new(exec.clone());
 
     let Cli {
@@ -331,29 +323,12 @@ fn main() -> Result<(), little_anyhow::Error> {
         let log_file = LogFile::default();
 
         // TODO: rename for clarity
-        let result = do_git_disjoint(exec.clone(), cli.clone(), log_file.clone()).await;
-        match result {
-            // Execution succeeded, so clean up the log file
-            Ok(()) => Ok(log_file.delete()?),
-            Err(err) => {
-                // Execution failed, so display the logs and the error to the user
-                let log_contents = fs::read_to_string(&log_file)?;
-                // REFACTOR: move this formatting into little_anyhow's Display
-                let error_message = format!(
-                    r#"
-Failed with error {:?}
+        do_git_disjoint(exec.clone(), cli.clone(), log_file.clone())
+            .await
+            .map_err(|err| little_anyhow::Error::new(err, log_file.clone()))?;
 
-Full log output:
-{}
-
-The log file is {:?}
-"#,
-                    err, log_contents, log_file,
-                );
-                writeln!(io::stderr(), "{}", error_message.trim_start())?;
-                Ok(())
-            }
-        }
+        log_file.delete()?;
+        Ok(())
     };
 
     exec.block_on(program)

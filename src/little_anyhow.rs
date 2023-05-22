@@ -1,3 +1,7 @@
+use std::fs;
+
+use crate::log_file::LogFile;
+
 /// A vendored error type providing the Debug format from `anyhow::Error`.
 ///
 /// This error type is meant to be used in one place in your binary: the error
@@ -41,13 +45,25 @@
 ///     Err(simulated_error)?
 /// }
 /// ```
-pub struct Error(Box<dyn std::error::Error>);
+pub(crate) struct Error {
+    err: Box<dyn std::error::Error>,
+    log_file: Option<LogFile>,
+}
+
+impl Error {
+    pub fn new(err: crate::error::Error, log_file: LogFile) -> Self {
+        Self {
+            err: Box::new(err),
+            log_file: Some(log_file),
+        }
+    }
+}
 
 impl std::fmt::Debug for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)?;
+        write!(f, "{}", self.err)?;
 
-        if let Some(source) = self.0.source() {
+        if let Some(source) = self.err.source() {
             write!(f, "\n\nCaused by:")?;
             let mut n: u32 = 0;
             let mut error = Some(source);
@@ -56,6 +72,16 @@ impl std::fmt::Debug for Error {
                 n += 1;
                 error = current_error.source();
             }
+        }
+
+        if let Some(log_file) = &self.log_file {
+            writeln!(f, "\n\nLog contents:")?;
+            let log_contents = fs::read_to_string(&log_file).expect(&format!(
+                "should be able to read the log file: {:?}",
+                log_file
+            ));
+            writeln!(f, "{}", log_contents)?;
+            writeln!(f, "\nLog file: {:?}", log_file)?;
         }
 
         Ok(())
@@ -67,6 +93,9 @@ where
     E: std::error::Error + 'static,
 {
     fn from(error: E) -> Self {
-        Error(Box::new(error))
+        Self {
+            err: Box::new(error),
+            log_file: None,
+        }
     }
 }
