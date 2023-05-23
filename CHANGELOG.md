@@ -1,3 +1,10 @@
+## [0.10.77](https://github.com/EricCrosson/git-disjoint/compare/v0.10.76...v0.10.77) (2023-05-23)
+
+
+### Bug Fixes
+
+* restore compilation ([37ca5ae](https://github.com/EricCrosson/git-disjoint/commit/37ca5ae6d4e2062f87b01f4a0342dd5d1bc0d12e))
+
 ## [0.10.76](https://github.com/EricCrosson/git-disjoint/compare/v0.10.75...v0.10.76) (2023-05-22)
 
 
