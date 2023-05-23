@@ -6,7 +6,7 @@ use std::{
 };
 
 #[derive(Clone, Debug)]
-pub(crate) struct LogFile(PathBuf);
+pub(crate) struct LogFile(pub PathBuf);
 
 impl AsRef<Path> for LogFile {
     fn as_ref(&self) -> &Path {

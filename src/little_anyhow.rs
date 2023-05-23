@@ -79,11 +79,11 @@ impl std::fmt::Debug for Error {
                 writeln!(f, "\n\nLog contents:")?;
                 writeln!(f, "{}", log_contents)?;
             } else {
-                writeln!(f, "\nFailed to read log file: {:?}", log_file)?;
+                writeln!(f, "\n\nFailed to read log file: {:?}", log_file)?;
             }
-            writeln!(f, "\nLog file: {:?}", log_file)?;
+            writeln!(f, "\nLog file: {:?}", log_file.0)?;
         } else {
-            writeln!(f, "\nNo log file available.")?;
+            writeln!(f, "\n\nNo log file available.")?;
         }
 
         Ok(())
