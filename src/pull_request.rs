@@ -89,7 +89,7 @@ impl PullRequest {
                 title: self.title,
                 body: self.body,
                 head: format!("{}:{}", self.forker, self.branch_name),
-                base: self.base.0.clone(),
+                base: self.base.0,
                 draft: true,
             })
             .send()
