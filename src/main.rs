@@ -12,8 +12,8 @@ use futures::{TryFutureExt, TryStreamExt};
 use git2::Commit;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use issue_group_map::IssueGroupMap;
-use lazy_static::lazy_static;
 use log_file::LogFile;
+use once_cell::sync::Lazy;
 use pull_request::PullRequest;
 
 mod branch_name;
@@ -51,16 +51,14 @@ const PREFIX_PENDING: &str = " ";
 const PREFIX_WORKING: &str = ">";
 const PREFIX_DONE: &str = "✔";
 
-lazy_static! {
-    static ref STYLE_ISSUE_GROUP_STABLE: ProgressStyle =
-        ProgressStyle::with_template("{prefix:.green} {msg}").unwrap();
-    static ref STYLE_ISSUE_GROUP_WORKING: ProgressStyle =
-        ProgressStyle::with_template("{prefix:.yellow} {msg}").unwrap();
-    static ref STYLE_COMMIT_STABLE: ProgressStyle =
-        ProgressStyle::with_template("  {prefix:.green} {msg}").unwrap();
-    static ref STYLE_COMMIT_WORKING: ProgressStyle =
-        ProgressStyle::with_template("  {spinner:.yellow} {msg}").unwrap();
-}
+static STYLE_ISSUE_GROUP_STABLE: Lazy<ProgressStyle> =
+    Lazy::new(|| ProgressStyle::with_template("{prefix:.green} {msg}").unwrap());
+static STYLE_ISSUE_GROUP_WORKING: Lazy<ProgressStyle> =
+    Lazy::new(|| ProgressStyle::with_template("{prefix:.yellow} {msg}").unwrap());
+static STYLE_COMMIT_STABLE: Lazy<ProgressStyle> =
+    Lazy::new(|| ProgressStyle::with_template("  {prefix:.green} {msg}").unwrap());
+static STYLE_COMMIT_WORKING: Lazy<ProgressStyle> =
+    Lazy::new(|| ProgressStyle::with_template("  {spinner:.yellow} {msg}").unwrap());
 
 #[derive(Debug)]
 struct CommitWork<'repo> {

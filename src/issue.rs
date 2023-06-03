@@ -1,14 +1,10 @@
 use std::fmt::Display;
 
-use lazy_static::lazy_static;
-use regex::Regex;
-
-lazy_static! {
-    static ref RE_JIRA_ISSUE: Regex = Regex::new(r"(?m)^(?:Closes )?Ticket:\s+(\S+)")
-        .expect("Expected regular expression to compile");
-    static ref RE_GITHUB_ISSUE: Regex =
-        Regex::new(r"(?im)^(?:closes|close|closed|fixes|fixed)\s+#(\d+)")
-            .expect("Expected regular expression to compile");
+macro_rules! regex {
+    ($re:literal $(,)?) => {{
+        static RE: once_cell::sync::OnceCell<regex::Regex> = once_cell::sync::OnceCell::new();
+        RE.get_or_init(|| regex::Regex::new($re).unwrap())
+    }};
 }
 
 /// Jira or GitHub issue identifier.
@@ -21,12 +17,15 @@ pub(crate) enum Issue {
 
 impl Issue {
     pub fn parse_from_commit_message<S: AsRef<str>>(commit_message: S) -> Option<Issue> {
-        if let Some(jira_captures) = RE_JIRA_ISSUE.captures(commit_message.as_ref()) {
+        let regex_jira_issue = regex!(r"(?m)^(?:Closes )?Ticket:\s+(\S+)");
+        if let Some(jira_captures) = regex_jira_issue.captures(commit_message.as_ref()) {
             return Some(Issue::Jira(
                 jira_captures[jira_captures.len() - 1].to_owned(),
             ));
         }
-        if let Some(github_captures) = RE_GITHUB_ISSUE.captures(commit_message.as_ref()) {
+
+        let regex_github_issue = regex!(r"(?im)^(?:closes|close|closed|fixes|fixed)\s+#(\d+)");
+        if let Some(github_captures) = regex_github_issue.captures(commit_message.as_ref()) {
             return Some(Issue::GitHub(
                 github_captures[github_captures.len() - 1].to_owned(),
             ));
