@@ -29,7 +29,6 @@ impl Display for Error {
             ErrorKind::SelectIssues(_) => write!(f, "unable to select issue groups"),
             ErrorKind::PlanBranches(_) => write!(f, "unable to plan commits onto branches"),
             ErrorKind::Git(_) => write!(f, "git operation failed"),
-            ErrorKind::Schedule(_) => write!(f, "unable to schedule tasks"),
             ErrorKind::Execute(_) => write!(f, "command failed to execute"),
             ErrorKind::GetPullRequestMetadata(_) => {
                 write!(f, "unable to query pull request metadata")
@@ -55,7 +54,6 @@ impl std::error::Error for Error {
             ErrorKind::SelectIssues(err) => Some(err),
             ErrorKind::PlanBranches(err) => Some(err),
             ErrorKind::Git(err) => Some(err),
-            ErrorKind::Schedule(err) => Some(err),
             ErrorKind::Execute(err) => Some(err),
             ErrorKind::GetPullRequestMetadata(err) => Some(err),
             ErrorKind::ParsePullRequestMetadata(err) => Some(err),
@@ -81,8 +79,6 @@ pub(crate) enum ErrorKind {
     PlanBranches(disjoint_branch::FromIssueGroupMapError),
     #[non_exhaustive]
     Git(git2::Error),
-    #[non_exhaustive]
-    Schedule(async_nursery::NurseErr),
     #[non_exhaustive]
     Execute(execute::ExecuteError),
     #[non_exhaustive]
@@ -157,14 +153,6 @@ impl From<git2::Error> for Error {
     fn from(err: git2::Error) -> Self {
         Self {
             kind: ErrorKind::Git(err),
-        }
-    }
-}
-
-impl From<async_nursery::NurseErr> for Error {
-    fn from(err: async_nursery::NurseErr) -> Self {
-        Self {
-            kind: ErrorKind::Schedule(err),
         }
     }
 }

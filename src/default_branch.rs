@@ -56,11 +56,11 @@ pub(crate) enum TryDefaultErrorKind {
 }
 
 impl DefaultBranch {
-    pub(crate) async fn try_get_default(
+    pub(crate) fn try_get_default(
         repository_metadata: &GithubRepositoryMetadata,
         github_token: &str,
     ) -> Result<DefaultBranch, TryDefaultError> {
-        let http_client = reqwest::Client::new();
+        let http_client = reqwest::blocking::Client::new();
         let url = format!(
             "https://api.github.com/repos/{}/{}",
             repository_metadata.owner, repository_metadata.name
@@ -71,13 +71,11 @@ impl DefaultBranch {
             .header("Accept", "application/vnd.github+json")
             .header("Authorization", format!("token {github_token}"))
             .send()
-            .await
             .map_err(|err| TryDefaultError {
                 url: url.clone(),
                 kind: TryDefaultErrorKind::Http(err),
             })?
             .json()
-            .await
             .map_err(|err| TryDefaultError {
                 url,
                 kind: TryDefaultErrorKind::Parse(err),
