@@ -1,6 +1,5 @@
 use std::{error::Error, fmt::Display, io};
 
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::{branch_name::BranchName, default_branch::DefaultBranch};
@@ -75,7 +74,10 @@ pub(crate) enum CreatePullRequestErrorKind {
 }
 
 impl PullRequest {
-    pub async fn create(self, http_client: Client) -> Result<(), CreatePullRequestError> {
+    pub fn create(
+        self,
+        http_client: reqwest::blocking::Client,
+    ) -> Result<(), CreatePullRequestError> {
         let url = format!(
             "https://api.github.com/repos/{}/{}/pulls",
             self.owner, self.name
@@ -93,13 +95,11 @@ impl PullRequest {
                 draft: true,
             })
             .send()
-            .await
             .map_err(|err| CreatePullRequestError {
                 url: url.clone(),
                 kind: CreatePullRequestErrorKind::Http(err),
             })?
             .json()
-            .await
             .map_err(|err| CreatePullRequestError {
                 url: url.clone(),
                 kind: CreatePullRequestErrorKind::Parse(err),

@@ -1,14 +1,13 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
+use std::sync::mpsc;
+use std::thread::{self, ScopedJoinHandle};
 use std::time::Duration;
 
-use async_executors::{TokioTp, TokioTpBuilder};
-use async_nursery::{NurseExt, Nursery};
 use clap::Parser;
 use default_branch::DefaultBranch;
 use disjoint_branch::{DisjointBranch, DisjointBranchMap};
-use futures::{TryFutureExt, TryStreamExt};
 use git2::Commit;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use issue_group_map::IssueGroupMap;
@@ -113,221 +112,244 @@ impl<'repo> From<(IssueGroup, DisjointBranch<'repo>)> for WorkOrder<'repo> {
     }
 }
 
-async fn cherry_pick(commit: String, log_file: LogFile) -> Result<(), Error> {
+fn cherry_pick(commit: String, log_file: LogFile) -> Result<(), Error> {
     execute(&["git", "cherry-pick", "--allow-empty", &commit], &log_file).map_err(|err| Error {
         kind: error::ErrorKind::CherryPick(err, commit),
     })
 }
 
-async fn update_spinner(progress_bar: ProgressBar) -> Result<(), Error> {
-    loop {
+fn update_spinner(receiver: mpsc::Receiver<bool>, progress_bar: ProgressBar) -> Result<(), Error> {
+    let mut keep_going = true;
+    while keep_going {
         progress_bar.tick();
-        tokio::time::sleep(Duration::from_millis(15)).await;
+        thread::sleep(Duration::from_millis(15));
+        match receiver.try_recv() {
+            Ok(_) => {
+                keep_going = false;
+            }
+            Err(err) => match &err {
+                mpsc::TryRecvError::Empty => (), // worker thread is not done, so keep updating the UI
+                mpsc::TryRecvError::Disconnected => panic!("sender should never disconnect"),
+            },
+        }
     }
-}
-
-async fn sleep(duration: Duration) -> Result<(), Error> {
-    tokio::time::sleep(duration).await;
     Ok(())
 }
 
-async fn do_git_disjoint(exec: TokioTp, cli: Cli, log_file: LogFile) -> Result<(), Error> {
-    let (pr_nursery, mut pr_stream) = Nursery::<TokioTp, Result<(), Error>>::new(exec.clone());
+fn sleep(duration: Duration) -> Result<(), Error> {
+    thread::sleep(duration);
+    Ok(())
+}
 
-    let Cli {
-        all,
-        base: _,
-        choose,
-        dry_run,
-        github_token,
-        overlay,
-        separate,
-    } = cli;
+fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
+    thread::scope(|s| {
+        let Cli {
+            all,
+            base: _,
+            choose,
+            // REFACTOR: use an enum
+            dry_run,
+            github_token,
+            overlay,
+            separate,
+        } = cli;
 
-    let repository_metadata = GithubRepositoryMetadata::try_default()?;
-    let base_branch = cli.base.clone();
-    let base_branch = match base_branch {
-        Some(base) => DefaultBranch(base),
-        None => DefaultBranch::try_get_default(&repository_metadata, &github_token).await?,
-    };
+        let repository_metadata = GithubRepositoryMetadata::try_default()?;
+        let base_branch = cli.base.clone();
+        let base_branch = match base_branch {
+            Some(base) => DefaultBranch(base),
+            None => DefaultBranch::try_get_default(&repository_metadata, &github_token)?,
+        };
 
-    let GithubRepositoryMetadata {
-        owner,
-        forker,
-        remote,
-        name,
-        root,
-        repository,
-    } = repository_metadata;
+        let GithubRepositoryMetadata {
+            owner,
+            forker,
+            remote,
+            name,
+            root,
+            repository,
+        } = repository_metadata;
 
-    let base_commit = repository.base_commit(&base_branch)?;
-    let commits = repository.commits_since_base(&base_commit)?;
-    // We have to make a first pass to determine the issue groups in play
-    let commits_by_issue_group = IssueGroupMap::try_from_commits(commits, all, separate)?
-        // Now filter the set of all issue groups to just the whitelisted issue groups
-        .select_issues(choose, overlay)?
-        .apply_overlay(overlay);
+        let base_commit = repository.base_commit(&base_branch)?;
+        let commits = repository.commits_since_base(&base_commit)?;
+        // We have to make a first pass to determine the issue groups in play
+        let commits_by_issue_group = IssueGroupMap::try_from_commits(commits, all, separate)?
+            // Now filter the set of all issue groups to just the whitelisted issue groups
+            .select_issues(choose, overlay)?
+            .apply_overlay(overlay);
 
-    let commit_plan_by_issue_group: DisjointBranchMap = commits_by_issue_group.try_into()?;
+        let commit_plan_by_issue_group: DisjointBranchMap = commits_by_issue_group.try_into()?;
 
-    let work_orders: Vec<WorkOrder> = commit_plan_by_issue_group
-        .into_iter()
-        .map(WorkOrder::from)
-        .collect();
+        let work_orders: Vec<WorkOrder> = commit_plan_by_issue_group
+            .into_iter()
+            .map(WorkOrder::from)
+            .collect();
 
-    // Short-circuit early if there is no work to do.
-    if work_orders.is_empty() {
-        return Ok(());
-    }
-
-    let http_client = reqwest::Client::new();
-
-    let multi_progress_bar = MultiProgress::new();
-
-    for work_order in work_orders.iter() {
-        // Insert one progress bar for the issue group.
-        multi_progress_bar.insert_from_back(0, work_order.progress_bar.clone());
-        work_order.progress_bar.tick();
-        // and one progress bar for each ticket.
-        // `tick` is necessary to force a repaint
-        for commit_work in work_order.commit_work.iter() {
-            multi_progress_bar.insert_from_back(0, commit_work.progress_bar.clone());
-            commit_work.progress_bar.tick();
-        }
-    }
-
-    for work_order in work_orders {
-        work_order
-            .progress_bar
-            .set_style(STYLE_ISSUE_GROUP_WORKING.clone());
-        work_order.progress_bar.set_prefix(PREFIX_WORKING);
-        work_order.progress_bar.tick();
-
-        let branch_ref = format!("refs/heads/{}", work_order.branch_name);
-        let branch_obj = repository.revparse_single(&branch_ref);
-
-        // If branch already exists, assume we've already handled this ticket
-        // DISCUSS: in the future, we could compare this branch against the desired
-        // commits, and add any missing commits to this branch and then update the remote
-        if branch_obj.is_ok() {
-            eprintln!(
-                "Warning: a branch named {:?} already exists",
-                work_order.branch_name
-            );
-            continue;
+        // Short-circuit early if there is no work to do.
+        if work_orders.is_empty() {
+            return Ok(());
         }
 
-        if !dry_run {
-            // Create a branch
-            repository.branch(work_order.branch_name.as_str(), &base_commit, true)?;
+        let http_client = reqwest::blocking::Client::new();
 
-            // Check out the new branch
-            let branch_obj = repository.revparse_single(&branch_ref)?;
-            repository.checkout_tree(&branch_obj, None)?;
-            repository.set_head(&branch_ref)?;
+        let multi_progress_bar = MultiProgress::new();
+
+        for work_order in work_orders.iter() {
+            // Insert one progress bar for the issue group.
+            multi_progress_bar.insert_from_back(0, work_order.progress_bar.clone());
+            work_order.progress_bar.tick();
+            // and one progress bar for each ticket.
+            // `tick` is necessary to force a repaint
+            for commit_work in work_order.commit_work.iter() {
+                multi_progress_bar.insert_from_back(0, commit_work.progress_bar.clone());
+                commit_work.progress_bar.tick();
+            }
         }
 
-        // Cherry-pick commits related to the target issue
-        for commit_work in work_order.commit_work.iter() {
-            commit_work
+        let mut join_handles: Vec<ScopedJoinHandle<'_, Result<(), Error>>> =
+            Vec::with_capacity(work_orders.len());
+
+        for work_order in work_orders {
+            work_order
                 .progress_bar
-                .set_style(STYLE_COMMIT_WORKING.clone());
+                .set_style(STYLE_ISSUE_GROUP_WORKING.clone());
+            work_order.progress_bar.set_prefix(PREFIX_WORKING);
+            work_order.progress_bar.tick();
 
-            // If we need to update the UI and perform a blocking action, spawn
-            // a worker thread. If there's no work to do, we can keep the UI
-            // activity on the main thread. But we don't, so the dry_run flag
-            // exercises more of the same code paths as a live run does.
-            let (nursery, mut output) = Nursery::<TokioTp, Result<(), Error>>::new(exec.clone());
-            nursery.nurse(update_spinner(commit_work.progress_bar.clone()))?;
+            let branch_ref = format!("refs/heads/{}", work_order.branch_name);
+            let branch_obj = repository.revparse_single(&branch_ref);
 
-            if dry_run {
-                nursery.nurse(sleep(Duration::from_millis(750)))?;
-            } else {
-                let commit_hash = commit_work.commit.id().to_string();
-                nursery.nurse(cherry_pick(commit_hash, log_file.clone()))?;
+            // If branch already exists, assume we've already handled this ticket
+            // DISCUSS: in the future, we could compare this branch against the desired
+            // commits, and add any missing commits to this branch and then update the remote
+            if branch_obj.is_ok() {
+                eprintln!(
+                    "Warning: a branch named {:?} already exists",
+                    work_order.branch_name
+                );
+                continue;
             }
 
-            // Prevent new tasks from spawning
-            drop(nursery);
-            // Wait for the cherry-pick to terminate
-            output.try_next().await?;
-            // Cancel the infinite spinner
-            drop(output);
+            if !dry_run {
+                // Create a branch
+                repository.branch(work_order.branch_name.as_str(), &base_commit, true)?;
 
-            commit_work
+                // Check out the new branch
+                let branch_obj = repository.revparse_single(&branch_ref)?;
+                repository.checkout_tree(&branch_obj, None)?;
+                repository.set_head(&branch_ref)?;
+            }
+
+            // Cherry-pick commits related to the target issue
+            for commit_work in work_order.commit_work.iter() {
+                commit_work
+                    .progress_bar
+                    .set_style(STYLE_COMMIT_WORKING.clone());
+
+                // If we need to update the UI and perform a blocking action, spawn
+                // a worker thread. If there's no work to do, we can keep the UI
+                // activity on the main thread. But we don't, so the dry_run flag
+                // exercises more of the same code paths as a live run does.
+                let log_file = log_file.clone();
+                thread::scope(|s| {
+                    let (sender, receiver) = mpsc::channel();
+
+                    let progress_bar = commit_work.progress_bar.clone();
+                    let ui_thread = s.spawn(|| update_spinner(receiver, progress_bar));
+
+                    let commit_hash = commit_work.commit.id().to_string();
+                    let worker_thread = s.spawn(move || {
+                        let result = match dry_run {
+                            true => sleep(Duration::from_millis(750)),
+                            false => cherry_pick(commit_hash, log_file),
+                        };
+                        // tell the ui_thread to stop
+                        sender
+                            .send(true)
+                            .expect("should always be able to communicate to UI thread");
+                        result
+                    });
+                    ui_thread
+                        .join()
+                        .expect("ui thread should propagate errors instead of panicking")?;
+                    worker_thread
+                        .join()
+                        .expect("worker thread should propagate errors instead of panicking")?;
+                    Ok::<(), Error>(())
+                })?;
+
+                commit_work
+                    .progress_bar
+                    .set_style(STYLE_COMMIT_STABLE.clone());
+                commit_work.progress_bar.set_prefix(PREFIX_DONE);
+                commit_work.progress_bar.finish()
+            }
+
+            if !dry_run {
+                // Push the branch
+                execute(
+                    &["git", "push", &remote, (work_order.branch_name.as_str())],
+                    &log_file,
+                )?;
+
+                // Open a pull request
+                // Only ask the user to edit the PR metadata when multiple commits
+                // create ambiguity about the contents of the PR title and body.
+                let needs_edit = work_order.commit_work.len() > 1;
+
+                let pr_metadata = match needs_edit {
+                    true => interactive_get_pr_metadata(&root, &work_order.commit_work)?,
+                    false => {
+                        // REFACTOR: clean this up
+                        let commit = &work_order.commit_work.get(0).unwrap().commit;
+                        commit.message().unwrap().parse()?
+                    }
+                };
+
+                let pull_request = PullRequest {
+                    owner: owner.clone(),
+                    name: name.clone(),
+                    forker: forker.clone(),
+                    title: pr_metadata.title,
+                    body: pr_metadata.body,
+                    github_token: github_token.clone(),
+                    branch_name: work_order.branch_name.clone(),
+                    base: base_branch.clone(),
+                };
+
+                let http_client = http_client.clone();
+                let pull_request_join_handle =
+                    s.spawn(move || pull_request.create(http_client).map_err(Into::into));
+                join_handles.push(pull_request_join_handle);
+
+                // Finally, check out the original ref
+                execute(&["git", "checkout", "-"], &log_file)?;
+            }
+
+            work_order
                 .progress_bar
-                .set_style(STYLE_COMMIT_STABLE.clone());
-            commit_work.progress_bar.set_prefix(PREFIX_DONE);
-            commit_work.progress_bar.finish()
+                .set_style(STYLE_ISSUE_GROUP_STABLE.clone());
+            work_order.progress_bar.set_prefix(PREFIX_DONE);
+            work_order.progress_bar.finish();
         }
 
-        if !dry_run {
-            // Push the branch
-            execute(
-                &["git", "push", &remote, (work_order.branch_name.as_str())],
-                &log_file,
-            )?;
-
-            // Open a pull request
-            // Only ask the user to edit the PR metadata when multiple commits
-            // create ambiguity about the contents of the PR title and body.
-            let needs_edit = work_order.commit_work.len() > 1;
-
-            let pr_metadata = match needs_edit {
-                true => interactive_get_pr_metadata(&root, &work_order.commit_work)?,
-                false => {
-                    // REFACTOR: clean this up
-                    let commit = &work_order.commit_work.get(0).unwrap().commit;
-                    commit.message().unwrap().parse()?
-                }
-            };
-
-            let pull_request = PullRequest {
-                owner: owner.clone(),
-                name: name.clone(),
-                forker: forker.clone(),
-                title: pr_metadata.title,
-                body: pr_metadata.body,
-                github_token: github_token.clone(),
-                branch_name: work_order.branch_name.clone(),
-                base: base_branch.clone(),
-            };
-
-            pr_nursery.nurse(pull_request.create(http_client.clone()).map_err(Into::into))?;
-
-            // Finally, check out the original ref
-            execute(&["git", "checkout", "-"], &log_file)?;
+        for handle in join_handles {
+            handle.join().unwrap()?;
         }
 
-        work_order
-            .progress_bar
-            .set_style(STYLE_ISSUE_GROUP_STABLE.clone());
-        work_order.progress_bar.set_prefix(PREFIX_DONE);
-        work_order.progress_bar.finish();
-    }
-
-    drop(pr_nursery);
-    while pr_stream.try_next().await?.is_some() {}
-
-    Ok(())
+        Ok(())
+    })
 }
 
 fn main() -> Result<(), little_anyhow::Error> {
     let cli = Cli::parse();
 
-    let exec: TokioTp = TokioTpBuilder::new().build()?;
+    let log_file = LogFile::default();
 
-    let program = async {
-        let log_file = LogFile::default();
+    // TODO: rename for clarity
+    do_git_disjoint(cli.clone(), log_file.clone())
+        .map_err(|err| little_anyhow::Error::new(err, log_file.clone()))?;
 
-        // TODO: rename for clarity
-        do_git_disjoint(exec.clone(), cli.clone(), log_file.clone())
-            .await
-            .map_err(|err| little_anyhow::Error::new(err, log_file.clone()))?;
-
-        log_file.delete()?;
-        Ok(())
-    };
-
-    exec.block_on(program)
+    log_file.delete()?;
+    Ok(())
 }
