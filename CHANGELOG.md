@@ -1,3 +1,10 @@
+## [0.10.87-beta.1](https://github.com/EricCrosson/git-disjoint/compare/v0.10.86...v0.10.87-beta.1) (2023-07-02)
+
+
+### Bug Fixes
+
+* use parse-git-url instead of git-url-parse ([844af78](https://github.com/EricCrosson/git-disjoint/commit/844af78c1d2410ff570318d9614980ec5593d64b))
+
 ## [0.10.86](https://github.com/EricCrosson/git-disjoint/compare/v0.10.85...v0.10.86) (2023-07-01)
 
 
