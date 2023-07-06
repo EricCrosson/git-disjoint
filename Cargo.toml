@@ -51,5 +51,5 @@ strip = true
 
 [build-dependencies]
 clap = { version = "=4.3.11", features = ["cargo", "derive", "wrap_help"] }
-clap_complete = "=4.3.1"
+clap_complete = "=4.3.2"
 clap_mangen = "=0.2.12"
