@@ -1,3 +1,10 @@
+## [0.10.106](https://github.com/EricCrosson/git-disjoint/compare/v0.10.105...v0.10.106) (2023-08-03)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate indicatif to v0.17.6 ([dfca5fc](https://github.com/EricCrosson/git-disjoint/commit/dfca5fca144b431702f7fb47a3be28945ffe3053))
+
 ## [0.10.105](https://github.com/EricCrosson/git-disjoint/compare/v0.10.104...v0.10.105) (2023-08-01)
 
 
