@@ -27,7 +27,7 @@ async_nursery = "=0.5.0"
 clap = { version = "=4.4.1", features = ["cargo", "derive", "env", "wrap_help"] }
 futures = "=0.3.28"
 git-url-parse = "=0.4.4"
-git2 = { version = "=0.17.2", default-features = false, features = ["zlib-ng-compat"] }
+git2 = { version = "=0.18.0", default-features = false, features = ["zlib-ng-compat"] }
 indexmap = "=2.0.0"
 indicatif = "=0.17.6"
 inquire = "=0.6.2"
