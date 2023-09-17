@@ -14,7 +14,7 @@ on:
 
 jobs:
   release:
-    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v4
+    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v5
     with:
       toolchain: nightly
     secrets:
