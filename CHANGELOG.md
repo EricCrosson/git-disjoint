@@ -1,3 +1,10 @@
+## [0.10.144](https://github.com/EricCrosson/git-disjoint/compare/v0.10.143...v0.10.144) (2023-11-23)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate open to v5.0.1 ([ed377a8](https://github.com/EricCrosson/git-disjoint/commit/ed377a83abfe454252225d45407e23db2f47160e))
+
 ## [0.10.143](https://github.com/EricCrosson/git-disjoint/compare/v0.10.142...v0.10.143) (2023-11-21)
 
 
