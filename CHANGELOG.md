@@ -1,3 +1,10 @@
+## [0.10.145](https://github.com/EricCrosson/git-disjoint/compare/v0.10.144...v0.10.145) (2023-12-08)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate once_cell to v1.19.0 ([9c0adfa](https://github.com/EricCrosson/git-disjoint/commit/9c0adfaf9250117945277dcc3904ef5d82859fec))
+
 ## [0.10.144](https://github.com/EricCrosson/git-disjoint/compare/v0.10.143...v0.10.144) (2023-11-23)
 
 
