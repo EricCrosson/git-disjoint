@@ -1,3 +1,10 @@
+## [0.10.148](https://github.com/EricCrosson/git-disjoint/compare/v0.10.147...v0.10.148) (2023-12-20)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate tokio to v1.35.1 ([f9d7084](https://github.com/EricCrosson/git-disjoint/commit/f9d7084a40e3fe625b52b4189a325ce9b76d773a))
+
 ## [0.10.147](https://github.com/EricCrosson/git-disjoint/compare/v0.10.146...v0.10.147) (2023-12-19)
 
 
