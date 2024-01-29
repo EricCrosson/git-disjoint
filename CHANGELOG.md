@@ -1,3 +1,10 @@
+## [0.10.159](https://github.com/EricCrosson/git-disjoint/compare/v0.10.158...v0.10.159) (2024-01-29)
+
+
+### Bug Fixes
+
+* use parse-git-url instead of git-url-parse ([5f6093a](https://github.com/EricCrosson/git-disjoint/commit/5f6093a34fc14759ebfb61fb07007d0a89b2c8c2))
+
 ## [0.10.158](https://github.com/EricCrosson/git-disjoint/compare/v0.10.157...v0.10.158) (2024-01-28)
 
 
