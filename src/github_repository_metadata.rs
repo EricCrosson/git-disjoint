@@ -3,7 +3,7 @@ use std::{
     string::FromUtf8Error,
 };
 
-use git_url_parse::GitUrl;
+use parse_git_url::GitUrl;
 
 use crate::git2_repository::{self, Repository};
 
