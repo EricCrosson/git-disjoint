@@ -22,8 +22,6 @@
   commonArgs = {
     src = craneLib.cleanCargoSource ../.;
 
-    # Add extra inputs here or any other derivation settings
-    # doCheck = true;
     buildInputs = with pkgs;
       [
         openssl
