@@ -1,3 +1,10 @@
+## [0.10.164](https://github.com/EricCrosson/git-disjoint/compare/v0.10.163...v0.10.164) (2024-02-07)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate git2 to v0.18.2 ([a08a9e4](https://github.com/EricCrosson/git-disjoint/commit/a08a9e43debae5490dedb0c82c306dd1634eef7b))
+
 ## [0.10.163](https://github.com/EricCrosson/git-disjoint/compare/v0.10.162...v0.10.163) (2024-02-01)
 
 
