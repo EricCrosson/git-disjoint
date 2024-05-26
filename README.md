@@ -24,7 +24,7 @@ cycle time low.
 You're working on a feature. As you work, you create some commits that don't directly
 implement your feature. Maybe you improve some documentation, fix a minor bug, or
 first refactor to make the change easy, before making the easy change[^1]. In any case,
-you commit directly to master[^2] as you go, because you want each change to persist
+you commit directly to master as you go[^2], because you want each change to persist
 in your development environment, even before it's gone through code review and landed
 upstream.
 
