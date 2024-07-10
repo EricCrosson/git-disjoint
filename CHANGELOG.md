@@ -1,3 +1,10 @@
+## [0.10.207](https://github.com/EricCrosson/git-disjoint/compare/v0.10.206...v0.10.207) (2024-07-10)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate open to v5.3.0 ([a076bae](https://github.com/EricCrosson/git-disjoint/commit/a076bae69b1b8a33bbb7b54cd4138998cdf91abf))
+
 ## [0.10.206](https://github.com/EricCrosson/git-disjoint/compare/v0.10.205...v0.10.206) (2024-07-07)
 
 
