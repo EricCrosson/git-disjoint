@@ -78,11 +78,27 @@
       ];
 
       postInstall = ''
-        installManPage "$(find target/release/build -type f -name git-disjoint.1)"
+        installManPage "$(
+          find target/release/build -type f -name git-disjoint.1 -print0 \
+          | xargs -0 ls -t \
+          | head -n 1
+        )"
         installShellCompletion \
-          "$(find target/release/build -type f -name git-disjoint.bash)" \
-          "$(find target/release/build -type f -name git-disjoint.fish)" \
-          --zsh "$(find target/release/build -type f -name _git-disjoint)"
+          "$(
+            find target/release/build -type f -name git-disjoint.bash -print0 \
+            | xargs -0 ls -t \
+            | head -n 1
+          )" \
+          "$(
+            find target/release/build -type f -name git-disjoint.fish -print0 \
+            | xargs -0 ls -t \
+            | head -n 1
+          )" \
+          --zsh "$(
+            find target/release/build -type f -name _git-disjoint -print0 \
+            | xargs -0 ls -t \
+            | head -n 1
+          )"
 
         wrapProgram $out/bin/git-disjoint \
           --prefix PATH ${pkgs.lib.makeBinPath runtimeInputs}

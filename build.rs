@@ -30,11 +30,8 @@ fn main() -> std::io::Result<()> {
     let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").ok_or(std::io::ErrorKind::NotFound)?);
     let command = cli::Cli::command();
 
-    let profile = std::env::var("PROFILE").expect("cargo should set PROFILE environment variable");
-    if profile == "release" {
-        generate_man_pages(&out_dir, command.clone())?;
-        generate_shell_completions(&out_dir, command)?;
-    }
+    generate_man_pages(&out_dir, command.clone())?;
+    generate_shell_completions(&out_dir, command)?;
 
     Ok(())
 }
