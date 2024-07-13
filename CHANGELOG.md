@@ -1,3 +1,10 @@
+## [0.10.208](https://github.com/EricCrosson/git-disjoint/compare/v0.10.207...v0.10.208) (2024-07-13)
+
+
+### Bug Fixes
+
+* test the release pipeline ([2fc7081](https://github.com/EricCrosson/git-disjoint/commit/2fc70815044d94aa60860c07fecbf77f6ea071b8))
+
 ## [0.10.207](https://github.com/EricCrosson/git-disjoint/compare/v0.10.206...v0.10.207) (2024-07-10)
 
 
