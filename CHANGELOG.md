@@ -1,3 +1,13 @@
+## [0.10.210](https://github.com/EricCrosson/git-disjoint/compare/v0.10.209...v0.10.210) (2024-08-09)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate indexmap to v2.3.0 ([9e3321c](https://github.com/EricCrosson/git-disjoint/commit/9e3321ca6ce41f8f134c6fd5ea7be9dc2e998128))
+* **deps:** update rust crate regex to v1.10.6 ([5cd4c4d](https://github.com/EricCrosson/git-disjoint/commit/5cd4c4dcd4530e8ca43f5b3b2213cfb5d91984fa))
+* **deps:** update rust crate serde to v1.0.205 ([9a7d236](https://github.com/EricCrosson/git-disjoint/commit/9a7d236a36dbb3c78571b49e7ac1c3ade459e2ff))
+* **deps:** update rust crate serde_json to v1.0.122 ([5fa9dc1](https://github.com/EricCrosson/git-disjoint/commit/5fa9dc1286d31ffb8a7327d049e3a6da9326e975))
+
 ## [0.10.209](https://github.com/EricCrosson/git-disjoint/compare/v0.10.208...v0.10.209) (2024-07-29)
 
 
