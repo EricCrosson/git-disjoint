@@ -3,7 +3,6 @@
     nixpkgs.url = "github:nixos/nixpkgs";
     crane = {
       url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
     fenix = {
       url = "github:nix-community/fenix";
@@ -64,7 +63,6 @@
         nativeBuildInputs =
           craneDerivations.commonArgs.nativeBuildInputs
           ++ [
-            craneDerivations.fenix-toolchain
             fenix.packages.${system}.rust-analyzer
           ];
 

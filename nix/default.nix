@@ -4,17 +4,18 @@
   crane,
   fenix,
 }: let
-  fenix-channel = fenix.packages.${system}.latest;
-  fenix-toolchain = fenix-channel.withComponents [
-    "rustc"
-    "cargo"
-    "clippy"
-    "rust-analysis"
-    "rust-src"
-    "rustfmt"
-  ];
-
-  craneLib = crane.lib.${system}.overrideToolchain fenix-toolchain;
+  craneLib = (crane.mkLib pkgs).overrideToolchain (p: let
+    fenix-channel = fenix.packages.${system}.latest;
+    fenix-toolchain = fenix-channel.withComponents [
+      "rustc"
+      "cargo"
+      "clippy"
+      "rust-analysis"
+      "rust-src"
+      "rustfmt"
+    ];
+  in
+    fenix-toolchain);
 
   runtimeInputs = with pkgs; [gitMinimal];
 
@@ -25,8 +26,6 @@
     buildInputs = with pkgs;
       [
         openssl
-        fenix-channel.rustc
-        fenix-channel.clippy
       ]
       ++ pkgs.lib.optionals pkgs.stdenv.isDarwin
       [
@@ -107,7 +106,6 @@
 in {
   inherit
     commonArgs
-    fenix-toolchain
     myCrate
     myCrateClippy
     myCrateCoverage
