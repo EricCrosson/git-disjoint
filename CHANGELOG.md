@@ -1,3 +1,17 @@
+## [0.10.248](https://github.com/EricCrosson/git-disjoint/compare/v0.10.247...v0.10.248) (2025-01-28)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate clap to v4.5.26 ([6bc9085](https://github.com/EricCrosson/git-disjoint/commit/6bc908565d4570de10de45d96c75a7dc67b4ffee))
+* **deps:** update rust crate clap to v4.5.27 ([cee6266](https://github.com/EricCrosson/git-disjoint/commit/cee626673200a7add2cc0a4ae74cea072cf4d569))
+* **deps:** update rust crate git2 to v0.20.0 ([4fe19c0](https://github.com/EricCrosson/git-disjoint/commit/4fe19c0267c5d9d58d4c44a6741d50382527ed3a))
+* **deps:** update rust crate indexmap to v2.7.1 ([b3deff7](https://github.com/EricCrosson/git-disjoint/commit/b3deff7521e10cc14bbf428b51db1ae5e4f00d4c))
+* **deps:** update rust crate open to v5.3.2 ([7307e15](https://github.com/EricCrosson/git-disjoint/commit/7307e1543693419561489c8c7e3e1d9b86c58360))
+* **deps:** update rust crate serde_json to v1.0.135 ([4405de1](https://github.com/EricCrosson/git-disjoint/commit/4405de10a15054a30be76ca520cb14332ffe268e))
+* **deps:** update rust crate serde_json to v1.0.136 ([b5d5fa8](https://github.com/EricCrosson/git-disjoint/commit/b5d5fa821ed630b4586ac6fd260e9d66768779ea))
+* **deps:** update rust crate serde_json to v1.0.137 ([a04a353](https://github.com/EricCrosson/git-disjoint/commit/a04a353196ac1018cb5be301c45877df66acacbd))
+
 ## [0.10.247](https://github.com/EricCrosson/git-disjoint/compare/v0.10.246...v0.10.247) (2025-01-01)
 
 
