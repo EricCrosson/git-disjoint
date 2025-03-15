@@ -1,3 +1,12 @@
+## [0.10.266](https://github.com/EricCrosson/git-disjoint/compare/v0.10.265...v0.10.266) (2025-03-15)
+
+
+### Bug Fixes
+
+* replace once_cell with std ([d5b7ab0](https://github.com/EricCrosson/git-disjoint/commit/d5b7ab0383fd82eed5311f8a4fb5b03fc28a0b04))
+* use github app token to publish releases ([c7f0c53](https://github.com/EricCrosson/git-disjoint/commit/c7f0c536dcfaa80bed318d3cd03039f8e41c5a40))
+* use uppercase variable names ([53bebb0](https://github.com/EricCrosson/git-disjoint/commit/53bebb00cb571ea3040c81b9da3d3cb37bbcd602))
+
 ## [0.10.265](https://github.com/EricCrosson/git-disjoint/compare/v0.10.264...v0.10.265) (2025-03-14)
 
 
