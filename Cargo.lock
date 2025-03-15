@@ -426,7 +426,6 @@ dependencies = [
  "indexmap",
  "indicatif",
  "inquire",
- "once_cell",
  "open",
  "parse-git-url",
  "proptest",

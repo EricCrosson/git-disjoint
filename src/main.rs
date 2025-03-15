@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 #![feature(exit_status_error)]
 
-use std::sync::mpsc;
+use std::sync::{mpsc, LazyLock};
 use std::thread::{self, ScopedJoinHandle};
 use std::time::Duration;
 
@@ -12,7 +12,6 @@ use git2::Commit;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use issue_group_map::IssueGroupMap;
 use log_file::LogFile;
-use once_cell::sync::Lazy;
 use pull_request::PullRequest;
 
 mod branch_name;
@@ -50,14 +49,14 @@ const PREFIX_PENDING: &str = " ";
 const PREFIX_WORKING: &str = ">";
 const PREFIX_DONE: &str = "✔";
 
-static STYLE_ISSUE_GROUP_STABLE: Lazy<ProgressStyle> =
-    Lazy::new(|| ProgressStyle::with_template("{prefix:.green} {msg}").unwrap());
-static STYLE_ISSUE_GROUP_WORKING: Lazy<ProgressStyle> =
-    Lazy::new(|| ProgressStyle::with_template("{prefix:.yellow} {msg}").unwrap());
-static STYLE_COMMIT_STABLE: Lazy<ProgressStyle> =
-    Lazy::new(|| ProgressStyle::with_template("  {prefix:.green} {msg}").unwrap());
-static STYLE_COMMIT_WORKING: Lazy<ProgressStyle> =
-    Lazy::new(|| ProgressStyle::with_template("  {spinner:.yellow} {msg}").unwrap());
+static STYLE_ISSUE_GROUP_STABLE: LazyLock<ProgressStyle> =
+    LazyLock::new(|| ProgressStyle::with_template("{prefix:.green} {msg}").unwrap());
+static STYLE_ISSUE_GROUP_WORKING: LazyLock<ProgressStyle> =
+    LazyLock::new(|| ProgressStyle::with_template("{prefix:.yellow} {msg}").unwrap());
+static STYLE_COMMIT_STABLE: LazyLock<ProgressStyle> =
+    LazyLock::new(|| ProgressStyle::with_template("  {prefix:.green} {msg}").unwrap());
+static STYLE_COMMIT_WORKING: LazyLock<ProgressStyle> =
+    LazyLock::new(|| ProgressStyle::with_template("  {spinner:.yellow} {msg}").unwrap());
 
 #[derive(Debug)]
 struct CommitWork<'repo> {
