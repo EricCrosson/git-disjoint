@@ -1,3 +1,10 @@
+## [0.10.267](https://github.com/EricCrosson/git-disjoint/compare/v0.10.266...v0.10.267) (2025-03-18)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate git2 to v0.20.1 ([cac4f90](https://github.com/EricCrosson/git-disjoint/commit/cac4f907227b2bf2d05f78302afeb13700f087c1))
+
 ## [0.10.266](https://github.com/EricCrosson/git-disjoint/compare/v0.10.265...v0.10.266) (2025-03-15)
 
 
