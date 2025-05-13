@@ -29,8 +29,6 @@
       ]
       ++ pkgs.lib.optionals pkgs.stdenv.isDarwin
       [
-        darwin.apple_sdk.frameworks.Security
-        darwin.apple_sdk.frameworks.SystemConfiguration
         libiconv
       ];
 
