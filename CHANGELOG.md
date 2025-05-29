@@ -1,3 +1,10 @@
+## [0.10.277](https://github.com/EricCrosson/git-disjoint/compare/v0.10.276...v0.10.277) (2025-05-29)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate reqwest to v0.12.18 ([6d3050b](https://github.com/EricCrosson/git-disjoint/commit/6d3050b8dbd669a36f5b030ec3feb7026dd6f09e))
+
 ## [0.10.276](https://github.com/EricCrosson/git-disjoint/compare/v0.10.275...v0.10.276) (2025-05-28)
 
 
