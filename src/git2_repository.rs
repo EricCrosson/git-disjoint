@@ -210,7 +210,7 @@ impl Repository {
 
     /// Assumption: `base` indicates a single commit
     /// Assumption: `origin` is the upstream/main repositiory
-    pub fn base_commit(&self, base: &DefaultBranch) -> Result<Commit, BaseCommitError> {
+    pub fn base_commit(&self, base: &DefaultBranch) -> Result<Commit<'_>, BaseCommitError> {
         (|| {
             let start_point = self
                 .revparse_single(&format!("origin/{}", &base.0))
