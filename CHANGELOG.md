@@ -1,3 +1,10 @@
+## [0.10.300](https://github.com/EricCrosson/git-disjoint/compare/v0.10.299...v0.10.300) (2025-09-14)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate serde_json to v1.0.145 ([610da91](https://github.com/EricCrosson/git-disjoint/commit/610da91451fb28fc810345910ccd6167f8b7d13e))
+
 ## [0.10.299](https://github.com/EricCrosson/git-disjoint/compare/v0.10.298...v0.10.299) (2025-09-14)
 
 
