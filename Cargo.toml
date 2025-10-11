@@ -1,6 +1,6 @@
 [package]
 name = "git-disjoint"
-version = "0.10.306"
+version = "0.10.307"
 edition = "2021"
 authors = ["Eric Crosson <eric.s.crosson@utexas.edu>"]
 license = "MIT OR Apache-2.0"
