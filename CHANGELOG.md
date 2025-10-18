@@ -1,3 +1,10 @@
+## [0.10.311](https://github.com/EricCrosson/git-disjoint/compare/v0.10.310...v0.10.311) (2025-10-18)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate indexmap to v2.12.0 ([3d13251](https://github.com/EricCrosson/git-disjoint/commit/3d13251de1bc3ff242882a305fcb6b90f97d3b0a))
+
 ## [0.10.310](https://github.com/EricCrosson/git-disjoint/compare/v0.10.309...v0.10.310) (2025-10-15)
 
 
