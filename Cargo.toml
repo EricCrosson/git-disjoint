@@ -37,7 +37,7 @@ serde_json = "=1.0.145"
 
 [dev-dependencies]
 proptest = "=1.9.0"
-proptest-derive = "=0.6.0"
+proptest-derive = "=0.7.0"
 
 [profile.release]
 lto = true
