@@ -28,7 +28,7 @@ git2 = { version = "=0.20.2", default-features = false, features = ["zlib-ng-com
 indexmap = "=2.12.0"
 indicatif = "=0.18.3"
 inquire = "=0.9.1"
-open = "=5.3.2"
+open = "=5.3.3"
 regex = "=1.12.2"
 reqwest = { version = "=0.12.24", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 sanitize-git-ref = "=1.0.12"
