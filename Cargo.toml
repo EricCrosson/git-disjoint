@@ -24,7 +24,7 @@ exclude = [
 [dependencies]
 clap = { version = "=4.5.53", features = ["cargo", "derive", "env", "wrap_help"] }
 parse-git-url = "=0.5.1"
-git2 = { version = "=0.20.2", default-features = false, features = ["zlib-ng-compat"] }
+git2 = { version = "=0.20.3", default-features = false, features = ["zlib-ng-compat"] }
 indexmap = "=2.12.1"
 indicatif = "=0.18.3"
 inquire = "=0.9.1"
