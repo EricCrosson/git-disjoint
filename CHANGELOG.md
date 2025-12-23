@@ -1,3 +1,11 @@
+## [0.10.322](https://github.com/EricCrosson/git-disjoint/compare/v0.10.321...v0.10.322) (2025-12-23)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate reqwest to v0.12.28 ([3191f44](https://github.com/EricCrosson/git-disjoint/commit/3191f443b16159bb681f85e13913959f363dec30))
+* **deps:** update rust crate serde_json to v1.0.146 ([76bbe1a](https://github.com/EricCrosson/git-disjoint/commit/76bbe1a2671e57805cb15007e87aaea744904b37))
+
 ## [0.10.321](https://github.com/EricCrosson/git-disjoint/compare/v0.10.320...v0.10.321) (2025-12-16)
 
 
