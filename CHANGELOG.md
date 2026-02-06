@@ -1,3 +1,10 @@
+## [0.10.333](https://github.com/EricCrosson/git-disjoint/compare/v0.10.332...v0.10.333) (2026-02-06)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate inquire to v0.9.3 ([4b07225](https://github.com/EricCrosson/git-disjoint/commit/4b07225fa561f0858ea292661b59fe7f6dfadfb3))
+
 ## [0.10.332](https://github.com/EricCrosson/git-disjoint/compare/v0.10.331...v0.10.332) (2026-02-04)
 
 
