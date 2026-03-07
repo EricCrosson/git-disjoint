@@ -1,3 +1,10 @@
+# [0.11.0](https://github.com/EricCrosson/git-disjoint/compare/v0.10.338...v0.11.0) (2026-03-07)
+
+
+### Features
+
+* fold demo infrastructure into repo ([a1c5b30](https://github.com/EricCrosson/git-disjoint/commit/a1c5b30a8f5544444580bd9e9c40592611625e84))
+
 ## [0.10.338](https://github.com/EricCrosson/git-disjoint/compare/v0.10.337...v0.10.338) (2026-02-25)
 
 
