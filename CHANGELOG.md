@@ -1,3 +1,11 @@
+## [0.11.2](https://github.com/EricCrosson/git-disjoint/compare/v0.11.1...v0.11.2) (2026-03-07)
+
+
+### Bug Fixes
+
+* **demo:** fix demo environment setup and recording issues ([afad0fe](https://github.com/EricCrosson/git-disjoint/commit/afad0fefb20b759e7a09c7850b8e574f712a72b9))
+* resolve default branch from fork, not upstream ([d52df02](https://github.com/EricCrosson/git-disjoint/commit/d52df029cd1153179de7207beb766c24a9518cc5))
+
 ## [0.11.1](https://github.com/EricCrosson/git-disjoint/compare/v0.11.0...v0.11.1) (2026-03-07)
 
 
