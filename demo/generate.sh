@@ -21,10 +21,13 @@ trap 'rm -rf "$DEMO_DIR"' EXIT
 # Initialize a git repo to serve as the demo environment
 git -c init.defaultBranch=master init "$DEMO_DIR/repo"
 cd "$DEMO_DIR/repo"
-git commit --allow-empty -m "initial commit"
+# Gitignore prepare-commits so it doesn't trigger the dirty-tree guard
+echo "prepare-commits" > .gitignore
+git add .gitignore
+git commit -m "initial commit"
 git remote add origin https://github.com/example/demo.git
 
-# Copy prepare-commits into the demo repo
+# Copy prepare-commits into the demo repo (gitignored, so status stays clean)
 cp "$SCRIPT_DIR/prepare-commits" "$DEMO_DIR/repo/prepare-commits"
 chmod +x "$DEMO_DIR/repo/prepare-commits"
 

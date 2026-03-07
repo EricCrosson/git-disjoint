@@ -11,9 +11,9 @@ Set Theme "Catppuccin Mocha"
 
 Set TypingSpeed 40ms
 
-Hide
-Type "# First, make some commits on your default branch" Enter
-Show
+Sleep 500ms
+Ctrl+L
+Sleep 200ms
 
 Type "./prepare-commits" Enter
 Sleep 2s
