@@ -18,7 +18,7 @@ cycle time low.
 ## Elevator Pitch
 
 <p align="center">
-  <img src="https://i.imgur.com/bUuxI8c.gif" alt="git-disjoint demo">
+  <img src="https://github.com/EricCrosson/git-disjoint/raw/assets/demo.gif" alt="git-disjoint demo">
 </p>
 
 You're working on a feature. As you work, you create some commits that don't directly
@@ -47,6 +47,7 @@ git disjoint
 into a new branch, and create a PR.
 
 [^1]: https://www.adamtal.me/2019/05/first-make-the-change-easy-then-make-the-easy-change
+
 [^2]: https://drewdevault.com/2020/04/06/My-weird-branchless-git-workflow.html
 
 ## How does it work?

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+if [ -n "$(git status --porcelain)" ]; then
+  >&2 echo "Error: working directory contains uncommitted changes"
+  exit 1
+fi
+
+create_commit() {
+  subject="${1:?Expected subject}"
+  body="${2:?Expected body}"
+  git commit \
+    --allow-empty \
+    --no-verify \
+    --message "$subject" \
+    --message "$body" \
+    >/dev/null
+}
+
+create_commit "chore: a" "Ticket: #1"
+create_commit "chore: b" "Ticket: #1"
+
+create_commit "build: a" "Ticket: #2"
+create_commit "build: b" "Ticket: #2"
+
+create_commit "style: a" "Ticket: #3"
+create_commit "style: b" "Ticket: #3"
+create_commit "style: c" "Ticket: #3"
+
+git log origin/master..HEAD --pretty='format:[%h] %s    %(trailers:key=Ticket,separator=)'

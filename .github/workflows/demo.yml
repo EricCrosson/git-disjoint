@@ -1,0 +1,43 @@
+---
+name: Demo GIF
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "demo/**"
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+  workflow_dispatch:
+
+concurrency:
+  group: demo-gif
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Generate demo GIF
+        run: nix develop ./nix --command bash demo/generate.sh
+
+      - name: Push to assets branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan assets-staging
+          git rm -rf .
+          mv demo/demo.gif demo.gif
+          git add demo.gif
+          git commit -m "chore: update demo GIF"
+          git push -f origin assets-staging:assets
