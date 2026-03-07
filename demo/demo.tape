@@ -12,14 +12,11 @@ Set Theme "Catppuccin Mocha"
 Set TypingSpeed 40ms
 
 Sleep 500ms
-Ctrl+L
-Sleep 200ms
 
 Type "./prepare-commits" Enter
-Sleep 2s
+Sleep 4s
 
-Enter
-Type "# Then, invoke git-disjoint!" Enter
+Type "# Now, invoke git-disjoint" Enter
 Type "# It: " Enter
 Type "# - creates a branch for each ticket," Enter
 Type "# - cherry-picks related commits onto that branch," Enter
@@ -28,4 +25,4 @@ Sleep 500ms
 
 Set TypingSpeed 167ms
 Type "git disjoint" Enter
-Sleep 15s
+Sleep 8s

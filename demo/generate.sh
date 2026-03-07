@@ -21,11 +21,16 @@ trap 'rm -rf "$DEMO_DIR"' EXIT
 # Initialize a git repo to serve as the demo environment
 git -c init.defaultBranch=master init "$DEMO_DIR/repo"
 cd "$DEMO_DIR/repo"
+git config user.email "demo@example.com"
+git config user.name "Demo"
 # Gitignore prepare-commits so it doesn't trigger the dirty-tree guard
 echo "prepare-commits" > .gitignore
 git add .gitignore
 git commit -m "initial commit"
 git remote add origin https://github.com/example/demo.git
+# git-disjoint always resolves the base as origin/<branch> (see git2_repository.rs:base_commit),
+# so manually create the remote tracking ref pointing at the initial commit.
+git update-ref refs/remotes/origin/master HEAD
 
 # Copy prepare-commits into the demo repo (gitignored, so status stays clean)
 cp "$SCRIPT_DIR/prepare-commits" "$DEMO_DIR/repo/prepare-commits"
