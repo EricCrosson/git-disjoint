@@ -63,7 +63,7 @@ impl DefaultBranch {
         let http_client = reqwest::blocking::Client::new();
         let url = format!(
             "https://api.github.com/repos/{}/{}",
-            repository_metadata.owner, repository_metadata.name
+            repository_metadata.forker, repository_metadata.name
         );
         let response: GetRepositoryResponse = http_client
             .get(&url)
@@ -81,7 +81,7 @@ impl DefaultBranch {
                 kind: TryDefaultErrorKind::Parse(err),
             })?;
 
-        // Assumption: `origin` is the upstream/main repositiory
+        // Assumption: The default branch in the fork matches the upstream repository's default branch
         Ok(DefaultBranch(response.default_branch))
     }
 }
