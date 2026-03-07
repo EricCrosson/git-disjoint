@@ -1,3 +1,10 @@
+## [0.11.1](https://github.com/EricCrosson/git-disjoint/compare/v0.11.0...v0.11.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* **demo:** fix PS1 rendering and prepare-commits dirty-tree error ([985a55b](https://github.com/EricCrosson/git-disjoint/commit/985a55b41cf54f166d216ff97cde046121c98133))
+
 # [0.11.0](https://github.com/EricCrosson/git-disjoint/compare/v0.10.338...v0.11.0) (2026-03-07)
 
 
