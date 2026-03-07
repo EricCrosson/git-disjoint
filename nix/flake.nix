@@ -63,7 +63,15 @@
         nativeBuildInputs =
           craneDerivations.commonArgs.nativeBuildInputs
           ++ [
+            (fenix.packages.${system}.latest.withComponents [
+              "rustc"
+              "cargo"
+              "clippy"
+              "rust-src"
+              "rustfmt"
+            ])
             fenix.packages.${system}.rust-analyzer
+            nixpkgs.legacyPackages.${system}.vhs
           ];
 
         inherit (self.checks.${system}.pre-commit-check) shellHook;

@@ -18,7 +18,8 @@ exclude = [
   "/flake.{lock,nix}",
   "/package*.json",
   "/rust-toolchain",
-  "/assets"
+  "/assets",
+  "/demo"
 ]
 
 [dependencies]
