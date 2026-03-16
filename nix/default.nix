@@ -5,7 +5,7 @@
   fenix,
 }: let
   craneLib = (crane.mkLib pkgs).overrideToolchain (p: let
-    fenix-channel = fenix.packages.${system}.latest;
+    fenix-channel = fenix.packages.${system}.stable;
     fenix-toolchain = fenix-channel.withComponents [
       "rustc"
       "cargo"

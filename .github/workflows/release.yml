@@ -16,7 +16,7 @@ jobs:
   release:
     uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v5
     with:
-      toolchain: nightly
+      toolchain: stable
       github_app_id: ${{ vars.SEMANTIC_RELEASE_GITHUB_APP_ID }}
     secrets:
       cargo-registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}

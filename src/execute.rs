@@ -2,9 +2,20 @@ use std::error::Error;
 use std::fmt::Display;
 use std::fs::OpenOptions;
 use std::io::{self, prelude::*};
-use std::process::{Command, ExitStatusError, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 
 use crate::log_file::LogFile;
+
+#[derive(Debug)]
+pub(crate) struct NonZeroExitStatus(ExitStatus);
+
+impl Display for NonZeroExitStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Error for NonZeroExitStatus {}
 
 #[derive(Debug)]
 #[non_exhaustive]
@@ -47,7 +58,7 @@ pub(crate) enum ExecuteErrorKind {
     Exec(io::Error, Vec<String>),
     /// The child process exited with non-zero exit code
     #[non_exhaustive]
-    Child(ExitStatusError, Vec<String>),
+    Child(NonZeroExitStatus, Vec<String>),
 }
 
 pub(crate) fn execute(command: &[&str], log_file: &LogFile) -> Result<(), ExecuteError> {
@@ -58,10 +69,7 @@ pub(crate) fn execute(command: &[&str], log_file: &LogFile) -> Result<(), Execut
             .create(true)
             .append(true)
             .open(log_file)
-            .expect(&format!(
-                "should be able to append to log file {:?}",
-                log_file
-            ));
+            .unwrap_or_else(|_| panic!("should be able to append to log file {:?}", log_file));
 
         writeln!(file, "$ {:?}", command.join(" ")).map_err(ExecuteErrorKind::Write)?;
 
@@ -91,9 +99,9 @@ pub(crate) fn execute(command: &[&str], log_file: &LogFile) -> Result<(), Execut
         })?;
 
         // Return an Err if the exit status is non-zero
-        if let Err(error) = status.exit_ok() {
+        if !status.success() {
             return Err(ExecuteErrorKind::Child(
-                error,
+                NonZeroExitStatus(status),
                 command
                     .iter()
                     .map(ToOwned::to_owned)

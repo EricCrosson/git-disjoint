@@ -44,7 +44,7 @@ pub(crate) enum FromCommitErrorKind {
     InvalidUtf8,
 }
 
-impl<'a> TryFrom<&Commit<'a>> for GitCommitSummary {
+impl TryFrom<&Commit<'_>> for GitCommitSummary {
     type Error = FromCommitError;
 
     fn try_from(commit: &Commit) -> Result<Self, Self::Error> {

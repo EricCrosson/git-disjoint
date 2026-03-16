@@ -1,5 +1,4 @@
 #![forbid(unsafe_code)]
-#![feature(exit_status_error)]
 
 use std::sync::{mpsc, LazyLock};
 use std::thread::{self, ScopedJoinHandle};
@@ -64,9 +63,9 @@ struct CommitWork<'repo> {
     progress_bar: ProgressBar,
 }
 
-impl<'repo> Into<&Commit<'repo>> for &'repo CommitWork<'repo> {
-    fn into(self) -> &'repo Commit<'repo> {
-        &self.commit
+impl<'repo> From<&'repo CommitWork<'repo>> for &'repo Commit<'repo> {
+    fn from(val: &'repo CommitWork<'repo>) -> Self {
+        &val.commit
     }
 }
 
@@ -300,7 +299,7 @@ fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
                     true => interactive_get_pr_metadata(&root, &work_order.commit_work)?,
                     false => {
                         // REFACTOR: clean this up
-                        let commit = &work_order.commit_work.get(0).unwrap().commit;
+                        let commit = &work_order.commit_work.first().unwrap().commit;
                         commit.message().unwrap().parse()?
                     }
                 };

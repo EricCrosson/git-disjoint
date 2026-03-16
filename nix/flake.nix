@@ -63,7 +63,7 @@
         nativeBuildInputs =
           craneDerivations.commonArgs.nativeBuildInputs
           ++ [
-            (fenix.packages.${system}.latest.withComponents [
+            (fenix.packages.${system}.stable.withComponents [
               "rustc"
               "cargo"
               "clippy"
