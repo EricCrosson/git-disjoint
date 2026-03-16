@@ -96,7 +96,7 @@
           )"
 
         wrapProgram $out/bin/git-disjoint \
-          --prefix PATH ${pkgs.lib.makeBinPath runtimeInputs}
+          --suffix PATH : ${pkgs.lib.makeBinPath runtimeInputs}
       '';
     });
 in {
