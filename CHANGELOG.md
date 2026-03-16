@@ -1,3 +1,10 @@
+## [0.11.6](https://github.com/EricCrosson/git-disjoint/compare/v0.11.5...v0.11.6) (2026-03-16)
+
+
+### Bug Fixes
+
+* **ci:** explicitly push binary to cachix after nix build ([d802e35](https://github.com/EricCrosson/git-disjoint/commit/d802e354feae004d818d151a0653f2504b4482df))
+
 ## [0.11.5](https://github.com/EricCrosson/git-disjoint/compare/v0.11.4...v0.11.5) (2026-03-16)
 
 
