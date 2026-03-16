@@ -1,3 +1,10 @@
+## [0.11.4](https://github.com/EricCrosson/git-disjoint/compare/v0.11.3...v0.11.4) (2026-03-16)
+
+
+### Bug Fixes
+
+* migrate from nightly to stable Rust ([cfe956b](https://github.com/EricCrosson/git-disjoint/commit/cfe956b842ffe730741b6f601a4f3f37e626eed3))
+
 ## [0.11.3](https://github.com/EricCrosson/git-disjoint/compare/v0.11.2...v0.11.3) (2026-03-14)
 
 
