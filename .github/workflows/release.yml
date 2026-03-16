@@ -41,3 +41,4 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - run: nix build
+      - run: cachix push git-disjoint ./result
