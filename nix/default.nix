@@ -23,11 +23,11 @@
   commonArgs = {
     src = craneLib.cleanCargoSource ../.;
 
-    buildInputs = with pkgs;
+    buildInputs =
       []
       ++ pkgs.lib.optionals pkgs.stdenv.isDarwin
       [
-        libiconv
+        pkgs.pkgsStatic.libiconv.dev
       ];
 
     nativeBuildInputs = with pkgs; [
@@ -70,6 +70,7 @@
         findutils
         installShellFiles
         makeWrapper
+        removeReferencesTo
       ];
 
       postInstall = ''
@@ -97,6 +98,11 @@
 
         wrapProgram $out/bin/git-disjoint \
           --suffix PATH : ${pkgs.lib.makeBinPath runtimeInputs}
+      '';
+
+      postFixup = pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
+        remove-references-to -t ${pkgs.pkgsStatic.libiconv} $out/bin/.git-disjoint-wrapped
+        remove-references-to -t ${pkgs.pkgsStatic.libiconv.dev} $out/bin/.git-disjoint-wrapped
       '';
     });
 in {
