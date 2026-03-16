@@ -1,3 +1,12 @@
+## [0.11.5](https://github.com/EricCrosson/git-disjoint/compare/v0.11.4...v0.11.5) (2026-03-16)
+
+
+### Bug Fixes
+
+* **nix:** fix wrapProgram to correctly add gitMinimal to PATH ([485d8d4](https://github.com/EricCrosson/git-disjoint/commit/485d8d4f1c7e0fed7c03770e63416daf120d60b5))
+* **nix:** remove openssl from buildInputs ([26b8af9](https://github.com/EricCrosson/git-disjoint/commit/26b8af90bf7afff5e3dcd6fb44c00f52f9b8c571))
+* **nix:** statically link libiconv on macOS to reduce closure size ([33d73d7](https://github.com/EricCrosson/git-disjoint/commit/33d73d7d710162ac4a4f3dffd83068c7f991c852))
+
 ## [0.11.4](https://github.com/EricCrosson/git-disjoint/compare/v0.11.3...v0.11.4) (2026-03-16)
 
 
