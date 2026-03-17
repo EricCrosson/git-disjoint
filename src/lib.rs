@@ -25,6 +25,7 @@ pub mod little_anyhow;
 #[doc(hidden)]
 pub mod log_file;
 pub mod plan;
+pub mod pre_validation;
 #[doc(hidden)]
 pub mod pull_request;
 #[doc(hidden)]

@@ -36,6 +36,9 @@ impl Display for Error {
             ErrorKind::ParsePullRequestMetadata(_) => {
                 write!(f, "unable to parse pull request metadata")
             }
+            ErrorKind::PreValidation => {
+                write!(f, "pre-validation failed: cherry-pick conflicts detected")
+            }
         }
     }
 }
@@ -57,6 +60,7 @@ impl std::error::Error for Error {
             ErrorKind::Execute(err) => Some(err),
             ErrorKind::GetPullRequestMetadata(err) => Some(err),
             ErrorKind::ParsePullRequestMetadata(err) => Some(err),
+            ErrorKind::PreValidation => None,
         }
     }
 }
@@ -91,12 +95,20 @@ pub enum ErrorKind {
     WebBrowser(pull_request::CreatePullRequestError),
     #[non_exhaustive]
     CherryPick(execute::ExecuteError, String),
+    #[non_exhaustive]
+    PreValidation,
 }
 
 impl Error {
     pub fn cherry_pick(err: execute::ExecuteError, commit: String) -> Self {
         Self {
             kind: ErrorKind::CherryPick(err, commit),
+        }
+    }
+
+    pub fn pre_validation() -> Self {
+        Self {
+            kind: ErrorKind::PreValidation,
         }
     }
 }

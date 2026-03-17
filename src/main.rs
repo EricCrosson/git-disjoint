@@ -19,6 +19,7 @@ use git_disjoint::github_repository_metadata::GithubRepositoryMetadata;
 use git_disjoint::issue_group::IssueGroup;
 use git_disjoint::issue_group_map::IssueGroupMap;
 use git_disjoint::log_file::LogFile;
+use git_disjoint::pre_validation;
 use git_disjoint::pull_request::PullRequest;
 
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
@@ -157,6 +158,16 @@ fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
             .apply_overlay(overlay);
 
         let commit_plan_by_issue_group: DisjointBranchMap = commits_by_issue_group.try_into()?;
+
+        // Pre-validate: simulate every cherry-pick in memory before any git writes
+        if let Err(report) =
+            pre_validation::validate(&commit_plan_by_issue_group, &base_commit, &repository)
+        {
+            use std::io::IsTerminal;
+            let use_color = std::io::stderr().is_terminal();
+            eprint!("{}", report.render(use_color));
+            return Err(Error::pre_validation());
+        }
 
         let work_orders: Vec<WorkOrder> = commit_plan_by_issue_group
             .into_iter()
