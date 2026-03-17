@@ -63,7 +63,7 @@
 
   # Next, we want to run the tests and collect code-coverage, _but only if
   # the clippy checks pass_ so we do not waste any extra cycles.
-  myCrateCoverage = craneLib.cargoNextest (commonArgs
+  myCrateCoverage = craneLib.cargoLlvmCov (commonArgs
     // {
       cargoArtifacts = myCrateClippy;
     });

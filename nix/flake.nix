@@ -27,11 +27,20 @@
       "x86_64-darwin"
       "x86_64-linux"
     ];
+
+    # Workaround for nixpkgs#351574 — cargo-llvm-cov tests fail on macOS
+    cargo-llvm-cov-overlay = _final: prev: {
+      cargo-llvm-cov = prev.cargo-llvm-cov.overrideAttrs (_old: {
+        doCheck = false;
+      });
+    };
   in {
     checks = forEachSystem (system: let
-      craneDerivations = nixpkgs.legacyPackages.${system}.callPackage ./default.nix {
-        inherit crane fenix;
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [cargo-llvm-cov-overlay];
       };
+      craneDerivations = pkgs.callPackage ./default.nix {inherit crane fenix;};
       pre-commit-check = pre-commit-hooks.lib.${system}.run {
         src = ../.;
         hooks = {
@@ -51,12 +60,43 @@
       inherit pre-commit-check;
     });
 
-    devShells = forEachSystem (system: let
-      craneDerivations = nixpkgs.legacyPackages.${system}.callPackage ./default.nix {
-        inherit crane fenix;
+    packages = forEachSystem (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [cargo-llvm-cov-overlay];
       };
+      craneDerivations = pkgs.callPackage ./default.nix {inherit crane fenix;};
     in {
-      default = nixpkgs.legacyPackages.${system}.mkShell {
+      lcov = craneDerivations.myCrateCoverage;
+    });
+
+    apps = forEachSystem (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [cargo-llvm-cov-overlay];
+      };
+      rust-toolchain-toml = builtins.fromTOML (builtins.readFile ../rust-toolchain.toml);
+      fenix-toolchain =
+        fenix.packages.${system}.stable.withComponents
+        rust-toolchain-toml.toolchain.components;
+    in {
+      coverage = {
+        type = "app";
+        program = toString (pkgs.writeShellScript "coverage" ''
+          export PATH="${pkgs.lib.makeBinPath [fenix-toolchain pkgs.cargo-llvm-cov]}:$PATH"
+          cargo llvm-cov --open "$@"
+        '');
+      };
+    });
+
+    devShells = forEachSystem (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [cargo-llvm-cov-overlay];
+      };
+      craneDerivations = pkgs.callPackage ./default.nix {inherit crane fenix;};
+    in {
+      default = pkgs.mkShell {
         # DISCUSS: can we use inherit instead?
         # DISCUSS: can we use inputsFrom instead?
         buildInputs = craneDerivations.commonArgs.buildInputs ++ craneDerivations.runtimeInputs;
@@ -67,8 +107,9 @@
           in [
             (fenix.packages.${system}.stable.withComponents
               rust-toolchain-toml.toolchain.components)
-            nixpkgs.legacyPackages.${system}.cargo-insta
-            nixpkgs.legacyPackages.${system}.vhs
+            pkgs.cargo-insta
+            pkgs.cargo-llvm-cov
+            pkgs.vhs
           ]);
 
         inherit (self.checks.${system}.pre-commit-check) shellHook;

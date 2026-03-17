@@ -3,6 +3,7 @@ channel = "stable"
 components = [
   "cargo",
   "clippy",
+  "llvm-tools",
   "rust-analysis",
   "rust-analyzer",
   "rust-src",
