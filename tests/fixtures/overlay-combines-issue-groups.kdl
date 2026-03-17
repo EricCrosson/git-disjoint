@@ -1,0 +1,14 @@
+title "overlay combines issue groups into one branch"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+}
+
+commit "feat: add widget\n\nTicket: AB-100" {
+  file "src/widget.rs" "pub struct Widget;"
+}
+commit "feat: add gadget\n\nTicket: AB-200" {
+  file "src/gadget.rs" "pub struct Gadget;"
+}
+
+run "git-disjoint --overlay"

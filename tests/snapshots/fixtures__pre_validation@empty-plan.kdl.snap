@@ -1,9 +1,0 @@
----
-source: tests/fixtures.rs
-assertion_line: 21
-expression: result
-input_file: tests/fixtures/pre_validation/empty-plan.kdl
----
-exit: 0
-
-(no branches planned)

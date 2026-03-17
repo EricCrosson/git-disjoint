@@ -7,23 +7,14 @@ use tempfile::TempDir;
 use git_disjoint::cli::{CommitGrouping, CommitsToConsider, OverlayCommitsIntoOnePullRequest};
 use git_disjoint::disjoint_branch::DisjointBranchMap;
 use git_disjoint::issue_group_map::IssueGroupMap;
-use git_disjoint::plan::Plan;
 use git_disjoint::pre_validation;
 
 const FIXED_TIME: i64 = 1_000_000_000;
 const FIXED_OFFSET: i32 = 0;
 
 #[derive(Debug)]
-pub enum FixtureMode {
-    Plan,
-    Validate,
-    Execute,
-}
-
-#[derive(Debug)]
 pub struct TestFixture {
-    pub _title: String,
-    pub mode: FixtureMode,
+    pub title: String,
     pub base_files: BTreeMap<String, String>,
     pub commits: Vec<TestCommit>,
     pub run_args: Vec<String>,
@@ -129,35 +120,52 @@ pub fn parse_fixture(kdl: &str) -> TestFixture {
     }
 
     let run_node = doc.get("run").expect("fixture must have a run node");
-    let run_entries: Vec<_> = run_node.entries().iter().collect();
-    let mode_str = run_entries[0]
+    let run_str = run_node
+        .entries()
+        .first()
+        .expect("run must have a value")
         .value()
         .as_string()
-        .expect("run mode must be a string");
-    let mode = match mode_str {
-        "plan" => FixtureMode::Plan,
-        "validate" => FixtureMode::Validate,
-        "execute" => FixtureMode::Execute,
-        other => panic!("unknown run mode: {other}"),
-    };
+        .expect("run value must be a string");
 
-    let run_args: Vec<String> = run_entries[1..]
-        .iter()
-        .map(|e| {
-            e.value()
-                .as_string()
-                .expect("run arg must be a string")
-                .to_string()
-        })
-        .collect();
+    let run_args = parse_cli_args(run_str);
 
     TestFixture {
-        _title: title,
-        mode,
+        title,
         base_files,
         commits,
         run_args,
     }
+}
+
+fn parse_cli_args(run_str: &str) -> Vec<String> {
+    let mut tokens = run_str.split_whitespace();
+    let cmd = tokens.next().expect("run string must not be empty");
+    assert_eq!(cmd, "git-disjoint", "run command must be 'git-disjoint'");
+    tokens.map(|s| s.to_string()).collect()
+}
+
+fn resolve_cli_args(
+    args: &[String],
+) -> (
+    CommitsToConsider,
+    CommitGrouping,
+    OverlayCommitsIntoOnePullRequest,
+) {
+    let mut all = CommitsToConsider::WithTrailer;
+    let mut separate = CommitGrouping::ByIssue;
+    let mut overlay = OverlayCommitsIntoOnePullRequest::No;
+
+    for arg in args {
+        match arg.as_str() {
+            "--all" | "-a" => all = CommitsToConsider::All,
+            "--separate" | "-s" => separate = CommitGrouping::Individual,
+            "--overlay" | "-o" => overlay = OverlayCommitsIntoOnePullRequest::Yes,
+            other => panic!("unknown fixture arg: {other}"),
+        }
+    }
+
+    (all, separate, overlay)
 }
 
 fn fixed_signature() -> Signature<'static> {
@@ -270,32 +278,9 @@ fn build_test_repo(fixture: &TestFixture) -> TestRepo {
     }
 }
 
-fn parse_cli_args(
-    args: &[String],
-) -> (
-    CommitsToConsider,
-    CommitGrouping,
-    OverlayCommitsIntoOnePullRequest,
-) {
-    let mut all = CommitsToConsider::WithTrailer;
-    let mut separate = CommitGrouping::ByIssue;
-    let mut overlay = OverlayCommitsIntoOnePullRequest::No;
-
-    for arg in args {
-        match arg.as_str() {
-            "--all" | "-a" => all = CommitsToConsider::All,
-            "--separate" | "-s" => separate = CommitGrouping::Individual,
-            "--overlay" | "-o" => overlay = OverlayCommitsIntoOnePullRequest::Yes,
-            other => panic!("unknown fixture arg: {other}"),
-        }
-    }
-
-    (all, separate, overlay)
-}
-
 pub fn run_fixture(fixture: &TestFixture) -> String {
     let test_repo = build_test_repo(fixture);
-    let (all, separate, overlay) = parse_cli_args(&fixture.run_args);
+    let (all, separate, overlay) = resolve_cli_args(&fixture.run_args);
 
     let base_commit = test_repo
         .repo
@@ -329,105 +314,78 @@ pub fn run_fixture(fixture: &TestFixture) -> String {
         Err(e) => return format!("exit: 1\n\nerror: {e}"),
     };
 
-    match fixture.mode {
-        FixtureMode::Plan => {
-            if branch_map.is_empty() {
-                return "exit: 0\n\n(no branches planned)".to_string();
-            }
-            let plan = Plan::from_disjoint_branch_map(&branch_map);
-            format!("exit: 0\n\n{}", plan.render().trim_end())
-        }
-        FixtureMode::Validate => {
-            match pre_validation::validate(&branch_map, &base_commit, &test_repo.repo) {
-                Ok(()) => {
-                    if branch_map.is_empty() {
-                        return "exit: 0\n\n(no branches planned)".to_string();
-                    }
-                    let plan = Plan::from_disjoint_branch_map(&branch_map);
-                    format!("exit: 0\n\n{}", plan.render().trim_end())
-                }
-                Err(report) => {
-                    format!("exit: 1\n\n{}", report.render(false).trim_end())
-                }
-            }
-        }
-        FixtureMode::Execute => {
-            // First validate
-            if let Err(report) =
-                pre_validation::validate(&branch_map, &base_commit, &test_repo.repo)
-            {
-                return format!("exit: 1\n\n{}", report.render(false).trim_end());
-            }
-
-            if branch_map.is_empty() {
-                return "exit: 0\n\n(no branches planned)".to_string();
-            }
-
-            use std::fmt::Write;
-            let mut output = "exit: 0".to_string();
-
-            // Execute: create branches via in-memory cherry-pick and render per-branch
-            for (_issue_group, branch) in branch_map.iter() {
-                let mut simulated_head = base_commit.clone();
-
-                for commit in &branch.commits {
-                    let mut index = test_repo
-                        .repo
-                        .cherrypick_commit(commit, &simulated_head, 0, None)
-                        .unwrap();
-
-                    let tree_oid = index.write_tree_to(&test_repo.repo).unwrap();
-                    let tree = test_repo.repo.find_tree(tree_oid).unwrap();
-                    let sig = fixed_signature();
-                    let new_oid = test_repo
-                        .repo
-                        .commit(
-                            None,
-                            &sig,
-                            &sig,
-                            commit.summary().unwrap_or(""),
-                            &tree,
-                            &[&simulated_head],
-                        )
-                        .unwrap();
-                    simulated_head = test_repo.repo.find_commit(new_oid).unwrap();
-                }
-
-                // Create a branch ref pointing at the final commit
-                test_repo
-                    .repo
-                    .branch(branch.branch_name.as_str(), &simulated_head, true)
-                    .unwrap();
-
-                // Render branch header
-                write!(output, "\n\nbranch {}:", branch.branch_name).unwrap();
-                for commit in &branch.commits {
-                    write!(output, "\n  * {}", commit.summary().unwrap_or("")).unwrap();
-                }
-
-                // List files in the branch's tree
-                let tree = simulated_head.tree().unwrap();
-                let mut files: Vec<String> = Vec::new();
-                tree.walk(git2::TreeWalkMode::PreOrder, |dir, entry| {
-                    if entry.kind() == Some(git2::ObjectType::Blob) {
-                        let path = if dir.is_empty() {
-                            entry.name().unwrap().to_string()
-                        } else {
-                            format!("{}{}", dir, entry.name().unwrap())
-                        };
-                        if path != ".gitkeep" {
-                            files.push(path);
-                        }
-                    }
-                    git2::TreeWalkResult::Ok
-                })
-                .unwrap();
-                files.sort();
-
-                write!(output, "\n  files: {}", files.join(", ")).unwrap();
-            }
-
-            output
-        }
+    // Validate
+    if let Err(report) = pre_validation::validate(&branch_map, &base_commit, &test_repo.repo) {
+        return format!("exit: 1\n\n{}", report.render(false).trim_end());
     }
+
+    if branch_map.is_empty() {
+        return "exit: 0\n\n(no branches planned)".to_string();
+    }
+
+    // Execute: create branches via in-memory cherry-pick and render per-branch
+    use std::fmt::Write;
+    let mut output = "exit: 0".to_string();
+
+    for (_issue_group, branch) in branch_map.iter() {
+        let mut simulated_head = base_commit.clone();
+
+        for commit in &branch.commits {
+            let mut index = test_repo
+                .repo
+                .cherrypick_commit(commit, &simulated_head, 0, None)
+                .unwrap();
+
+            let tree_oid = index.write_tree_to(&test_repo.repo).unwrap();
+            let tree = test_repo.repo.find_tree(tree_oid).unwrap();
+            let sig = fixed_signature();
+            let new_oid = test_repo
+                .repo
+                .commit(
+                    None,
+                    &sig,
+                    &sig,
+                    commit.summary().unwrap_or(""),
+                    &tree,
+                    &[&simulated_head],
+                )
+                .unwrap();
+            simulated_head = test_repo.repo.find_commit(new_oid).unwrap();
+        }
+
+        // Create a branch ref pointing at the final commit
+        test_repo
+            .repo
+            .branch(branch.branch_name.as_str(), &simulated_head, true)
+            .unwrap();
+
+        // Render branch header
+        write!(output, "\n\nbranch {}:", branch.branch_name).unwrap();
+        for commit in &branch.commits {
+            write!(output, "\n  * {}", commit.summary().unwrap_or("")).unwrap();
+        }
+
+        // List files in the branch's tree
+        let tree = simulated_head.tree().unwrap();
+        let mut files: Vec<String> = Vec::new();
+        tree.walk(git2::TreeWalkMode::PreOrder, |dir, entry| {
+            if entry.kind() == Some(git2::ObjectType::Blob) {
+                let path = if dir.is_empty() {
+                    entry.name().unwrap().to_string()
+                } else {
+                    format!("{}{}", dir, entry.name().unwrap())
+                };
+                if path != ".gitkeep" {
+                    files.push(path);
+                }
+            }
+            git2::TreeWalkResult::Ok
+        })
+        .unwrap();
+        files.sort();
+
+        write!(output, "\n  files: {}", files.join(", ")).unwrap();
+    }
+
+    output
 }

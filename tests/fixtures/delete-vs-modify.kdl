@@ -1,0 +1,15 @@
+title "delete in one issue and modify in another conflicts"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+  file "src/old.rs" "pub struct Old;"
+}
+
+commit "refactor: remove old module\n\nTicket: AB-100" {
+  delete "src/old.rs"
+}
+commit "feat: extend old module\n\nTicket: AB-200" {
+  file "src/old.rs" "pub struct Old;\nimpl Old {}"
+}
+
+run "git-disjoint"

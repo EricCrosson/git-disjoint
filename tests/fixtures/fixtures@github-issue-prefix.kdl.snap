@@ -1,0 +1,12 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: github issue number appears as branch name prefix
+expression: result
+input_file: tests/fixtures/github-issue-prefix.kdl
+---
+exit: 0
+
+branch 789-feat-implement-rate-limiting:
+  * feat: implement rate limiting
+  files: src/lib.rs, src/rate_limit.rs

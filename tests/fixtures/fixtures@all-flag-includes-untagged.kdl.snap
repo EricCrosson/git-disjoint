@@ -1,0 +1,16 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: all flag includes untagged commits
+expression: result
+input_file: tests/fixtures/all-flag-includes-untagged.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+  files: src/lib.rs, src/widget.rs
+
+branch chore-minor-cleanup:
+  * chore: minor cleanup
+  files: src/lib.rs

@@ -1,0 +1,11 @@
+title "jira ticket appears as branch name prefix"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+}
+
+commit "feat: implement rate limiting\n\nTicket: DX-456" {
+  file "src/rate_limit.rs" "pub fn rate_limit() {}"
+}
+
+run "git-disjoint"

@@ -1,0 +1,16 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: same file different regions does not conflict
+expression: result
+input_file: tests/fixtures/different-regions-no-conflict.kdl
+---
+exit: 0
+
+branch AB-100-feat-change-top-for-widget:
+  * feat: change top for widget
+  files: src/lib.rs
+
+branch AB-200-feat-change-bottom-for-gadget:
+  * feat: change bottom for gadget
+  files: src/lib.rs

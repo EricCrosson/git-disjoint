@@ -1,0 +1,14 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: sequential commits same issue cherry-picked in order
+expression: result
+input_file: tests/fixtures/sequential-commits-same-issue.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+  * feat: add widget tests
+  * feat: document widget
+  files: src/lib.rs, src/widget.rs, src/widget_test.rs

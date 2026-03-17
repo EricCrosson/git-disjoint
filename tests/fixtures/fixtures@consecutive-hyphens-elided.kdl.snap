@@ -1,0 +1,12 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: consecutive hyphens are elided
+expression: result
+input_file: tests/fixtures/consecutive-hyphens-elided.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget-desktop-only-:
+  * feat: add widget -- desktop only!
+  files: src/lib.rs, src/widget.rs

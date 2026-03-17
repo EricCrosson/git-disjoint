@@ -1,0 +1,12 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: "simplest case: one commit one issue"
+expression: result
+input_file: tests/fixtures/single-commit-single-issue.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+  files: src/lib.rs, src/widget.rs

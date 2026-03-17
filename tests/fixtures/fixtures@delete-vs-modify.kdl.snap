@@ -1,0 +1,18 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: delete in one issue and modify in another conflicts
+expression: result
+input_file: tests/fixtures/delete-vs-modify.kdl
+---
+exit: 1
+
+error: cherry-pick would fail for branch `AB-200-feat-extend-old-module`
+  --> commit "feat: extend old module"
+   |
+   = conflict in src/old.rs
+   |
+   = help: these commits have overlapping changes and cannot be split
+           into separate branches from the same base
+   = help: consider assigning them to the same issue, or use `--overlay`
+           to combine them into a single PR

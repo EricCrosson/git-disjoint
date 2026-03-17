@@ -1,0 +1,12 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: special characters in summary are sanitized
+expression: result
+input_file: tests/fixtures/special-chars-sanitized.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget-experimental-:
+  * feat: add widget (experimental)
+  files: src/lib.rs, src/widget.rs

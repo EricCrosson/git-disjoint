@@ -1,0 +1,18 @@
+---
+source: tests/fixtures.rs
+assertion_line: 16
+description: two issues that modify the same line conflict
+expression: result
+input_file: tests/fixtures/same-line-conflict.kdl
+---
+exit: 1
+
+error: cherry-pick would fail for branch `AB-200-feat-change-line-2-for-gadget`
+  --> commit "feat: change line 2 for gadget"
+   |
+   = conflict in src/lib.rs
+   |
+   = help: these commits have overlapping changes and cannot be split
+           into separate branches from the same base
+   = help: consider assigning them to the same issue, or use `--overlay`
+           to combine them into a single PR
