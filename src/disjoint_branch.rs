@@ -6,7 +6,7 @@ use indexmap::IndexMap;
 use crate::{branch_name::BranchName, issue_group::IssueGroup, issue_group_map::IssueGroupMap};
 
 #[derive(Debug)]
-pub(crate) struct DisjointBranch<'repo> {
+pub struct DisjointBranch<'repo> {
     // REFACTOR: make this private
     pub branch_name: BranchName,
     // REFACTOR: make this private
@@ -14,11 +14,11 @@ pub(crate) struct DisjointBranch<'repo> {
 }
 
 #[derive(Debug)]
-pub(crate) struct DisjointBranchMap<'repo>(IndexMap<IssueGroup, DisjointBranch<'repo>>);
+pub struct DisjointBranchMap<'repo>(IndexMap<IssueGroup, DisjointBranch<'repo>>);
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct FromIssueGroupMapError {
+pub struct FromIssueGroupMapError {
     kind: FromIssueGroupMapErrorKind,
 }
 
@@ -41,7 +41,7 @@ impl Error for FromIssueGroupMapError {
 }
 
 #[derive(Debug)]
-pub(crate) enum FromIssueGroupMapErrorKind {
+pub enum FromIssueGroupMapErrorKind {
     #[non_exhaustive]
     InvalidUtf8(String),
 }

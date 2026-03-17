@@ -33,9 +33,9 @@ use crate::log_file::LogFile;
 /// ```should_panic
 /// use std::io::{self, Write};
 ///
-/// // Return `Result<(), little_anyhow::Error>` from `main` for
+/// // Return `Result<(), git_disjoint::little_anyhow::Error>` from `main` for
 /// // human-readable errors from your binary
-/// fn main() -> Result<(), little_anyhow::Error> {
+/// fn main() -> Result<(), git_disjoint::little_anyhow::Error> {
 ///     writeln!(
 ///         io::stdout(),
 ///         "You can create a little_anyhow::Error from any type implementing `std::error::Error`"
@@ -45,7 +45,7 @@ use crate::log_file::LogFile;
 ///     Err(simulated_error)?
 /// }
 /// ```
-pub(crate) struct Error {
+pub struct Error {
     err: Box<dyn std::error::Error>,
     log_file: Option<LogFile>,
 }

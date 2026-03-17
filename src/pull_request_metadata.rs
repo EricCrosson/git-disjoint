@@ -3,14 +3,14 @@ use std::{error::Error, fmt::Display, str::FromStr};
 use crate::pull_request_message::IGNORE_MARKER;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub(crate) struct PullRequestMetadata {
+pub struct PullRequestMetadata {
     pub title: String,
     pub body: String,
 }
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct FromStrError {
+pub struct FromStrError {
     kind: FromStrErrorKind,
 }
 
@@ -33,7 +33,7 @@ impl Error for FromStrError {
 }
 
 #[derive(Debug)]
-pub(crate) enum FromStrErrorKind {
+pub enum FromStrErrorKind {
     #[non_exhaustive]
     EmptyPullRequestMessage,
 }

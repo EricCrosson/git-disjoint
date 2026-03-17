@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use git2::Commit;
 
-pub(crate) const IGNORE_MARKER: &str = "# ------------------------ >8 ------------------------";
+pub const IGNORE_MARKER: &str = "# ------------------------ >8 ------------------------";
 
 const PULL_REQUEST_INSTRUCTIONS: &str = r#"
 # Do not modify or remove the line above.
@@ -15,7 +15,7 @@ Changes:
 "#;
 
 #[derive(Clone, Debug)]
-pub(crate) struct PullRequestMessageTemplate<'repo> {
+pub struct PullRequestMessageTemplate<'repo> {
     commits: Vec<&'repo Commit<'repo>>,
 }
 

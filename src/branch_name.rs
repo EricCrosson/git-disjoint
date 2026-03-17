@@ -12,7 +12,7 @@ static CHARACTERS_TO_REPLACE_WITH_HYPHEN: &[char] = &['!', '`', '(', ')'];
 static CHARACTERS_TO_REMOVE: &[char] = &['\'', '"'];
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub(crate) struct BranchName(String);
+pub struct BranchName(String);
 
 fn elide_consecutive_hyphens(mut s: String) -> String {
     let mut current_run = 0;

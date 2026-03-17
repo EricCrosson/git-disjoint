@@ -11,7 +11,7 @@ macro_rules! regex {
 /// Jira or GitHub issue identifier.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
-pub(crate) enum Issue {
+pub enum Issue {
     Jira(String),
     GitHub(String),
 }

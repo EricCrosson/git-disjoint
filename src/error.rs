@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct Error {
+pub struct Error {
     pub kind: ErrorKind,
 }
 
@@ -62,7 +62,7 @@ impl std::error::Error for Error {
 }
 
 #[derive(Debug)]
-pub(crate) enum ErrorKind {
+pub enum ErrorKind {
     #[non_exhaustive]
     RepositoryMetadata(github_repository_metadata::TryDefaultError),
     #[non_exhaustive]
@@ -91,6 +91,14 @@ pub(crate) enum ErrorKind {
     WebBrowser(pull_request::CreatePullRequestError),
     #[non_exhaustive]
     CherryPick(execute::ExecuteError, String),
+}
+
+impl Error {
+    pub fn cherry_pick(err: execute::ExecuteError, commit: String) -> Self {
+        Self {
+            kind: ErrorKind::CherryPick(err, commit),
+        }
+    }
 }
 
 impl From<github_repository_metadata::TryDefaultError> for Error {

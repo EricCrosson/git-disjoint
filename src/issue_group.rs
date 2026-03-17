@@ -5,7 +5,7 @@ use git2::Commit;
 use crate::issue::Issue;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct GitCommitSummary(pub String);
+pub struct GitCommitSummary(pub String);
 
 impl Display for GitCommitSummary {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -15,7 +15,7 @@ impl Display for GitCommitSummary {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct FromCommitError {
+pub struct FromCommitError {
     commit: git2::Oid,
     kind: FromCommitErrorKind,
 }
@@ -39,7 +39,7 @@ impl Error for FromCommitError {
 }
 
 #[derive(Debug)]
-pub(crate) enum FromCommitErrorKind {
+pub enum FromCommitErrorKind {
     #[non_exhaustive]
     InvalidUtf8,
 }
@@ -61,7 +61,7 @@ impl TryFrom<&Commit<'_>> for GitCommitSummary {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum IssueGroup {
+pub enum IssueGroup {
     Issue(Issue),
     Commit(GitCommitSummary),
 }

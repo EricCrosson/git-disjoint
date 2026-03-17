@@ -1,7 +1,7 @@
 use clap::{ArgAction, Parser};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub(crate) enum CommitsToConsider {
+pub enum CommitsToConsider {
     All,
     WithTrailer,
 }
@@ -17,7 +17,7 @@ impl From<&str> for CommitsToConsider {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub(crate) enum PromptUserToChooseCommits {
+pub enum PromptUserToChooseCommits {
     Yes,
     No,
 }
@@ -33,7 +33,7 @@ impl From<&str> for PromptUserToChooseCommits {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub(crate) enum OverlayCommitsIntoOnePullRequest {
+pub enum OverlayCommitsIntoOnePullRequest {
     Yes,
     No,
 }
@@ -49,7 +49,7 @@ impl From<&str> for OverlayCommitsIntoOnePullRequest {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub(crate) enum CommitGrouping {
+pub enum CommitGrouping {
     Individual,
     ByIssue,
 }
@@ -66,7 +66,7 @@ impl From<&str> for CommitGrouping {
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about)]
-pub(crate) struct Cli {
+pub struct Cli {
     /// Do not ignore commits without an issue trailer.
     ///
     /// Commits without an issue trailer are considered to be their own

@@ -9,7 +9,7 @@ use git2::{Commit, RepositoryState};
 
 use crate::default_branch::DefaultBranch;
 
-pub(crate) struct Repository(git2::Repository);
+pub struct Repository(git2::Repository);
 
 impl Deref for Repository {
     type Target = git2::Repository;
@@ -27,7 +27,7 @@ impl From<git2::Repository> for Repository {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct FromPathError {
+pub struct FromPathError {
     path: PathBuf,
     kind: FromPathErrorKind,
 }
@@ -63,7 +63,7 @@ impl Error for FromPathError {
 }
 
 #[derive(Debug)]
-pub(crate) enum FromPathErrorKind {
+pub enum FromPathErrorKind {
     #[non_exhaustive]
     OpenRepository(git2::Error),
     #[non_exhaustive]
@@ -96,7 +96,7 @@ impl TryFrom<&Path> for Repository {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct BaseCommitError {
+pub struct BaseCommitError {
     base: DefaultBranch,
     kind: BaseCommitErrorKind,
 }
@@ -122,7 +122,7 @@ impl Error for BaseCommitError {
 }
 
 #[derive(Debug)]
-pub(crate) enum BaseCommitErrorKind {
+pub enum BaseCommitErrorKind {
     #[non_exhaustive]
     Revparse(git2::Error),
     #[non_exhaustive]
@@ -131,7 +131,7 @@ pub(crate) enum BaseCommitErrorKind {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct WalkCommitsError {
+pub struct WalkCommitsError {
     kind: WalkCommitsErrorKind,
 }
 
@@ -158,7 +158,7 @@ impl Error for WalkCommitsError {
 }
 
 #[derive(Debug)]
-pub(crate) enum WalkCommitsErrorKind {
+pub enum WalkCommitsErrorKind {
     #[non_exhaustive]
     Revwalk(git2::Error),
     #[non_exhaustive]

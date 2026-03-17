@@ -16,7 +16,7 @@ use crate::{
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct GetPullRequestMetadataError {
+pub struct GetPullRequestMetadataError {
     kind: GetPullRequestMetadataErrorKind,
 }
 
@@ -58,7 +58,7 @@ impl Error for GetPullRequestMetadataError {
 }
 
 #[derive(Debug)]
-pub(crate) enum GetPullRequestMetadataErrorKind {
+pub enum GetPullRequestMetadataErrorKind {
     #[non_exhaustive]
     AmbiguousEditor,
     #[non_exhaustive]
@@ -79,7 +79,7 @@ impl From<GetPullRequestMetadataErrorKind> for GetPullRequestMetadataError {
     }
 }
 
-pub(crate) fn interactive_get_pr_metadata<'repo>(
+pub fn interactive_get_pr_metadata<'repo>(
     root: &Path,
     commits: impl IntoIterator<Item = impl Into<&'repo Commit<'repo>>>,
 ) -> Result<PullRequestMetadata, GetPullRequestMetadataError> {

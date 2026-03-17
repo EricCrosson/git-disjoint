@@ -5,40 +5,21 @@ use std::thread::{self, ScopedJoinHandle};
 use std::time::Duration;
 
 use clap::Parser;
-use default_branch::DefaultBranch;
-use disjoint_branch::{DisjointBranch, DisjointBranchMap};
 use git2::Commit;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use issue_group_map::IssueGroupMap;
-use log_file::LogFile;
-use pull_request::PullRequest;
 
-mod branch_name;
-mod cli;
-mod default_branch;
-mod disjoint_branch;
-mod editor;
-mod error;
-mod execute;
-mod git2_repository;
-mod github_repository_metadata;
-mod interact;
-mod issue;
-mod issue_group;
-mod issue_group_map;
-mod little_anyhow;
-mod log_file;
-mod pull_request;
-mod pull_request_message;
-mod pull_request_metadata;
-
-use crate::branch_name::BranchName;
-use crate::cli::Cli;
-use crate::editor::interactive_get_pr_metadata;
-use crate::error::Error;
-use crate::execute::execute;
-use crate::github_repository_metadata::GithubRepositoryMetadata;
-use crate::issue_group::IssueGroup;
+use git_disjoint::branch_name::BranchName;
+use git_disjoint::cli::Cli;
+use git_disjoint::default_branch::DefaultBranch;
+use git_disjoint::disjoint_branch::{DisjointBranch, DisjointBranchMap};
+use git_disjoint::editor::interactive_get_pr_metadata;
+use git_disjoint::error::Error;
+use git_disjoint::execute::execute;
+use git_disjoint::github_repository_metadata::GithubRepositoryMetadata;
+use git_disjoint::issue_group::IssueGroup;
+use git_disjoint::issue_group_map::IssueGroupMap;
+use git_disjoint::log_file::LogFile;
+use git_disjoint::pull_request::PullRequest;
 
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
@@ -111,9 +92,8 @@ impl<'repo> From<(IssueGroup, DisjointBranch<'repo>)> for WorkOrder<'repo> {
 }
 
 fn cherry_pick(commit: String, log_file: LogFile) -> Result<(), Error> {
-    execute(&["git", "cherry-pick", "--allow-empty", &commit], &log_file).map_err(|err| Error {
-        kind: error::ErrorKind::CherryPick(err, commit),
-    })
+    execute(&["git", "cherry-pick", "--allow-empty", &commit], &log_file)
+        .map_err(|err| Error::cherry_pick(err, commit))
 }
 
 fn update_spinner(receiver: mpsc::Receiver<bool>, progress_bar: ProgressBar) -> Result<(), Error> {
@@ -339,14 +319,14 @@ fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
     })
 }
 
-fn main() -> Result<(), little_anyhow::Error> {
+fn main() -> Result<(), git_disjoint::little_anyhow::Error> {
     let cli = Cli::parse();
 
     let log_file = LogFile::default();
 
     // TODO: rename for clarity
     do_git_disjoint(cli.clone(), log_file.clone())
-        .map_err(|err| little_anyhow::Error::new(err, log_file.clone()))?;
+        .map_err(|err| git_disjoint::little_anyhow::Error::new(err, log_file.clone()))?;
 
     log_file.delete()?;
     Ok(())

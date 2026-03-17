@@ -7,7 +7,7 @@ use std::process::{Command, ExitStatus, Stdio};
 use crate::log_file::LogFile;
 
 #[derive(Debug)]
-pub(crate) struct NonZeroExitStatus(ExitStatus);
+pub struct NonZeroExitStatus(ExitStatus);
 
 impl Display for NonZeroExitStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -19,7 +19,7 @@ impl Error for NonZeroExitStatus {}
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct ExecuteError {
+pub struct ExecuteError {
     kind: ExecuteErrorKind,
 }
 
@@ -50,7 +50,7 @@ impl Error for ExecuteError {
 }
 
 #[derive(Debug)]
-pub(crate) enum ExecuteErrorKind {
+pub enum ExecuteErrorKind {
     #[non_exhaustive]
     Write(io::Error),
     /// Error while executing the child process
@@ -61,7 +61,7 @@ pub(crate) enum ExecuteErrorKind {
     Child(NonZeroExitStatus, Vec<String>),
 }
 
-pub(crate) fn execute(command: &[&str], log_file: &LogFile) -> Result<(), ExecuteError> {
+pub fn execute(command: &[&str], log_file: &LogFile) -> Result<(), ExecuteError> {
     (|| -> Result<(), ExecuteErrorKind> {
         let mut runner = Command::new(command[0]);
 

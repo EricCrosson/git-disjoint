@@ -19,7 +19,7 @@ use crate::{
 };
 
 #[derive(Debug, Default)]
-pub(crate) struct IssueGroupMap<'repo>(IndexMap<IssueGroup, Vec<Commit<'repo>>>);
+pub struct IssueGroupMap<'repo>(IndexMap<IssueGroup, Vec<Commit<'repo>>>);
 
 impl<'repo> IntoIterator for IssueGroupMap<'repo> {
     type Item = (IssueGroup, Vec<Commit<'repo>>);
@@ -39,7 +39,7 @@ impl<'repo> FromIterator<(IssueGroup, Vec<Commit<'repo>>)> for IssueGroupMap<'re
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct FromCommitsError {
+pub struct FromCommitsError {
     kind: FromCommitsErrorKind,
 }
 
@@ -62,7 +62,7 @@ impl Error for FromCommitsError {
 }
 
 #[derive(Debug)]
-pub(crate) enum FromCommitsErrorKind {
+pub enum FromCommitsErrorKind {
     #[non_exhaustive]
     FromCommit(issue_group::FromCommitError),
     #[non_exhaustive]

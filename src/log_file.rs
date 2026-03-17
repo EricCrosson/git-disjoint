@@ -6,7 +6,7 @@ use std::{
 };
 
 #[derive(Clone, Debug)]
-pub(crate) struct LogFile(pub PathBuf);
+pub struct LogFile(pub PathBuf);
 
 impl AsRef<Path> for LogFile {
     fn as_ref(&self) -> &Path {
@@ -31,7 +31,7 @@ impl Default for LogFile {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct DeleteError {
+pub struct DeleteError {
     path: PathBuf,
     kind: DeleteErrorKind,
 }
@@ -53,7 +53,7 @@ impl Error for DeleteError {
 }
 
 #[derive(Debug)]
-pub(crate) enum DeleteErrorKind {
+pub enum DeleteErrorKind {
     #[non_exhaustive]
     Delete(io::Error),
 }

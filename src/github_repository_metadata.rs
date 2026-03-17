@@ -7,7 +7,7 @@ use parse_git_url::GitUrl;
 
 use crate::git2_repository::{self, Repository};
 
-pub(crate) struct GithubRepositoryMetadata {
+pub struct GithubRepositoryMetadata {
     pub owner: String,
     // Terminology from https://stackoverflow.com/a/72018520
     // Best to clean that up
@@ -20,7 +20,7 @@ pub(crate) struct GithubRepositoryMetadata {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct TryDefaultError {
+pub struct TryDefaultError {
     kind: TryDefaultErrorKind,
 }
 
@@ -51,7 +51,7 @@ impl Error for TryDefaultError {
 }
 
 #[derive(Debug)]
-pub(crate) enum TryDefaultErrorKind {
+pub enum TryDefaultErrorKind {
     #[non_exhaustive]
     RunCommand(io::Error),
     #[non_exhaustive]

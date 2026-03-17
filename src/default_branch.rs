@@ -6,7 +6,7 @@ use crate::github_repository_metadata::GithubRepositoryMetadata;
 
 // REFACTOR: remove pub of inner type
 #[derive(Clone, Debug)]
-pub(crate) struct DefaultBranch(pub String);
+pub struct DefaultBranch(pub String);
 
 impl Display for DefaultBranch {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -21,7 +21,7 @@ struct GetRepositoryResponse {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct TryDefaultError {
+pub struct TryDefaultError {
     // owner/name repository slug
     url: String,
     kind: TryDefaultErrorKind,
@@ -48,7 +48,7 @@ impl Error for TryDefaultError {
 }
 
 #[derive(Debug)]
-pub(crate) enum TryDefaultErrorKind {
+pub enum TryDefaultErrorKind {
     #[non_exhaustive]
     Http(reqwest::Error),
     #[non_exhaustive]
@@ -56,7 +56,7 @@ pub(crate) enum TryDefaultErrorKind {
 }
 
 impl DefaultBranch {
-    pub(crate) fn try_get_default(
+    pub fn try_get_default(
         repository_metadata: &GithubRepositoryMetadata,
         github_token: &str,
     ) -> Result<DefaultBranch, TryDefaultError> {

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{branch_name::BranchName, default_branch::DefaultBranch};
 
 #[derive(Debug)]
-pub(crate) struct PullRequest {
+pub struct PullRequest {
     pub owner: String,
     pub name: String,
     pub forker: String,
@@ -34,7 +34,7 @@ struct CreatePullRequestResponse {
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct CreatePullRequestError {
+pub struct CreatePullRequestError {
     url: String,
     pub kind: CreatePullRequestErrorKind,
 }
@@ -64,7 +64,7 @@ impl Error for CreatePullRequestError {
 }
 
 #[derive(Debug)]
-pub(crate) enum CreatePullRequestErrorKind {
+pub enum CreatePullRequestErrorKind {
     #[non_exhaustive]
     Http(reqwest::Error),
     #[non_exhaustive]

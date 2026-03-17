@@ -5,14 +5,14 @@ use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use crate::issue_group::IssueGroup;
 
 #[derive(Debug)]
-pub(crate) enum IssueGroupWhitelist {
+pub enum IssueGroupWhitelist {
     Whitelist(HashSet<IssueGroup>),
     WhitelistDNE,
 }
 
 #[derive(Debug)]
 #[non_exhaustive]
-pub(crate) struct SelectIssuesError {
+pub struct SelectIssuesError {
     kind: SelectIssuesErrorKind,
 }
 
@@ -33,7 +33,7 @@ impl Error for SelectIssuesError {
 }
 
 #[derive(Debug)]
-pub(crate) enum SelectIssuesErrorKind {
+pub enum SelectIssuesErrorKind {
     #[non_exhaustive]
     Prompt(inquire::InquireError),
 }
@@ -47,7 +47,7 @@ impl From<inquire::InquireError> for SelectIssuesError {
 }
 
 // TODO: refactor into a better abstraction -- this seems coupled with IssueGroupMap
-pub(crate) fn prompt_user<'a, I: Iterator<Item = &'a IssueGroup>>(
+pub fn prompt_user<'a, I: Iterator<Item = &'a IssueGroup>>(
     choices: I,
 ) -> Result<HashSet<IssueGroup>, SelectIssuesError> {
     let formatter: MultiOptionFormatter<&IssueGroup> =
