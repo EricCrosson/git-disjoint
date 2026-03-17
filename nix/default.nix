@@ -14,9 +14,22 @@
 
   runtimeInputs = with pkgs; [gitMinimal];
 
+  # Include test fixture files (.kdl, .snap) alongside standard Cargo sources
+  # so that integration tests run in nix check derivations.
+  testFixtureFilter = path: _type:
+    builtins.match ".*\\.kdl$" path
+    != null
+    || builtins.match ".*\\.snap$" path != null;
+  src = pkgs.lib.cleanSourceWith {
+    src = ../.;
+    filter = path: type:
+      (testFixtureFilter path type) || (craneLib.filterCargoSources path type);
+    name = "source";
+  };
+
   # Common derivation arguments used for all builds
   commonArgs = {
-    src = craneLib.cleanCargoSource ../.;
+    inherit src;
 
     buildInputs =
       []
