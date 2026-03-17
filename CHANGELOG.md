@@ -1,3 +1,10 @@
+## [0.11.8](https://github.com/EricCrosson/git-disjoint/compare/v0.11.7...v0.11.8) (2026-03-17)
+
+
+### Bug Fixes
+
+* **nix:** update dev shell toolchain to Rust 1.94 ([20de615](https://github.com/EricCrosson/git-disjoint/commit/20de61562917187f90927d40c3c74ade922694cb))
+
 ## [0.11.7](https://github.com/EricCrosson/git-disjoint/compare/v0.11.6...v0.11.7) (2026-03-17)
 
 
