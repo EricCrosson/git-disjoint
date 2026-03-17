@@ -24,6 +24,7 @@ pub mod issue_group_map;
 pub mod little_anyhow;
 #[doc(hidden)]
 pub mod log_file;
+pub mod plan;
 #[doc(hidden)]
 pub mod pull_request;
 #[doc(hidden)]

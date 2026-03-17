@@ -52,6 +52,16 @@ impl From<FromIssueGroupMapErrorKind> for FromIssueGroupMapError {
     }
 }
 
+impl<'repo> DisjointBranchMap<'repo> {
+    pub fn iter(&self) -> indexmap::map::Iter<'_, IssueGroup, DisjointBranch<'repo>> {
+        self.0.iter()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
 impl<'repo> FromIterator<(IssueGroup, DisjointBranch<'repo>)> for DisjointBranchMap<'repo> {
     fn from_iter<T: IntoIterator<Item = (IssueGroup, DisjointBranch<'repo>)>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
