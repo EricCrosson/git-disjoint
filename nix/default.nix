@@ -4,16 +4,11 @@
   crane,
   fenix,
 }: let
-  craneLib = (crane.mkLib pkgs).overrideToolchain (p: let
-    fenix-channel = fenix.packages.${system}.stable;
-    fenix-toolchain = fenix-channel.withComponents [
-      "rustc"
-      "cargo"
-      "clippy"
-      "rust-analysis"
-      "rust-src"
-      "rustfmt"
-    ];
+  craneLib = (crane.mkLib pkgs).overrideToolchain (_: let
+    rust-toolchain-toml = builtins.fromTOML (builtins.readFile ../rust-toolchain.toml);
+    fenix-toolchain =
+      fenix.packages.${system}.stable.withComponents
+      rust-toolchain-toml.toolchain.components;
   in
     fenix-toolchain);
 
