@@ -62,17 +62,13 @@
         buildInputs = craneDerivations.commonArgs.buildInputs ++ craneDerivations.runtimeInputs;
         nativeBuildInputs =
           craneDerivations.commonArgs.nativeBuildInputs
-          ++ [
-            (fenix.packages.${system}.stable.withComponents [
-              "rustc"
-              "cargo"
-              "clippy"
-              "rust-src"
-              "rustfmt"
-            ])
-            fenix.packages.${system}.rust-analyzer
+          ++ (let
+            rust-toolchain-toml = builtins.fromTOML (builtins.readFile ../rust-toolchain.toml);
+          in [
+            (fenix.packages.${system}.stable.withComponents
+              rust-toolchain-toml.toolchain.components)
             nixpkgs.legacyPackages.${system}.vhs
-          ];
+          ]);
 
         inherit (self.checks.${system}.pre-commit-check) shellHook;
       };
