@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: jira ticket appears as branch name prefix
 expression: result
 input_file: tests/fixtures/jira-ticket-prefix.kdl

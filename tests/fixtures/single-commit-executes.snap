@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: single commit execution
 expression: result
 input_file: tests/fixtures/single-commit-executes.kdl

@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: no commits matching trailers passes vacuously
 expression: result
 input_file: tests/fixtures/empty-plan.kdl

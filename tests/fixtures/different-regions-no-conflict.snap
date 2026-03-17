@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: same file different regions does not conflict
 expression: result
 input_file: tests/fixtures/different-regions-no-conflict.kdl

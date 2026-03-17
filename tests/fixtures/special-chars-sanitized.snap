@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: special characters in summary are sanitized
 expression: result
 input_file: tests/fixtures/special-chars-sanitized.kdl

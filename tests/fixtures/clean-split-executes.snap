@@ -1,0 +1,15 @@
+---
+source: tests/fixtures.rs
+description: two disjoint issues execute cleanly
+expression: result
+input_file: tests/fixtures/clean-split-executes.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+  files: src/lib.rs, src/widget.rs
+
+branch AB-200-feat-add-gadget:
+  * feat: add gadget
+  files: src/gadget.rs, src/lib.rs

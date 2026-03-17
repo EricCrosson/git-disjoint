@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: github issue number appears as branch name prefix
 expression: result
 input_file: tests/fixtures/github-issue-prefix.kdl

@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: all commits same issue is trivially clean
 expression: result
 input_file: tests/fixtures/all-same-issue-clean.kdl

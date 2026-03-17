@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: all flag includes untagged commits
 expression: result
 input_file: tests/fixtures/all-flag-includes-untagged.kdl

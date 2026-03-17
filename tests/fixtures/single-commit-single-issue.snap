@@ -1,9 +1,8 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
-description: commit without trailer is excluded
+description: "simplest case: one commit one issue"
 expression: result
-input_file: tests/fixtures/commit-without-trailer-excluded.kdl
+input_file: tests/fixtures/single-commit-single-issue.kdl
 ---
 exit: 0
 

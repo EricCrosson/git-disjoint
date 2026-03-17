@@ -1,9 +1,8 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
-description: sequential commits same issue cherry-picked in order
+description: multiple commits with same issue grouped into one branch
 expression: result
-input_file: tests/fixtures/sequential-commits-same-issue.kdl
+input_file: tests/fixtures/multiple-commits-same-issue.kdl
 ---
 exit: 0
 

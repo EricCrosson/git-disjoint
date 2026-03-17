@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: consecutive hyphens are elided
 expression: result
 input_file: tests/fixtures/consecutive-hyphens-elided.kdl

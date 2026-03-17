@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: two issues split cleanly into two branches
 expression: result
 input_file: tests/fixtures/two-issues-clean-split.kdl

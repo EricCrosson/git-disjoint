@@ -1,16 +1,15 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
-description: separate flag splits same issue into individual branches
+description: two issues that modify the same line conflict
 expression: result
-input_file: tests/fixtures/separate-flag-splits-same-issue.kdl
+input_file: tests/fixtures/same-line-conflict.kdl
 ---
 exit: 1
 
-error: cherry-pick would fail for branch `feat-extend-widget`
-  --> commit "feat: extend widget"
+error: cherry-pick would fail for branch `AB-200-feat-change-line-2-for-gadget`
+  --> commit "feat: change line 2 for gadget"
    |
-   = conflict in src/widget.rs
+   = conflict in src/lib.rs
    |
    = help: these commits have overlapping changes and cannot be split
            into separate branches from the same base

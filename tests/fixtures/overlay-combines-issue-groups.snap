@@ -1,6 +1,5 @@
 ---
 source: tests/fixtures.rs
-assertion_line: 16
 description: overlay combines issue groups into one branch
 expression: result
 input_file: tests/fixtures/overlay-combines-issue-groups.kdl
