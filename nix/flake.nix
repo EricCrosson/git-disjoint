@@ -67,6 +67,7 @@
           in [
             (fenix.packages.${system}.stable.withComponents
               rust-toolchain-toml.toolchain.components)
+            nixpkgs.legacyPackages.${system}.cargo-insta
             nixpkgs.legacyPackages.${system}.vhs
           ]);
 

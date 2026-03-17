@@ -1,0 +1,11 @@
+---
+source: tests/fixtures.rs
+assertion_line: 31
+expression: result
+input_file: tests/fixtures/execution/single-commit-executes.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+  files: src/lib.rs, src/widget.rs

@@ -1,0 +1,11 @@
+title "github issue number appears as branch name prefix"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+}
+
+commit "feat: implement rate limiting\n\nCloses #789" {
+  file "src/rate_limit.rs" "pub fn rate_limit() {}"
+}
+
+run "plan"

@@ -1,0 +1,14 @@
+title "validation failure prevents any branch creation"
+
+base {
+  file "src/lib.rs" "line 1\nline 2\nline 3\n"
+}
+
+commit "feat: change line 2 for widget\n\nTicket: AB-100" {
+  file "src/lib.rs" "line 1\nwidget line\nline 3\n"
+}
+commit "feat: change line 2 for gadget\n\nTicket: AB-200" {
+  file "src/lib.rs" "line 1\ngadget line\nline 3\n"
+}
+
+run "execute"

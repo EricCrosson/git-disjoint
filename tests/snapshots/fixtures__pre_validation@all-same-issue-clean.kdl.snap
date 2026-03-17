@@ -1,0 +1,11 @@
+---
+source: tests/fixtures.rs
+assertion_line: 21
+expression: result
+input_file: tests/fixtures/pre_validation/all-same-issue-clean.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+  * feat: extend widget

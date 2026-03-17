@@ -1,0 +1,14 @@
+title "commit without trailer is excluded"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+}
+
+commit "feat: add widget\n\nTicket: AB-100" {
+  file "src/widget.rs" "pub struct Widget;"
+}
+commit "chore: minor cleanup" {
+  file "src/lib.rs" "fn main() {\n    // cleaned up\n}"
+}
+
+run "plan"

@@ -1,0 +1,17 @@
+title "sequential commits same issue cherry-picked in order"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+}
+
+commit "feat: add widget\n\nTicket: AB-100" {
+  file "src/widget.rs" "pub struct Widget;"
+}
+commit "feat: add widget tests\n\nTicket: AB-100" {
+  file "src/widget_test.rs" "#[test] fn test_widget() {}"
+}
+commit "feat: document widget\n\nTicket: AB-100" {
+  file "src/widget.rs" "/// A widget.\npub struct Widget;"
+}
+
+run "execute"

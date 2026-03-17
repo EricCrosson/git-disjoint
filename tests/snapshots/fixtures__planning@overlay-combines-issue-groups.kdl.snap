@@ -1,0 +1,11 @@
+---
+source: tests/fixtures.rs
+assertion_line: 11
+expression: result
+input_file: tests/fixtures/planning/overlay-combines-issue-groups.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+  * feat: add gadget

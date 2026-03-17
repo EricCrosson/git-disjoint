@@ -1,0 +1,14 @@
+---
+source: tests/fixtures.rs
+assertion_line: 11
+expression: result
+input_file: tests/fixtures/planning/two-issues-clean-split.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+  * feat: extend widget
+
+branch AB-200-feat-add-gadget:
+  * feat: add gadget

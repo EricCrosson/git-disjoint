@@ -1,0 +1,13 @@
+---
+source: tests/fixtures.rs
+assertion_line: 11
+expression: result
+input_file: tests/fixtures/planning/all-flag-includes-untagged.kdl
+---
+exit: 0
+
+branch AB-100-feat-add-widget:
+  * feat: add widget
+
+branch chore-minor-cleanup:
+  * chore: minor cleanup

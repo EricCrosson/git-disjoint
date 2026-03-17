@@ -1,0 +1,14 @@
+title "file created in group A and modified in group B conflicts"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+}
+
+commit "feat: add config\n\nTicket: AB-100" {
+  file "src/config.rs" "pub struct Config;"
+}
+commit "feat: extend config\n\nTicket: AB-200" {
+  file "src/config.rs" "pub struct Config;\nimpl Config {}"
+}
+
+run "validate"

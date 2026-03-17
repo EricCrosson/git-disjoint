@@ -1,0 +1,11 @@
+title "simplest case: one commit one issue"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+}
+
+commit "feat: add widget\n\nTicket: AB-100" {
+  file "src/widget.rs" "pub struct Widget;"
+}
+
+run "plan"
