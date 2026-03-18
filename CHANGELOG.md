@@ -1,3 +1,10 @@
+## [0.12.1](https://github.com/EricCrosson/git-disjoint/compare/v0.12.0...v0.12.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* **branch_name:** strip leading and trailing hyphens ([cf3ca46](https://github.com/EricCrosson/git-disjoint/commit/cf3ca460e6a8530064e943ababc0d55d77660ac0)), closes [#291](https://github.com/EricCrosson/git-disjoint/issues/291)
+
 # [0.12.0](https://github.com/EricCrosson/git-disjoint/compare/v0.11.8...v0.12.0) (2026-03-18)
 
 
