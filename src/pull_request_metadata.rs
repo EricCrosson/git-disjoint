@@ -64,3 +64,48 @@ impl FromStr for PullRequestMetadata {
         Ok(Self { title, body })
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::PullRequestMetadata;
+    use crate::pull_request_message::IGNORE_MARKER;
+
+    #[test]
+    fn parse_empty_string_returns_error() {
+        let result = "".parse::<PullRequestMetadata>();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_title_only() {
+        let result = "My PR title".parse::<PullRequestMetadata>().unwrap();
+        assert_eq!(result.title, "My PR title");
+        assert_eq!(result.body, "");
+    }
+
+    #[test]
+    fn parse_title_with_body() {
+        let result = "Title\n\nBody paragraph"
+            .parse::<PullRequestMetadata>()
+            .unwrap();
+        assert_eq!(result.title, "Title");
+        assert_eq!(result.body, "Body paragraph");
+    }
+
+    #[test]
+    fn parse_strips_content_after_ignore_marker() {
+        let input = format!("Title\n\nBody\n{IGNORE_MARKER}\nshould be ignored");
+        let result = input.parse::<PullRequestMetadata>().unwrap();
+        assert_eq!(result.title, "Title");
+        assert_eq!(result.body, "Body");
+    }
+
+    #[test]
+    fn parse_trims_whitespace() {
+        let result = "  Title with spaces  \n\n  Body with spaces  "
+            .parse::<PullRequestMetadata>()
+            .unwrap();
+        assert_eq!(result.title, "Title with spaces");
+        assert_eq!(result.body, "Body with spaces");
+    }
+}
