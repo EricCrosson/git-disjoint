@@ -101,3 +101,56 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::Error;
+    use std::fmt;
+
+    #[derive(Debug)]
+    struct SimpleError(&'static str);
+    impl fmt::Display for SimpleError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+    impl std::error::Error for SimpleError {}
+
+    #[derive(Debug)]
+    struct ChainedError {
+        msg: &'static str,
+        source: SimpleError,
+    }
+    impl fmt::Display for ChainedError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.msg)
+        }
+    }
+    impl std::error::Error for ChainedError {
+        fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+            Some(&self.source)
+        }
+    }
+
+    #[test]
+    fn debug_format_without_source() {
+        let err: Error = SimpleError("something broke").into();
+        let output = format!("{err:?}");
+        assert!(output.contains("something broke"));
+        assert!(!output.contains("Caused by"));
+        assert!(output.contains("No log file available"));
+    }
+
+    #[test]
+    fn debug_format_with_source_chain() {
+        let err: Error = ChainedError {
+            msg: "outer error",
+            source: SimpleError("inner cause"),
+        }
+        .into();
+        let output = format!("{err:?}");
+        assert!(output.contains("outer error"));
+        assert!(output.contains("Caused by:"));
+        assert!(output.contains("0: inner cause"));
+    }
+}
