@@ -1,0 +1,15 @@
+---
+source: tests/fixtures.rs
+description: separate flag with duplicate commit summaries deduplicates issue groups
+expression: result
+input_file: tests/fixtures/separate-with-duplicate-summaries.kdl
+---
+exit: 0
+
+branch do-the-thing:
+  * do the thing
+  files: a.txt
+
+branch do-the-thing_1:
+  * do the thing
+  files: b.txt

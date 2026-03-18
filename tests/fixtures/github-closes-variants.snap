@@ -1,0 +1,19 @@
+---
+source: tests/fixtures.rs
+description: github issue trailer variants all parse correctly
+expression: result
+input_file: tests/fixtures/github-closes-variants.kdl
+---
+exit: 0
+
+branch 100-fix-bug-one:
+  * fix: bug one
+  files: a.txt
+
+branch 200-fix-bug-two:
+  * fix: bug two
+  files: b.txt
+
+branch 300-fix-bug-three:
+  * fix: bug three
+  files: c.txt

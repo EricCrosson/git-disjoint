@@ -1,0 +1,12 @@
+---
+source: tests/fixtures.rs
+description: all and overlay flags combine untagged commits into one branch
+expression: result
+input_file: tests/fixtures/overlay-all-untagged-commits.kdl
+---
+exit: 0
+
+branch first-change:
+  * first change
+  * second change
+  files: a.txt, b.txt

@@ -1,0 +1,10 @@
+title "all and overlay flags combine untagged commits into one branch"
+
+commit "first change" {
+  file "a.txt" "a"
+}
+commit "second change" {
+  file "b.txt" "b"
+}
+
+run "git-disjoint --all --overlay"

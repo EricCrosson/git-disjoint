@@ -1,0 +1,13 @@
+title "three issues split cleanly into three branches"
+
+commit "feat: widgets\n\nTicket: AB-100" {
+  file "widget.txt" "w"
+}
+commit "feat: gadgets\n\nTicket: AB-200" {
+  file "gadget.txt" "g"
+}
+commit "feat: sprockets\n\nTicket: AB-300" {
+  file "sprocket.txt" "s"
+}
+
+run "git-disjoint"

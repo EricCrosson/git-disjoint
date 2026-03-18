@@ -1,0 +1,19 @@
+---
+source: tests/fixtures.rs
+description: three issues split cleanly into three branches
+expression: result
+input_file: tests/fixtures/three-way-clean-split.kdl
+---
+exit: 0
+
+branch AB-100-feat-widgets:
+  * feat: widgets
+  files: widget.txt
+
+branch AB-200-feat-gadgets:
+  * feat: gadgets
+  files: gadget.txt
+
+branch AB-300-feat-sprockets:
+  * feat: sprockets
+  files: sprocket.txt

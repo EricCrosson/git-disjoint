@@ -1,0 +1,10 @@
+title "separate and all flags treat every commit individually"
+
+commit "tagged change\n\nTicket: AB-100" {
+  file "a.txt" "a"
+}
+commit "untagged change" {
+  file "b.txt" "b"
+}
+
+run "git-disjoint --separate --all"

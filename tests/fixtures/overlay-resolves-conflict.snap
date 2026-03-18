@@ -1,0 +1,12 @@
+---
+source: tests/fixtures.rs
+description: overlay resolves conflict between two issues modifying same file
+expression: result
+input_file: tests/fixtures/overlay-resolves-conflict.kdl
+---
+exit: 0
+
+branch AB-100-change-a:
+  * change A
+  * change B
+  files: shared.txt

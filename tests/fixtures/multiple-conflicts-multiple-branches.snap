@@ -1,0 +1,27 @@
+---
+source: tests/fixtures.rs
+description: multiple branches each conflicting produces multi-block error report
+expression: result
+input_file: tests/fixtures/multiple-conflicts-multiple-branches.kdl
+---
+exit: 1
+
+error: cherry-pick would fail for branch `AB-200-feat-change-lib-for-gadgets`
+  --> commit "feat: change lib for gadgets"
+   |
+   = conflict in src/lib.rs
+   |
+   = help: these commits have overlapping changes and cannot be split
+           into separate branches from the same base
+   = help: consider assigning them to the same issue, or use `--overlay`
+           to combine them into a single PR
+
+error: cherry-pick would fail for branch `AB-300-feat-change-lib-for-sprockets`
+  --> commit "feat: change lib for sprockets"
+   |
+   = conflict in src/lib.rs
+   |
+   = help: these commits have overlapping changes and cannot be split
+           into separate branches from the same base
+   = help: consider assigning them to the same issue, or use `--overlay`
+           to combine them into a single PR

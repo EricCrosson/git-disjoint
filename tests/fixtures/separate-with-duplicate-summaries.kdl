@@ -1,0 +1,10 @@
+title "separate flag with duplicate commit summaries deduplicates issue groups"
+
+commit "do the thing\n\nTicket: AB-100" {
+  file "a.txt" "a content"
+}
+commit "do the thing\n\nTicket: AB-200" {
+  file "b.txt" "b content"
+}
+
+run "git-disjoint --separate"

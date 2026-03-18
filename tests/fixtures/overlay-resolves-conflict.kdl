@@ -1,0 +1,14 @@
+title "overlay resolves conflict between two issues modifying same file"
+
+base {
+  file "shared.txt" "line1\nline2\n"
+}
+
+commit "change A\n\nTicket: AB-100" {
+  file "shared.txt" "changed-by-a\nline2\n"
+}
+commit "change B\n\nTicket: AB-200" {
+  file "shared.txt" "changed-by-a\nchanged-by-b\n"
+}
+
+run "git-disjoint --overlay"

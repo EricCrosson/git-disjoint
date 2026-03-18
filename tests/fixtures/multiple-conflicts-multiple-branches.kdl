@@ -1,0 +1,18 @@
+title "multiple branches each conflicting produces multi-block error report"
+
+base {
+  file "src/lib.rs" "line 1\nline 2\nline 3\n"
+  file "src/config.rs" "original config\n"
+}
+
+commit "feat: change lib for widgets\n\nTicket: AB-100" {
+  file "src/lib.rs" "line 1\nwidget line\nline 3\n"
+}
+commit "feat: change lib for gadgets\n\nTicket: AB-200" {
+  file "src/lib.rs" "line 1\ngadget line\nline 3\n"
+}
+commit "feat: change lib for sprockets\n\nTicket: AB-300" {
+  file "src/lib.rs" "line 1\nsprocket line\nline 3\n"
+}
+
+run "git-disjoint"

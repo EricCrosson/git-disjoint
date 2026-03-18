@@ -1,0 +1,15 @@
+---
+source: tests/fixtures.rs
+description: separate and all flags treat every commit individually
+expression: result
+input_file: tests/fixtures/separate-all-combined.kdl
+---
+exit: 0
+
+branch tagged-change:
+  * tagged change
+  files: a.txt
+
+branch untagged-change:
+  * untagged change
+  files: b.txt

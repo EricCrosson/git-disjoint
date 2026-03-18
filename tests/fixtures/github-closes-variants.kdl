@@ -1,0 +1,13 @@
+title "github issue trailer variants all parse correctly"
+
+commit "fix: bug one\n\nCloses #100" {
+  file "a.txt" "a"
+}
+commit "fix: bug two\n\nFixes #200" {
+  file "b.txt" "b"
+}
+commit "fix: bug three\n\nFixed #300" {
+  file "c.txt" "c"
+}
+
+run "git-disjoint"
