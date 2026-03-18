@@ -11,6 +11,7 @@ pub mod editor;
 pub mod error;
 #[doc(hidden)]
 pub mod execute;
+pub mod fill;
 #[doc(hidden)]
 pub mod git2_repository;
 #[doc(hidden)]

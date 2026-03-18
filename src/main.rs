@@ -15,12 +15,14 @@ use git_disjoint::disjoint_branch::{DisjointBranch, DisjointBranchMap};
 use git_disjoint::editor::interactive_get_pr_metadata;
 use git_disjoint::error::Error;
 use git_disjoint::execute::execute;
+use git_disjoint::fill;
 use git_disjoint::github_repository_metadata::GithubRepositoryMetadata;
 use git_disjoint::issue_group::IssueGroup;
 use git_disjoint::issue_group_map::IssueGroupMap;
 use git_disjoint::log_file::LogFile;
 use git_disjoint::pre_validation;
 use git_disjoint::pull_request::PullRequest;
+use git_disjoint::pull_request_metadata::PullRequestMetadata;
 
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
@@ -289,9 +291,13 @@ fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
                 let pr_metadata = match needs_edit {
                     true => interactive_get_pr_metadata(&root, &work_order.commit_work)?,
                     false => {
-                        // REFACTOR: clean this up
+                        // Fill lines only for single-commit PRs. The multi-commit path
+                        // opens an editor where the user controls formatting.
                         let commit = &work_order.commit_work.first().unwrap().commit;
-                        commit.message().unwrap().parse()?
+                        let mut pr_metadata: PullRequestMetadata =
+                            commit.message().unwrap().parse()?;
+                        pr_metadata.body = fill::fill_lines(&pr_metadata.body);
+                        pr_metadata
                     }
                 };
 
