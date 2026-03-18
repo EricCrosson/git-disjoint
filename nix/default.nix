@@ -1,13 +1,12 @@
 {
   pkgs,
-  system,
   crane,
   fenix,
 }: let
   craneLib = (crane.mkLib pkgs).overrideToolchain (_: let
     rust-toolchain-toml = builtins.fromTOML (builtins.readFile ../rust-toolchain.toml);
     fenix-toolchain =
-      fenix.packages.${system}.stable.withComponents
+      fenix.packages.${pkgs.stdenv.hostPlatform.system}.stable.withComponents
       rust-toolchain-toml.toolchain.components;
   in
     fenix-toolchain);
