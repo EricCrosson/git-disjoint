@@ -224,4 +224,35 @@ Closes #123
             "Expected to find no issue to parse from commit message"
         );
     }
+
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn display_is_never_empty(issue in prop_oneof![
+            "[A-Z]{2,6}-[0-9]{1,6}".prop_map(Issue::Jira),
+            "[0-9]{1,6}".prop_map(Issue::GitHub),
+        ]) {
+            let display = format!("{}", issue);
+            prop_assert!(!display.is_empty());
+        }
+
+        #[test]
+        fn display_then_parse_roundtrip_jira(
+            project in "[A-Z]{2,6}",
+            number in 1u32..=99999u32,
+        ) {
+            let id = format!("{project}-{number}");
+            let message = format!("feat: x\n\nTicket: {id}");
+            let parsed = Issue::parse_from_commit_message(&message);
+            prop_assert_eq!(parsed, Some(Issue::Jira(id)));
+        }
+
+        #[test]
+        fn display_then_parse_roundtrip_github(number in 1u32..=99999u32) {
+            let message = format!("fix: x\n\nCloses #{number}");
+            let parsed = Issue::parse_from_commit_message(&message);
+            prop_assert_eq!(parsed, Some(Issue::GitHub(number.to_string())));
+        }
+    }
 }

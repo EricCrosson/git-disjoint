@@ -62,3 +62,36 @@ impl From<String> for BranchName {
         Self::new(s)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::BranchName;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn sanitization_is_idempotent(s in "\\PC*") {
+            let once = BranchName::new(s.clone());
+            let twice = BranchName::new(once.as_str().to_string());
+            prop_assert_eq!(once, twice);
+        }
+
+        #[test]
+        fn no_consecutive_hyphens(s in "\\PC*") {
+            let branch = BranchName::new(s);
+            prop_assert!(!branch.as_str().contains("--"),
+                "branch name contains consecutive hyphens: {:?}", branch.as_str());
+        }
+
+        #[test]
+        fn no_forbidden_chars(s in "\\PC*") {
+            let branch = BranchName::new(s);
+            let name = branch.as_str();
+            prop_assert!(!name.contains('('), "contains '('");
+            prop_assert!(!name.contains(')'), "contains ')'");
+            prop_assert!(!name.contains('`'), "contains backtick");
+            prop_assert!(!name.contains('\''), "contains single quote");
+            prop_assert!(!name.contains('"'), "contains double quote");
+        }
+    }
+}
