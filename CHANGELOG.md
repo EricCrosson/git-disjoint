@@ -1,3 +1,20 @@
+# [0.12.0](https://github.com/EricCrosson/git-disjoint/compare/v0.11.8...v0.12.0) (2026-03-18)
+
+
+### Bug Fixes
+
+* **branch_name:** remove characters before eliding consecutive hyphens ([16a8186](https://github.com/EricCrosson/git-disjoint/commit/16a8186ce896862bc03f7a636afeb602bae6b580))
+* **nix:** include .kdl and .snap files in cargo source filter ([0d7788b](https://github.com/EricCrosson/git-disjoint/commit/0d7788bf30553d008869e102ff4b8cdd00878e22))
+* **nix:** replace deprecated system with stdenv.hostPlatform.system ([39cb6d4](https://github.com/EricCrosson/git-disjoint/commit/39cb6d406b2a537b485d05c05c5a86631474f01a))
+
+
+### Features
+
+* add data-driven KDL fixture test harness with insta snapshots ([c60aa53](https://github.com/EricCrosson/git-disjoint/commit/c60aa537d950ff5831c7ef898141eb1412b0919d))
+* add Plan type for structured branch planning output ([a526c85](https://github.com/EricCrosson/git-disjoint/commit/a526c8525afb05d472a3d003f229e0cae68b7de8))
+* **nix:** add LCOV code coverage via cargo-llvm-cov ([a68b54e](https://github.com/EricCrosson/git-disjoint/commit/a68b54e4877e5b920497b8989e93a2dcac54151f)), closes [nixpkgs#351574](https://github.com/nixpkgs/issues/351574)
+* pre-validate cherry-picks in memory before any git writes ([19f2bf6](https://github.com/EricCrosson/git-disjoint/commit/19f2bf6fce5792438cf894be537da38bd7489695))
+
 ## [0.11.8](https://github.com/EricCrosson/git-disjoint/compare/v0.11.7...v0.11.8) (2026-03-17)
 
 
