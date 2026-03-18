@@ -1,11 +1,13 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use git2::{Commit, Oid, Repository, Signature, Time};
+use git2::{Commit, Oid, Signature, Time};
 use tempfile::TempDir;
 
 use git_disjoint::cli::{CommitGrouping, CommitsToConsider, OverlayCommitsIntoOnePullRequest};
+use git_disjoint::default_branch::DefaultBranch;
 use git_disjoint::disjoint_branch::DisjointBranchMap;
+use git_disjoint::git2_repository::Repository;
 use git_disjoint::issue_group_map::IssueGroupMap;
 use git_disjoint::pre_validation;
 
@@ -190,8 +192,13 @@ fn delete_file(repo_path: &Path, relative_path: &str) {
     std::fs::remove_file(full_path).unwrap();
 }
 
-fn create_commit(
-    repo: &Repository,
+struct TestRepo {
+    _tempdir: TempDir,
+    repo: Repository,
+}
+
+fn create_git2_commit(
+    repo: &git2::Repository,
     parent: &Commit,
     files: &BTreeMap<String, String>,
     deletes: &[String],
@@ -219,20 +226,14 @@ fn create_commit(
         .unwrap()
 }
 
-struct TestRepo {
-    _tempdir: TempDir,
-    repo: Repository,
-    base_commit_oid: Oid,
-}
-
 fn build_test_repo(fixture: &TestFixture) -> TestRepo {
     let tempdir = TempDir::new().unwrap();
-    let repo = Repository::init(tempdir.path()).unwrap();
+    let git2_repo = git2::Repository::init(tempdir.path()).unwrap();
 
     let sig = fixed_signature();
 
     // Create initial commit with base files
-    let mut index = repo.index().unwrap();
+    let mut index = git2_repo.index().unwrap();
 
     // Always create at least one file so the base commit has a tree
     if fixture.base_files.is_empty() {
@@ -249,21 +250,23 @@ fn build_test_repo(fixture: &TestFixture) -> TestRepo {
     let tree_oid = index.write_tree().unwrap();
 
     let base_oid = {
-        let tree = repo.find_tree(tree_oid).unwrap();
-        repo.commit(Some("HEAD"), &sig, &sig, "initial commit", &tree, &[])
+        let tree = git2_repo.find_tree(tree_oid).unwrap();
+        git2_repo
+            .commit(Some("HEAD"), &sig, &sig, "initial commit", &tree, &[])
             .unwrap()
     };
 
     // Create the remote ref that git-disjoint looks for
-    repo.reference("refs/remotes/origin/main", base_oid, true, "test setup")
+    git2_repo
+        .reference("refs/remotes/origin/main", base_oid, true, "test setup")
         .unwrap();
 
     // Now apply each test commit
     let mut parent_oid = base_oid;
     for test_commit in &fixture.commits {
-        let parent = repo.find_commit(parent_oid).unwrap();
-        parent_oid = create_commit(
-            &repo,
+        let parent = git2_repo.find_commit(parent_oid).unwrap();
+        parent_oid = create_git2_commit(
+            &git2_repo,
             &parent,
             &test_commit.files,
             &test_commit.delete,
@@ -271,10 +274,11 @@ fn build_test_repo(fixture: &TestFixture) -> TestRepo {
         );
     }
 
+    let repo: Repository = git2_repo.into();
+
     TestRepo {
         _tempdir: tempdir,
         repo,
-        base_commit_oid: base_oid,
     }
 }
 
@@ -284,22 +288,13 @@ pub fn run_fixture(fixture: &TestFixture) -> String {
 
     let base_commit = test_repo
         .repo
-        .find_commit(test_repo.base_commit_oid)
+        .base_commit(&DefaultBranch("main".to_string()))
         .unwrap();
 
-    // Walk commits since base
-    let mut revwalk = test_repo.repo.revwalk().unwrap();
-    revwalk.push_head().unwrap();
-    revwalk.hide(base_commit.id()).unwrap();
-    revwalk
-        .set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::REVERSE)
-        .unwrap();
-
-    let commits: Vec<Commit> = revwalk
-        .filter_map(|id| {
-            let id = id.ok()?;
-            test_repo.repo.find_commit(id).ok()
-        })
+    let commits: Vec<Commit> = test_repo
+        .repo
+        .commits_since_base(&base_commit)
+        .unwrap()
         .collect();
 
     // Build the issue group map
