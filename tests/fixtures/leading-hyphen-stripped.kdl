@@ -1,0 +1,11 @@
+title "leading hyphen is stripped from branch name"
+
+base {
+  file "src/lib.rs" "fn main() {}"
+}
+
+commit "(fix) something" {
+  file "src/widget.rs" "pub struct Widget;"
+}
+
+run "git-disjoint --all"

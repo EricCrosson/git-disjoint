@@ -1,0 +1,11 @@
+---
+source: tests/fixtures.rs
+description: leading hyphen is stripped from branch name
+expression: result
+input_file: tests/fixtures/leading-hyphen-stripped.kdl
+---
+exit: 0
+
+branch fix-something:
+  * (fix) something
+  files: src/lib.rs, src/widget.rs

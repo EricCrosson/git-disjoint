@@ -47,6 +47,7 @@ impl BranchName {
         let s = value.replace(CHARACTERS_TO_REPLACE_WITH_HYPHEN, "-");
         let s = s.replace(CHARACTERS_TO_REMOVE, "");
         let s = elide_consecutive_hyphens(s);
+        let s = s.trim_matches('-').to_string();
         Self(s)
     }
 }
@@ -81,6 +82,18 @@ mod test {
             let branch = BranchName::new(s);
             prop_assert!(!branch.as_str().contains("--"),
                 "branch name contains consecutive hyphens: {:?}", branch.as_str());
+        }
+
+        #[test]
+        fn no_leading_or_trailing_hyphens(s in "\\PC*") {
+            let branch = BranchName::new(s);
+            let name = branch.as_str();
+            if !name.is_empty() {
+                prop_assert!(!name.starts_with('-'),
+                    "branch name starts with hyphen: {:?}", name);
+                prop_assert!(!name.ends_with('-'),
+                    "branch name ends with hyphen: {:?}", name);
+            }
         }
 
         #[test]
