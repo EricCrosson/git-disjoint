@@ -45,8 +45,8 @@ impl BranchName {
 
     pub fn new(value: String) -> Self {
         let s = value.replace(CHARACTERS_TO_REPLACE_WITH_HYPHEN, "-");
-        let s = elide_consecutive_hyphens(s);
         let s = s.replace(CHARACTERS_TO_REMOVE, "");
+        let s = elide_consecutive_hyphens(s);
         Self(s)
     }
 }
