@@ -8,7 +8,7 @@
   ];
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     crane = {
       url = "github:ipetkov/crane";
     };

@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     crane = {
       url = "github:ipetkov/crane";
     };
@@ -8,7 +8,7 @@
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    pre-commit-hooks = {
+    git-hooks = {
       url = "github:cachix/pre-commit-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -19,7 +19,7 @@
     nixpkgs,
     crane,
     fenix,
-    pre-commit-hooks,
+    git-hooks,
   }: let
     forEachSystem = nixpkgs.lib.genAttrs [
       "aarch64-darwin"
@@ -41,7 +41,7 @@
         overlays = [cargo-llvm-cov-overlay];
       };
       craneDerivations = pkgs.callPackage ./default.nix {inherit crane fenix;};
-      pre-commit-check = pre-commit-hooks.lib.${system}.run {
+      pre-commit-check = git-hooks.lib.${system}.run {
         src = ../.;
         hooks = {
           actionlint.enable = true;
