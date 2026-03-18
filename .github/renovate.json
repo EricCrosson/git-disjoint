@@ -1,21 +1,10 @@
 {
-  "extends": [
-    "config:js-app"
-  ],
-  "labels": [
-    "dependencies"
-  ],
-  "assignees": [
-    "@ericcrosson"
-  ],
+  "extends": ["config:js-app"],
+  "labels": ["dependencies"],
+  "assignees": ["@ericcrosson"],
   "packageRules": [
     {
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "pin",
-        "digest"
-      ],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
     }
   ],
