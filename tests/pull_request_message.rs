@@ -1,5 +1,3 @@
-mod common;
-
 use std::path::Path;
 
 use git2::{Oid, Repository as Git2Repository, Signature, Time};
