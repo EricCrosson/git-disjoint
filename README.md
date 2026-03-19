@@ -87,7 +87,7 @@ Alternatively, install **git-disjoint** with one of the following package manage
 
 | Repository     | Command                                               |
 | -------------- | ----------------------------------------------------- |
-| Cargo          | `cargo +nightly install git-disjoint`                 |
+| Cargo          | `cargo install git-disjoint`                          |
 | Cargo binstall | `cargo binstall git-disjoint`                         |
 | Nix            | `nix profile install github:EricCrosson/git-disjoint` |
 
