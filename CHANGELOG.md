@@ -1,3 +1,11 @@
+## [0.13.1](https://github.com/EricCrosson/git-disjoint/compare/v0.13.0...v0.13.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* order PR editor template commits most-recent-first ([fa3591c](https://github.com/EricCrosson/git-disjoint/commit/fa3591cf58d456b57f0adc3d301e7cc139ae73d8)), closes [#380](https://github.com/EricCrosson/git-disjoint/issues/380)
+* remove unused mod common import from pull_request_message tests ([bc23fe5](https://github.com/EricCrosson/git-disjoint/commit/bc23fe5964c4918bd922e3bf93d6ee95c4972f9c))
+
 # [0.13.0](https://github.com/EricCrosson/git-disjoint/compare/v0.12.1...v0.13.0) (2026-03-19)
 
 
