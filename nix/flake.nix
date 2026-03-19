@@ -45,7 +45,10 @@
         src = ../.;
         hooks = {
           actionlint.enable = true;
-          alejandra.enable = true;
+          alejandra = {
+            enable = true;
+            settings.verbosity = "quiet";
+          };
           clippy = {
             enable = true;
             package = craneDerivations.fenix-toolchain;
