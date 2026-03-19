@@ -52,7 +52,10 @@
             settings.denyWarnings = true;
           };
           prettier.enable = true;
-          rustfmt.enable = true;
+          rustfmt = {
+            enable = true;
+            package = craneDerivations.fenix-toolchain;
+          };
         };
       };
     in {
