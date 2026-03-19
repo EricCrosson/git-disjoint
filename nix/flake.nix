@@ -54,11 +54,14 @@
             package = craneDerivations.fenix-toolchain;
             settings.denyWarnings = true;
           };
+          deadnix.enable = true;
           prettier.enable = true;
           rustfmt = {
             enable = true;
             package = craneDerivations.fenix-toolchain;
           };
+          statix.enable = true;
+          taplo.enable = true;
         };
       };
     in {
