@@ -30,7 +30,7 @@ impl<'repo> FromIterator<&'repo Commit<'repo>> for PullRequestMessageTemplate<'r
 impl Display for PullRequestMessageTemplate<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "\n{}\n{}", IGNORE_MARKER, PULL_REQUEST_INSTRUCTIONS)?;
-        for commit in &self.commits {
+        for commit in self.commits.iter().rev() {
             writeln!(
                 f,
                 "{:.7} ({:?})",

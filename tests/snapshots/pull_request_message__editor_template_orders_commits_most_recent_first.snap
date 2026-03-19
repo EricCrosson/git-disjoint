@@ -1,0 +1,27 @@
+---
+source: tests/pull_request_message.rs
+expression: "format!(\"{template}\")"
+---
+# ------------------------ >8 ------------------------
+
+# Do not modify or remove the line above.
+# Everything below it will be ignored.
+
+Write a message for this pull request. The first block
+of text is the title and the rest is the description.
+
+Changes:
+37ab61a ("Test User")
+    feat: commit C
+    
+    Ticket: AB-1
+
+6b63c60 ("Test User")
+    feat: commit B
+    
+    Ticket: AB-1
+
+99d71ef ("Test User")
+    feat: commit A
+    
+    Ticket: AB-1
