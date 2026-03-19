@@ -3,13 +3,12 @@
   crane,
   fenix,
 }: let
-  craneLib = (crane.mkLib pkgs).overrideToolchain (_: let
-    rust-toolchain-toml = builtins.fromTOML (builtins.readFile ../rust-toolchain.toml);
-    fenix-toolchain =
-      fenix.packages.${pkgs.stdenv.hostPlatform.system}.stable.withComponents
-      rust-toolchain-toml.toolchain.components;
-  in
-    fenix-toolchain);
+  rust-toolchain-toml = builtins.fromTOML (builtins.readFile ../rust-toolchain.toml);
+  fenix-toolchain =
+    fenix.packages.${pkgs.stdenv.hostPlatform.system}.stable.withComponents
+    rust-toolchain-toml.toolchain.components;
+
+  craneLib = (crane.mkLib pkgs).overrideToolchain (_: fenix-toolchain);
 
   runtimeInputs = with pkgs; [gitMinimal];
 
@@ -57,7 +56,7 @@
       # Again we apply some extra arguments only to this derivation
       # and not every where else. In this case we add some clippy flags
       inherit cargoArtifacts;
-      cargoClippyExtraArgs = "-- --deny warnings";
+      cargoClippyExtraArgs = "--all-targets -- --deny warnings";
     });
 
   # Next, we want to run the tests and collect code-coverage, _but only if
@@ -115,6 +114,7 @@
 in {
   inherit
     commonArgs
+    fenix-toolchain
     myCrate
     myCrateClippy
     myCrateCoverage

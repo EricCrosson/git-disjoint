@@ -46,6 +46,11 @@
         hooks = {
           actionlint.enable = true;
           alejandra.enable = true;
+          clippy = {
+            enable = true;
+            package = craneDerivations.fenix-toolchain;
+            settings.denyWarnings = true;
+          };
           prettier.enable = true;
           rustfmt.enable = true;
         };
