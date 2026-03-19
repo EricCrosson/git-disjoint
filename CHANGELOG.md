@@ -1,3 +1,10 @@
+# [0.13.0](https://github.com/EricCrosson/git-disjoint/compare/v0.12.1...v0.13.0) (2026-03-19)
+
+
+### Features
+
+* **fill:** reflow hard-wrapped prose in single-commit PR bodies ([312f874](https://github.com/EricCrosson/git-disjoint/commit/312f874abefd1b1012dfaa30a2c91f61396d8d8d)), closes [#610](https://github.com/EricCrosson/git-disjoint/issues/610)
+
 ## [0.12.1](https://github.com/EricCrosson/git-disjoint/compare/v0.12.0...v0.12.1) (2026-03-18)
 
 
