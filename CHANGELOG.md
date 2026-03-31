@@ -1,3 +1,10 @@
+# [0.14.0](https://github.com/EricCrosson/git-disjoint/compare/v0.13.1...v0.14.0) (2026-03-31)
+
+
+### Features
+
+* add --ready flag to create PRs as ready for review ([903fd4b](https://github.com/EricCrosson/git-disjoint/commit/903fd4bab03189fc87f154f99871e22472679f5a))
+
 ## [0.13.1](https://github.com/EricCrosson/git-disjoint/compare/v0.13.0...v0.13.1) (2026-03-19)
 
 
