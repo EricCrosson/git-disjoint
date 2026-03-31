@@ -1,0 +1,11 @@
+---
+source: src/pull_request.rs
+expression: "serde_json::to_string_pretty(&req).unwrap()"
+---
+{
+  "title": "Fix the widget",
+  "body": "This fixes the broken widget.\n\nTicket: PROJ-123",
+  "head": "forker:proj-123-fix-the-widget",
+  "base": "main",
+  "draft": false
+}

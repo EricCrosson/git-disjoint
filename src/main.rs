@@ -132,6 +132,7 @@ fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
             dry_run,
             github_token,
             overlay,
+            ready,
             separate,
         } = cli;
 
@@ -310,6 +311,7 @@ fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
                     github_token: github_token.clone(),
                     branch_name: work_order.branch_name.clone(),
                     base: base_branch.clone(),
+                    draft: !ready,
                 };
 
                 let http_client = http_client.clone();

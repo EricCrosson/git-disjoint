@@ -138,6 +138,17 @@ pub struct Cli {
     )]
     pub overlay: OverlayCommitsIntoOnePullRequest,
 
+    /// Create pull requests as ready for review.
+    ///
+    /// By default, git-disjoint creates draft pull requests. Use this flag
+    /// to mark pull requests as ready for review immediately.
+    #[arg(
+        short,
+        long,
+        help = "Create pull requests as ready for review instead of draft"
+    )]
+    pub ready: bool,
+
     /// Do not group commits by issue.
     ///
     /// Treat each commit independently, regardless of issue trailer. Each

@@ -14,6 +14,7 @@ pub struct PullRequest {
     pub github_token: String,
     pub branch_name: BranchName,
     pub base: DefaultBranch,
+    pub draft: bool,
 }
 
 // https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#create-a-pull-request
@@ -74,6 +75,16 @@ pub enum CreatePullRequestErrorKind {
 }
 
 impl PullRequest {
+    fn build_request(&self) -> CreatePullRequestRequest {
+        CreatePullRequestRequest {
+            title: self.title.clone(),
+            body: self.body.clone(),
+            head: format!("{}:{}", self.forker, self.branch_name),
+            base: self.base.0.clone(),
+            draft: self.draft,
+        }
+    }
+
     pub fn create(
         self,
         http_client: reqwest::blocking::Client,
@@ -87,13 +98,7 @@ impl PullRequest {
             .header("User-Agent", "git-disjoint")
             .header("Accept", "application/vnd.github.v3+json")
             .header("Authorization", format!("token {}", self.github_token))
-            .json(&CreatePullRequestRequest {
-                title: self.title,
-                body: self.body,
-                head: format!("{}:{}", self.forker, self.branch_name),
-                base: self.base.0,
-                draft: true,
-            })
+            .json(&self.build_request())
             .send()
             .map_err(|err| CreatePullRequestError {
                 url: url.clone(),
@@ -112,5 +117,39 @@ impl PullRequest {
         })?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{branch_name::BranchName, default_branch::DefaultBranch};
+
+    fn test_pull_request(draft: bool) -> PullRequest {
+        PullRequest {
+            owner: "owner".into(),
+            name: "repo".into(),
+            forker: "forker".into(),
+            title: "Fix the widget".into(),
+            body: "This fixes the broken widget.\n\nTicket: PROJ-123".into(),
+            github_token: "token".into(),
+            branch_name: BranchName::new("proj-123-fix-the-widget".into()),
+            base: DefaultBranch("main".into()),
+            draft,
+        }
+    }
+
+    #[test]
+    fn build_request_creates_draft_pr() {
+        let pr = test_pull_request(true);
+        let req = pr.build_request();
+        insta::assert_snapshot!(serde_json::to_string_pretty(&req).unwrap());
+    }
+
+    #[test]
+    fn build_request_creates_ready_pr() {
+        let pr = test_pull_request(false);
+        let req = pr.build_request();
+        insta::assert_snapshot!(serde_json::to_string_pretty(&req).unwrap());
     }
 }
