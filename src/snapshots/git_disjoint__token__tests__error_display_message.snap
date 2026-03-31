@@ -1,0 +1,10 @@
+---
+source: src/token.rs
+expression: err.to_string()
+---
+unable to resolve GitHub token
+
+Provide a token using one of these methods (in order of precedence):
+  1. --github-token <TOKEN>
+  2. GITHUB_TOKEN environment variable
+  3. Install and authenticate the GitHub CLI: gh auth login

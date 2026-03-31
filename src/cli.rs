@@ -116,13 +116,16 @@ pub struct Cli {
     pub dry_run: bool,
 
     /// GitHub API token with repo permissions.
+    ///
+    /// If not provided, git-disjoint will attempt to resolve a token
+    /// from the GitHub CLI (`gh auth token`).
     #[arg(
         long,
         env = "GITHUB_TOKEN",
-        help = "GitHub API token",
+        help = "GitHub API token [default: resolved from gh auth token]",
         value_name = "TOKEN"
     )]
-    pub github_token: String,
+    pub github_token: Option<String>,
 
     /// Combine multiple issue groups into one PR.
     ///
@@ -166,4 +169,21 @@ pub struct Cli {
         action = ArgAction::SetTrue,
     )]
     pub separate: CommitGrouping,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_without_token_returns_none() {
+        let cli = Cli::try_parse_from(["git-disjoint"]).unwrap();
+        assert_eq!(cli.github_token, None);
+    }
+
+    #[test]
+    fn parse_with_token_flag_returns_some() {
+        let cli = Cli::try_parse_from(["git-disjoint", "--github-token", "ghp_abc123"]).unwrap();
+        assert_eq!(cli.github_token, Some("ghp_abc123".into()));
+    }
 }

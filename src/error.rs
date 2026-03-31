@@ -4,7 +4,7 @@ use std::fmt::Display;
 
 use crate::{
     default_branch, disjoint_branch, editor, execute, git2_repository, github_repository_metadata,
-    interact, issue_group_map, pull_request, pull_request_metadata,
+    interact, issue_group_map, pull_request, pull_request_metadata, token,
 };
 
 #[derive(Debug)]
@@ -36,6 +36,7 @@ impl Display for Error {
             ErrorKind::ParsePullRequestMetadata(_) => {
                 write!(f, "unable to parse pull request metadata")
             }
+            ErrorKind::ResolveToken(err) => write!(f, "{err}"),
             ErrorKind::PreValidation => {
                 write!(f, "pre-validation failed: cherry-pick conflicts detected")
             }
@@ -60,6 +61,7 @@ impl std::error::Error for Error {
             ErrorKind::Execute(err) => Some(err),
             ErrorKind::GetPullRequestMetadata(err) => Some(err),
             ErrorKind::ParsePullRequestMetadata(err) => Some(err),
+            ErrorKind::ResolveToken(err) => err.source(),
             ErrorKind::PreValidation => None,
         }
     }
@@ -96,6 +98,8 @@ pub enum ErrorKind {
     #[non_exhaustive]
     CherryPick(execute::ExecuteError, String),
     #[non_exhaustive]
+    ResolveToken(token::ResolveTokenError),
+    #[non_exhaustive]
     PreValidation,
 }
 
@@ -109,6 +113,21 @@ impl Error {
     pub fn pre_validation() -> Self {
         Self {
             kind: ErrorKind::PreValidation,
+        }
+    }
+
+    pub fn is_http_auth_error(&self) -> bool {
+        matches!(
+            self.kind,
+            ErrorKind::DefaultBranch(_) | ErrorKind::CreatePullRequest(_)
+        )
+    }
+}
+
+impl From<token::ResolveTokenError> for Error {
+    fn from(err: token::ResolveTokenError) -> Self {
+        Self {
+            kind: ErrorKind::ResolveToken(err),
         }
     }
 }

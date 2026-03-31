@@ -32,3 +32,4 @@ pub mod pull_request;
 pub mod pull_request_message;
 #[doc(hidden)]
 pub mod pull_request_metadata;
+pub mod token;

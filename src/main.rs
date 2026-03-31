@@ -23,6 +23,7 @@ use git_disjoint::log_file::LogFile;
 use git_disjoint::pre_validation;
 use git_disjoint::pull_request::PullRequest;
 use git_disjoint::pull_request_metadata::PullRequestMetadata;
+use git_disjoint::token;
 
 // DISCUSS: how to handle cherry-pick merge conflicts, and resuming gracefully
 // What if we stored a log of what we were going to do before we took any action?
@@ -122,7 +123,7 @@ fn sleep(duration: Duration) -> Result<(), Error> {
     Ok(())
 }
 
-fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
+fn do_git_disjoint(cli: Cli, github_token: String, log_file: LogFile) -> Result<(), Error> {
     thread::scope(|s| {
         let Cli {
             all,
@@ -130,7 +131,7 @@ fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
             choose,
             // REFACTOR: use an enum
             dry_run,
-            github_token,
+            github_token: _,
             overlay,
             ready,
             separate,
@@ -340,12 +341,24 @@ fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
 
 fn main() -> Result<(), git_disjoint::little_anyhow::Error> {
     let cli = Cli::parse();
+    let from_gh_cli = cli.github_token.is_none();
+    let github_token = match cli.github_token.clone() {
+        Some(token) => token,
+        None => token::resolve_token_from_gh_cli()?,
+    };
 
     let log_file = LogFile::default();
 
     // TODO: rename for clarity
-    do_git_disjoint(cli.clone(), log_file.clone())
-        .map_err(|err| git_disjoint::little_anyhow::Error::new(err, log_file.clone()))?;
+    do_git_disjoint(cli.clone(), github_token, log_file.clone()).map_err(|err| {
+        if from_gh_cli && err.is_http_auth_error() {
+            eprintln!(
+                "hint: your `gh` token may lack the `repo` scope — \
+                 try `gh auth refresh -s repo`"
+            );
+        }
+        git_disjoint::little_anyhow::Error::new(err, log_file.clone())
+    })?;
 
     log_file.delete()?;
     Ok(())
