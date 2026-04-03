@@ -519,7 +519,7 @@ dependencies = [
 
 [[package]]
 name = "git-disjoint"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "clap",
  "clap_complete",
