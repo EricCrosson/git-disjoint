@@ -1,3 +1,10 @@
+# [0.15.0](https://github.com/EricCrosson/git-disjoint/compare/v0.14.1...v0.15.0) (2026-04-08)
+
+
+### Features
+
+* resolve GitHub token from gh CLI when --github-token is not provided ([a7f7a92](https://github.com/EricCrosson/git-disjoint/commit/a7f7a92a19cfe33849aed7851ef6cd793b4f51f9))
+
 ## [0.14.1](https://github.com/EricCrosson/git-disjoint/compare/v0.14.0...v0.14.1) (2026-04-03)
 
 
