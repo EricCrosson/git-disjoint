@@ -1,3 +1,10 @@
+# [0.16.0](https://github.com/EricCrosson/git-disjoint/compare/v0.15.1...v0.16.0) (2026-04-10)
+
+
+### Features
+
+* extract hostname from git remote for gh auth token ([e89b130](https://github.com/EricCrosson/git-disjoint/commit/e89b1301e1216dde1527655c049555fee33cc2a7))
+
 ## [0.15.1](https://github.com/EricCrosson/git-disjoint/compare/v0.15.0...v0.15.1) (2026-04-10)
 
 
