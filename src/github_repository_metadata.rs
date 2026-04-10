@@ -14,6 +14,7 @@ pub struct GithubRepositoryMetadata {
     pub forker: String,
     pub remote: String,
     pub name: String,
+    pub hostname: String,
     pub root: PathBuf,
     pub repository: Repository,
 }
@@ -87,11 +88,14 @@ impl GithubRepositoryMetadata {
         let origin = get_remote_url("origin")?;
         let remote = get_user_remote(&repository)?;
 
+        let hostname = origin.host.unwrap_or_else(|| "github.com".to_string());
+
         Ok(GithubRepositoryMetadata {
             owner: origin.owner.unwrap(),
             forker: get_remote_url(&remote)?.owner.unwrap(),
             remote,
             name: origin.name,
+            hostname,
             root: get_repository_root()?,
             repository,
         })

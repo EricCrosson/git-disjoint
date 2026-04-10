@@ -123,7 +123,7 @@ fn sleep(duration: Duration) -> Result<(), Error> {
     Ok(())
 }
 
-fn do_git_disjoint(cli: Cli, github_token: String, log_file: LogFile) -> Result<(), Error> {
+fn do_git_disjoint(cli: Cli, log_file: LogFile) -> Result<(), Error> {
     thread::scope(|s| {
         let Cli {
             all,
@@ -131,13 +131,17 @@ fn do_git_disjoint(cli: Cli, github_token: String, log_file: LogFile) -> Result<
             choose,
             // REFACTOR: use an enum
             dry_run,
-            github_token: _,
+            github_token: explicit_token,
             overlay,
             ready,
             separate,
         } = cli;
 
         let repository_metadata = GithubRepositoryMetadata::try_default()?;
+        let github_token = match explicit_token {
+            Some(token) => token,
+            None => token::resolve_token_from_gh_cli(&repository_metadata.hostname)?,
+        };
         let base_branch = cli.base.clone();
         let base_branch = match base_branch {
             Some(base) => DefaultBranch(base),
@@ -149,6 +153,7 @@ fn do_git_disjoint(cli: Cli, github_token: String, log_file: LogFile) -> Result<
             forker,
             remote,
             name,
+            hostname: _,
             root,
             repository,
         } = repository_metadata;
@@ -342,15 +347,11 @@ fn do_git_disjoint(cli: Cli, github_token: String, log_file: LogFile) -> Result<
 fn main() -> Result<(), git_disjoint::little_anyhow::Error> {
     let cli = Cli::parse();
     let from_gh_cli = cli.github_token.is_none();
-    let github_token = match cli.github_token.clone() {
-        Some(token) => token,
-        None => token::resolve_token_from_gh_cli()?,
-    };
 
     let log_file = LogFile::default();
 
     // TODO: rename for clarity
-    do_git_disjoint(cli.clone(), github_token, log_file.clone()).map_err(|err| {
+    do_git_disjoint(cli.clone(), log_file.clone()).map_err(|err| {
         if from_gh_cli && err.is_http_auth_error() {
             eprintln!(
                 "hint: your `gh` token may lack the `repo` scope — \

@@ -38,10 +38,20 @@ enum ResolveTokenErrorKind {
     InvalidUtf8(std::string::FromUtf8Error),
 }
 
-/// Resolve a GitHub token by invoking `gh auth token --hostname github.com`.
-pub fn resolve_token_from_gh_cli() -> Result<String, ResolveTokenError> {
+fn build_gh_token_args(hostname: &str) -> Vec<String> {
+    vec![
+        "auth".to_string(),
+        "token".to_string(),
+        "--hostname".to_string(),
+        hostname.to_string(),
+    ]
+}
+
+/// Resolve a GitHub token by invoking `gh auth token --hostname <hostname>`.
+pub fn resolve_token_from_gh_cli(hostname: &str) -> Result<String, ResolveTokenError> {
+    let args = build_gh_token_args(hostname);
     let output = Command::new("gh")
-        .args(["auth", "token", "--hostname", "github.com"])
+        .args(&args)
         .output()
         .map_err(|err| ResolveTokenError {
             kind: ResolveTokenErrorKind::Io(err),
@@ -127,5 +137,20 @@ mod tests {
             kind: ResolveTokenErrorKind::EmptyToken,
         };
         insta::assert_snapshot!(err.to_string());
+    }
+
+    #[test]
+    fn build_args_for_github_com() {
+        let args = build_gh_token_args("github.com");
+        assert_eq!(args, ["auth", "token", "--hostname", "github.com"]);
+    }
+
+    #[test]
+    fn build_args_for_github_enterprise() {
+        let args = build_gh_token_args("github.mycompany.com");
+        assert_eq!(
+            args,
+            ["auth", "token", "--hostname", "github.mycompany.com"]
+        );
     }
 }
