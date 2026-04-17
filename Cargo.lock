@@ -1184,9 +1184,9 @@ dependencies = [
 
 [[package]]
 name = "parse-git-url"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cd626725d3855a68fdede6483fae43429129bf246f42d8db598911c8036cf47"
+checksum = "5d64d9400d3d63d981269597e2404e7e8e74ea97673bc74d8252af83d4e06313"
 dependencies = [
  "tracing",
  "url",
