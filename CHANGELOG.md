@@ -1,3 +1,10 @@
+## [0.16.3](https://github.com/EricCrosson/git-disjoint/compare/v0.16.2...v0.16.3) (2026-04-18)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate parse-git-url to v0.6.1 ([60cc1fc](https://github.com/EricCrosson/git-disjoint/commit/60cc1fce64e3feaa95145bebcc3afcf5de09a05d))
+
 ## [0.16.2](https://github.com/EricCrosson/git-disjoint/compare/v0.16.1...v0.16.2) (2026-04-17)
 
 
