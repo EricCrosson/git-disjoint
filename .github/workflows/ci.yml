@@ -6,6 +6,6 @@ on:
 
 jobs:
   test:
-    uses: semantic-release-action/rust/.github/workflows/ci.yml@v5
+    uses: semantic-release-action/rust/.github/workflows/ci.yml@v5.3.0
     with:
       toolchain: stable
