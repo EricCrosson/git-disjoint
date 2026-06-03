@@ -14,7 +14,7 @@ on:
 
 jobs:
   release:
-    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v5
+    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v5.3.0
     with:
       toolchain: stable
       github_app_id: ${{ vars.SEMANTIC_RELEASE_GITHUB_APP_ID }}
@@ -29,7 +29,7 @@ jobs:
         os: [macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
         with:
           ref: master
 
