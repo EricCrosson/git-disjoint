@@ -8,20 +8,20 @@ macro_rules! regex {
     }};
 }
 
-/// Jira or GitHub issue identifier.
+/// WorkTracker or GitHub issue identifier.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub enum Issue {
-    Jira(String),
+    WorkTracker(String),
     GitHub(String),
 }
 
 impl Issue {
     pub fn parse_from_commit_message<S: AsRef<str>>(commit_message: S) -> Option<Issue> {
-        let regex_jira_issue = regex!(r"(?m)^(?:Closes )?Ticket:\s+(\S+)");
-        if let Some(jira_captures) = regex_jira_issue.captures(commit_message.as_ref()) {
-            return Some(Issue::Jira(
-                jira_captures[jira_captures.len() - 1].to_owned(),
+        let regex_issue = regex!(r"(?m)^(?:Closes )?Ticket:\s+(\S+)");
+        if let Some(issue_captures) = regex_issue.captures(commit_message.as_ref()) {
+            return Some(Issue::WorkTracker(
+                issue_captures[issue_captures.len() - 1].to_owned(),
             ));
         }
 
@@ -36,7 +36,7 @@ impl Issue {
 
     pub fn issue_identifier(&self) -> &str {
         match self {
-            Issue::Jira(ticket) => ticket,
+            Issue::WorkTracker(id) => id,
             Issue::GitHub(issue) => issue,
         }
     }
@@ -48,7 +48,7 @@ impl Display for Issue {
             f,
             "{}{}",
             match self {
-                Issue::Jira(_) => "Jira ",
+                Issue::WorkTracker(_) => "Issue ",
                 Issue::GitHub(_) => "GitHub #",
             },
             self.issue_identifier()
@@ -61,9 +61,9 @@ mod test {
     use super::Issue;
 
     #[test]
-    fn display_jira_issue() {
-        let issue = Issue::Jira("GD-0".to_string());
-        assert_eq!(format!("{issue}"), "Jira GD-0");
+    fn display_issue() {
+        let issue = Issue::WorkTracker("GD-0".to_string());
+        assert_eq!(format!("{issue}"), "Issue GD-0");
     }
 
     #[test]
@@ -89,67 +89,67 @@ mod test {
     }
 
     test_parses!(
-        successfully_parse_jira_ticket_from_commit_message_without_newline,
+        successfully_parse_issue_from_commit_message_without_newline,
         r#"
 feat(foo): add hyperdrive
 
 Ticket: AB-123     
 "#,
-        Issue::Jira("AB-123".to_string())
+        Issue::WorkTracker("AB-123".to_string())
     );
 
     test_parses!(
-        successfully_parse_jira_ticket_from_commit_message_with_newline,
+        successfully_parse_issue_from_commit_message_with_newline,
         r#"
 feat(foo): add hyperdrive
 
 Ticket: AB-123
         
 "#,
-        Issue::Jira("AB-123".to_string())
+        Issue::WorkTracker("AB-123".to_string())
     );
 
     test_parses!(
-        successfully_parse_jira_ticket_from_commit_message_with_trailer,
+        successfully_parse_issue_from_commit_message_with_trailer,
         r#"
 feat(foo): add hyperdrive
 
 Ticket: AB-123
 Footer: http://example.com
 "#,
-        Issue::Jira("AB-123".to_string())
+        Issue::WorkTracker("AB-123".to_string())
     );
 
     test_parses!(
-        successfully_parse_jira_ticket_closes_ticket_from_commit_message_without_newline,
+        successfully_parse_issue_closes_issue_from_commit_message_without_newline,
         r#"
 feat(foo): add hyperdrive
 
 Closes Ticket: AB-123
 "#,
-        Issue::Jira("AB-123".to_string())
+        Issue::WorkTracker("AB-123".to_string())
     );
 
     test_parses!(
-        successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_newline,
+        successfully_parse_issue_closes_issue_from_commit_message_with_newline,
         r#"
 feat(foo): add hyperdrive
 
 Closes Ticket: AB-123
 
 "#,
-        Issue::Jira("AB-123".to_string())
+        Issue::WorkTracker("AB-123".to_string())
     );
 
     test_parses!(
-        successfully_parse_jira_ticket_closes_ticket_from_commit_message_with_trailer,
+        successfully_parse_issue_closes_issue_from_commit_message_with_trailer,
         r#"
 feat(foo): add hyperdrive
 
 Closes Ticket: AB-123
 Footer: http://example.com
 "#,
-        Issue::Jira("AB-123".to_string())
+        Issue::WorkTracker("AB-123".to_string())
     );
 
     test_parses!(
@@ -184,7 +184,7 @@ Closes #123
     );
 
     test_parses!(
-        successfully_parse_github_issue_closes_ticket_from_commit_message_without_newline,
+        successfully_parse_github_issue_closes_issue_from_commit_message_without_newline,
         r#"
 feat(foo): add hyperdrive
 
@@ -194,7 +194,7 @@ Closes #123
     );
 
     test_parses!(
-        successfully_parse_github_issue_closes_ticket_from_commit_message_with_newline,
+        successfully_parse_github_issue_closes_issue_from_commit_message_with_newline,
         r#"
 feat(foo): add hyperdrive
 
@@ -205,7 +205,7 @@ Closes #123
     );
 
     test_parses!(
-        successfully_parse_github_issue_closes_ticket_from_commit_message_with_trailer,
+        successfully_parse_github_issue_closes_issue_from_commit_message_with_trailer,
         r#"
 feat(foo): add hyperdrive
 
@@ -216,7 +216,7 @@ Closes #123
     );
 
     #[test]
-    fn unnsuccessfully_parse_from_commit_message() {
+    fn unsuccessfully_parse_from_commit_message() {
         let message = "feat(foo): add hyperdrive";
         let issue = Issue::parse_from_commit_message(message);
         assert!(
@@ -230,7 +230,7 @@ Closes #123
     proptest! {
         #[test]
         fn display_is_never_empty(issue in prop_oneof![
-            "[A-Z]{2,6}-[0-9]{1,6}".prop_map(Issue::Jira),
+            "[A-Z]{2,6}-[0-9]{1,6}".prop_map(Issue::WorkTracker),
             "[0-9]{1,6}".prop_map(Issue::GitHub),
         ]) {
             let display = format!("{}", issue);
@@ -238,14 +238,14 @@ Closes #123
         }
 
         #[test]
-        fn display_then_parse_roundtrip_jira(
+        fn display_then_parse_roundtrip_issue(
             project in "[A-Z]{2,6}",
             number in 1u32..=99999u32,
         ) {
             let id = format!("{project}-{number}");
             let message = format!("feat: x\n\nTicket: {id}");
             let parsed = Issue::parse_from_commit_message(&message);
-            prop_assert_eq!(parsed, Some(Issue::Jira(id)));
+            prop_assert_eq!(parsed, Some(Issue::WorkTracker(id)));
         }
 
         #[test]

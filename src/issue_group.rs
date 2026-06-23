@@ -99,7 +99,7 @@ mod test_display {
 
     #[test]
     fn display_human_readable_issue() {
-        check(Issue::Jira("COOL-123".to_string()), "Jira COOL-123");
+        check(Issue::WorkTracker("COOL-123".to_string()), "Issue COOL-123");
     }
 
     #[test]

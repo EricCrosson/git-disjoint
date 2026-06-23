@@ -65,7 +65,7 @@ behind your local commits to ahead of them.
 
 **git-disjoint** adds value to your workflow if you:
 
-- use a work tracker (supports Jira and GitHub Issues)
+- use a work tracker (supports Issue and GitHub Issues)
 - use GitHub and Pull Requests
 
 ## Requirements
@@ -101,7 +101,7 @@ Alternatively, install **git-disjoint** with one of the following package manage
 
 1. In each commit message, include a reference to the relevant issue.
 
-   For example, use the Jira automation [format][jira]:
+   For example, use the Issue automation [format][issue]:
 
    ```
    Ticket: COOL-123
@@ -119,7 +119,7 @@ Alternatively, install **git-disjoint** with one of the following package manage
    Closes #123
    ```
 
-[jira]: https://support.atlassian.com/jira-software-cloud/docs/reference-issues-in-your-development-work/
+[issue]: https://support.atlassian.com/jira-software-cloud/docs/reference-issues-in-your-development-work/
 [github]: https://github.blog/2013-01-22-closing-issues-via-commit-messages/
 
 ### Open PRs

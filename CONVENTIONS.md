@@ -7,7 +7,7 @@ It identifies commits by their issue references in commit messages, groups them 
 
 ## Core Functionality
 
-1. **Issue Identification**: Git-disjoint parses commit messages for issue references (e.g., "Fixes #123" or "JIRA-456") to group related commits.
+1. **Issue Identification**: Git-disjoint parses commit messages for issue references (e.g., "Fixes #123" or "Ticket: ISSUE-456") to group related commits.
 
 2. **Automatic Branch Creation**: Creates branches for each issue group without requiring manual branch management.
 

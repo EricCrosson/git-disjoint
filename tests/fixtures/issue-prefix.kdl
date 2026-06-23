@@ -1,4 +1,4 @@
-title "jira ticket appears as branch name prefix"
+title "issue appears as branch name prefix"
 
 base {
   file "src/lib.rs" "fn main() {}"

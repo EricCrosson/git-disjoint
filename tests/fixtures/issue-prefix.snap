@@ -1,8 +1,8 @@
 ---
 source: tests/fixtures.rs
-description: jira ticket appears as branch name prefix
+description: issue appears as branch name prefix
 expression: result
-input_file: tests/fixtures/jira-ticket-prefix.kdl
+input_file: tests/fixtures/issue-prefix.kdl
 ---
 exit: 0
 
