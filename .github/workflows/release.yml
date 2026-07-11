@@ -14,7 +14,7 @@ on:
 
 jobs:
   release:
-    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v5.3.1
+    uses: semantic-release-action/rust/.github/workflows/release-binary.yml@v5.3.2
     with:
       toolchain: stable
       github_app_id: ${{ vars.SEMANTIC_RELEASE_GITHUB_APP_ID }}
