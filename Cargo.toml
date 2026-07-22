@@ -23,7 +23,7 @@ exclude = [
 ]
 
 [dependencies]
-clap = { version = "=4.6.3", features = [
+clap = { version = "=4.6.4", features = [
   "cargo",
   "derive",
   "env",
@@ -60,6 +60,6 @@ codegen-units = 1
 strip = true
 
 [build-dependencies]
-clap = { version = "=4.6.3", features = ["cargo", "derive", "wrap_help"] }
+clap = { version = "=4.6.4", features = ["cargo", "derive", "wrap_help"] }
 clap_complete = "=4.6.7"
 clap_mangen = "=0.2.33"
