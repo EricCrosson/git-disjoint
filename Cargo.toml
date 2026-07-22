@@ -30,7 +30,7 @@ clap = { version = "=4.6.4", features = [
   "wrap_help",
 ] }
 parse-git-url = "=0.6.1"
-git2 = { version = "=0.20.4", default-features = false, features = [
+git2 = { version = "=0.21.0", default-features = false, features = [
   "zlib-ng-compat",
 ] }
 indexmap = "=2.14.0"
