@@ -49,7 +49,7 @@ serde_json = "=1.0.154"
 
 [dev-dependencies]
 insta = { version = "=1.49.0", features = ["glob"] }
-kdl = "=6.0.0"
+kdl = "=6.7.1"
 proptest = "=1.12.0"
 proptest-derive = "=0.9.0"
 tempfile = "=3.27.0"
